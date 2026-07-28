@@ -29,6 +29,12 @@ jobs:
         with:
           python-version: '3.12'
 
+      # For `node tests/run.js` (node:test needs 18+). No npm install: the
+      # test suite has no dependencies.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
       # KFF ACA premium + uninsured rate. KFF updates roughly yearly, but
       # running monthly is idempotent and picks up new years automatically.
       # Non-blocking: if KFF changes its page layout, fetch_data.R still reads
@@ -58,6 +64,14 @@ jobs:
           # The script skips that metric, without failing, when unset.
           EIA_KEY: ${{ secrets.EIA_KEY }}
         run: Rscript fetch_data.R
+
+      # Gate: validate the freshly generated payloads before they are committed.
+      # fetch_data.R exiting 0 only means every source answered; these tests
+      # check the artifacts are internally consistent (ranks, CPI coverage,
+      # date sanity, staleness, state/metric agreement). A failure here leaves
+      # the deployed site serving the last good data.
+      - name: Validate generated data
+        run: node tests/run.js
 
       - name: Commit and push if data changed
         run: |

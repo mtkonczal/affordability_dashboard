@@ -686,50 +686,6 @@ function loadDataFile(src) {
   return _loadedFiles[src];
 }
 
-Object.assign(window, {
-  ESP, fmtVal, fmtDate, ordinal, pctChange, valueAt, sliceFrom, downloadCSV, downloadCardAsPNG,
-  downloadCompareCSV,
-  linePath, toPoints, hoursToAfford, REFERENCE_PRICES, scaleByCPI, categoryLabel,
-  ANCHORS, anchorById, anchorDate, buildFactText, loadDataFile,
-});
-
-})();
-</script>
-
-<script type="text/babel" data-presets="react">
-(function() {
-// ── Main app ─────────────────────────────────────────────────────────────────
-// Four views over the same design language:
-//   National        — every national series as selectable chart cards + heatmap
-//   My State        — all metrics for one state (US available as an option)
-//   Compare States  — 1–4 metrics, pinned states overlaid (US pinnable too)
-//   Map             — choropleth (or sorted bar chart) of all states, one
-//                     measure at a time, levels for a selected year; change
-//                     lives on its pinned-states chart
-
-const { ESP, fmtVal, fmtDate, ordinal, pctChange, valueAt, sliceFrom, downloadCSV, downloadCardAsPNG,
-        downloadCompareCSV,
-        linePath, toPoints, categoryLabel, hoursToAfford, REFERENCE_PRICES, scaleByCPI,
-        ANCHORS, anchorById, anchorDate, buildFactText, loadDataFile } = window;
-const { useState, useMemo, useEffect, useRef } = React;
-
-const NAVY = '#2c3254';
-const WARM_RED = '#E04E39';
-const BEIGE = '#f4f2e4';
-const PAPER = '#FFFDF2';
-const INK = '#0E1320';
-const MUTE = '#6B6E78';
-const SOFT = '#9A9CA3';
-
-// Embed mode (?embed=1): iframe on the ESP site, which brings its own header.
-// The navy topper is dropped, the view tabs move into a light menu bar, the
-// menu bars go ESP cream #FFFDF2 to match the ESP site header (comms request,
-// July 2026) and the chart area stays white.
-const EMBED = document.documentElement.classList.contains('embed');
-const MENU_BG = EMBED ? '#FFFDF2' : PAPER;
-const PAGE_BG = EMBED ? '#FFFFFF' : BEIGE;
-
-
 // ── Real (inflation-adjusted) transform ─────────────────────────────────────
 // One global Nominal/Real switch drives the whole page. "Real" deflates a
 // series by CPI-U (all items) and re-expresses it in the latest month's
@@ -769,6 +725,55 @@ function toReal(series, cpi) {
 function seriesForType(item, cpi, real) {
   return (real && isDeflatable(item)) ? toReal(item.data, cpi) : item.data;
 }
+
+Object.assign(window, {
+  ESP, fmtVal, fmtDate, ordinal, pctChange, valueAt, sliceFrom, downloadCSV, downloadCardAsPNG,
+  downloadCompareCSV,
+  linePath, toPoints, hoursToAfford, REFERENCE_PRICES, scaleByCPI, categoryLabel,
+  ANCHORS, anchorById, anchorDate, buildFactText, loadDataFile,
+  ALREADY_REAL_IDS, isDeflatable, toReal, seriesForType,
+});
+
+})();
+</script>
+
+<script type="text/babel" data-presets="react">
+(function() {
+// ── Main app ─────────────────────────────────────────────────────────────────
+// Four views over the same design language:
+//   National        — every national series as selectable chart cards + heatmap
+//   My State        — all metrics for one state (US available as an option)
+//   Compare States  — 1–4 metrics, pinned states overlaid (US pinnable too)
+//   Map             — choropleth (or sorted bar chart) of all states, one
+//                     measure at a time, levels for a selected year; change
+//                     lives on its pinned-states chart
+
+const { ESP, fmtVal, fmtDate, ordinal, pctChange, valueAt, sliceFrom, downloadCSV, downloadCardAsPNG,
+        downloadCompareCSV,
+        linePath, toPoints, categoryLabel, hoursToAfford, REFERENCE_PRICES, scaleByCPI,
+        ANCHORS, anchorById, anchorDate, buildFactText, loadDataFile,
+        ALREADY_REAL_IDS, isDeflatable, toReal, seriesForType } = window;
+const { useState, useMemo, useEffect, useRef } = React;
+
+const NAVY = '#2c3254';
+const WARM_RED = '#E04E39';
+const BEIGE = '#f4f2e4';
+const PAPER = '#FFFDF2';
+const INK = '#0E1320';
+const MUTE = '#6B6E78';
+const SOFT = '#9A9CA3';
+
+// Embed mode (?embed=1): iframe on the ESP site, which brings its own header.
+// The navy topper is dropped, the view tabs move into a light menu bar, the
+// menu bars go ESP cream #FFFDF2 to match the ESP site header (comms request,
+// July 2026) and the chart area stays white.
+const EMBED = document.documentElement.classList.contains('embed');
+const MENU_BG = EMBED ? '#FFFDF2' : PAPER;
+const PAGE_BG = EMBED ? '#FFFFFF' : BEIGE;
+
+// The Real (inflation-adjusted) transform lives in the pure-helpers block
+// above (ALREADY_REAL_IDS / isDeflatable / toReal / seriesForType), so the
+// unit tests in tests/ can import it without a JSX transform.
 
 // Alphabetical by label (comms request); chips within each row are
 // alphabetized too, in NationalView.

@@ -69,7 +69,9 @@ serving the last good data: stale, never broken.
 | `scripts/` | Yearly fetchers (KFF, Census ACS) and the annual-data converter |
 | `data/` | Committed build artifacts (JS payloads + CSVs) and raw annual inputs |
 | `assets/` | ESP logo assets |
+| `tests/` | Data-contract + helper tests, `node tests/run.js` (no dependencies) |
 | `.github/workflows/update-data.yml` | Monthly automated data refresh |
+| `.github/workflows/tests.yml` | Runs the test suite on push and PRs |
 | `DEPLOYMENT.md` | GitHub Pages setup, embed instructions, secrets |
 | `CLAUDE.md` | Developer/agent guide to the architecture |
 
@@ -100,6 +102,18 @@ python3 scripts/convert_annual.py
 
 After any of the yearly scripts, re-run `Rscript fetch_data.R` to fold the
 results into the site payloads.
+
+### Checking a refresh
+
+```bash
+node tests/run.js
+```
+
+Validates the regenerated payloads — dates, missing values, stale series, state
+coverage, the baked-in national ranks, CPI coverage for the inflation-adjusted
+toggle — and the pure display logic in `index.html`. No dependencies; Node 18+.
+The monthly workflow runs it before committing, so a bad fetch leaves the live
+site on the last good data. Details in [`tests/README.md`](tests/README.md).
 
 ### API keys
 

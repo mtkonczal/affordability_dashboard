@@ -15,6 +15,10 @@ page.
 ## Common commands
 
 ```bash
+# Run the test suite (no dependencies; Node 18+). Do this after any data
+# refresh and after editing index.html. See tests/README.md.
+node tests/run.js
+
 # Refresh all time-series data (national + 51 states; takes several minutes)
 Rscript fetch_data.R
 
@@ -40,6 +44,37 @@ Keys read from `.Renviron` / environment: `BLS_KEY` (required — SA CPI
 subindexes not on FRED), `CENSUS_API_KEY` (required — county renter weights
 for state rents), `EIA_KEY` (optional — state electricity bills; skipped
 loudly when absent).
+
+## Tests
+
+`node tests/run.js` — Node's built-in runner, no `package.json`, no npm
+install, ~2 seconds. Two suites, described in `tests/README.md`:
+
+- `tests/data_contract.test.js` validates the committed payloads against what
+  `index.html` assumes: manifest/payload parity, state `has`-list vs state
+  files, date and value sanity, cached `latest_*`/`n_obs`, per-cadence
+  staleness, CPI coverage for Real mode, no double-deflation, state-file vs
+  metric-file agreement, **recomputed national ranks**, ZORI coverage ≥ 50%,
+  `rent_hours` = rent ÷ wages, annual tile CSVs. **Run this after every data
+  change** — `.github/workflows/update-data.yml` runs it as a gate before the
+  automated commit, so a bad refresh is never published.
+- `tests/helpers.test.js` pins the pure logic in index.html's first babel
+  block, including the editorial rules in `buildFactText` (percentage points on
+  rate series, no index levels in a public fact) and the Dec-2019 anchor.
+
+`tests/lib/load.js` runs each artifact with `new Function('window', src)` plus
+a stub `window`/`document` — which works only because every script in this
+project assigns onto `window`. **Constraint this adds: the first
+`<script type="text/babel">` block in index.html must stay free of JSX and of
+module-scope browser APIs.** It is the pure-helpers block (it ends with
+`Object.assign(window, {...})`); components belong in the second block. To make
+something in block two testable, move it to block one and destructure it from
+`window` in block two — that's how `isDeflatable`/`toReal`/`seriesForType`
+live there. A test asserts every name destructured from `window` is actually
+exported, so a broken seam fails loudly instead of rendering "Loading…".
+
+Nothing renders in the tests — charts, the choropleth, embed mode, deep links
+and PNG export are still covered only by the manual pass in `What to Check.md`.
 
 ## Architecture
 

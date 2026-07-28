@@ -1,0 +1,27 @@
+name: Tests
+
+# Runs on every push and pull request that touches the front end, the
+# committed data payloads, or the tests themselves. No npm install — the suite
+# uses Node's built-in test runner and has no dependencies.
+
+on:
+  push:
+    paths:
+      - 'index.html'
+      - 'data/**'
+      - 'tests/**'
+      - '.github/workflows/tests.yml'
+  pull_request:
+  workflow_dispatch: {}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - run: node tests/run.js

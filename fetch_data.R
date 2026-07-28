@@ -1644,7 +1644,13 @@ for (metric in STATE_METRICS) {
 metric_index <- lapply(STATE_METRICS, function(m) {
   n_states <- sum(vapply(STATES, function(s)
     !is.null(state_results[[s$code]][[m$id]]), logical(1)))
-  list(
+  # Drop NULL fields (national_id is NULL for electricity_bill — no comparable
+  # national series). jsonlite writes an R NULL as `{}`, and an empty object is
+  # truthy in JS, so the front end's `m.national_id && data[m.national_id]`
+  # would look up data["[object Object]"]. Omitting the key keeps that falsy.
+  # tests/data_contract.test.js asserts national_id, when present, is a string
+  # naming a real national series.
+  Filter(Negate(is.null), list(
     id           = m$id,
     label        = m$label,
     units        = m$units,
@@ -1657,7 +1663,7 @@ metric_index <- lapply(STATE_METRICS, function(m) {
     invert_color = isTRUE(m$invert_color),
     rebase       = grepl("^Index", m$units),
     n_states     = n_states
-  )
+  ))
 })
 metric_index <- Filter(function(m) m$n_states > 0, metric_index)
 
