@@ -228,7 +228,7 @@ SERIES <- list(
   # (moved out of Daily Items — comms feedback).
   list(
     id          = "groceries",
-    fred_id     = "CPIFABSL",
+    fred_id     = "CUSR0000SAF11",
     label       = "Groceries",
     subtitle    = "Food at Home CPI (All Groceries)",
     category    = "groceries",
@@ -329,12 +329,13 @@ SERIES <- list(
     id          = "car_insurance",
     source      = "bls",
     bls_id      = "CUSR0000SETE",
-    fred_id     = "CUUR0000SETE",   # NSA version on FRED, used for the "view source" link
+    source_note = "BLS · Motor Vehicle Insurance CPI (not on FRED)",
+    source_url  = "https://data.bls.gov/timeseries/CUSR0000SETE",
     label       = "Car Insurance",
     subtitle    = "Motor Vehicle Insurance CPI",
     category    = "big",
     units       = "Index (1982–84 = 100)",
-    description = "CPI for motor vehicle insurance, all urban consumers, seasonally adjusted (fetched via the BLS API; FRED carries only the NSA version).",
+    description = "CPI for motor vehicle insurance, all urban consumers, seasonally adjusted (fetched via the BLS API; not carried on FRED).",
     color       = "#6366F1",
     from        = "2000-01-01"
   ),
@@ -363,13 +364,16 @@ SERIES <- list(
   list(
     id          = "health_insurance",
     source      = "bls",
-    bls_id      = "CUSR0000SEMF",
-    fred_id     = "CUUR0000SEMF",
+    bls_id      = "CUSR0000SEME",   # item code SEME = Health insurance (SEMF is
+                                    # Medicinal drugs — a prior version of this
+                                    # entry pulled the wrong item code).
+    source_note = "BLS · Health Insurance CPI (not on FRED)",
+    source_url  = "https://data.bls.gov/timeseries/CUSR0000SEME",
     label       = "Health Insurance",
     subtitle    = "Health Insurance CPI",
     category    = "big",
     units       = "Index (1982–84 = 100)",
-    description = "CPI for health insurance, all urban consumers, seasonally adjusted (fetched via the BLS API). Captures the cost of insurance retained by insurers (administrative costs, profit), not total medical care.",
+    description = "CPI for health insurance, all urban consumers, seasonally adjusted (fetched via the BLS API; not carried on FRED). Captures the cost of insurance retained by insurers (administrative costs, profit), not total medical care.",
     color       = "#4F46E5",
     from        = "2005-12-01"
   ),
@@ -377,7 +381,8 @@ SERIES <- list(
     id          = "childcare",
     source      = "bls",
     bls_id      = "CUSR0000SEEB03",
-    fred_id     = "CUUR0000SEEB03",
+    source_note = "BLS · Day Care and Preschool CPI (not on FRED)",
+    source_url  = "https://data.bls.gov/timeseries/CUSR0000SEEB03",
     label       = "Childcare",
     subtitle    = "Day Care and Preschool CPI",
     category    = "big",

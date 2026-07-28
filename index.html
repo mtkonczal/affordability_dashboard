@@ -1400,6 +1400,7 @@ function ChartCard({ item, anchorId, displayMode, priceType, cpiData, overlayIte
               href={srcUrl}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={handleSourceLinkClick}
               style={{ color: SOFT, textDecoration: 'none', borderBottom: '1px dotted rgba(44,50,84,.3)' }}
               onMouseEnter={(e) => { e.currentTarget.style.color = NAVY; }}
               onMouseLeave={(e) => { e.currentTarget.style.color = SOFT; }}
@@ -2464,6 +2465,7 @@ function ExportFooter({ metric, onCSV, onPNG }) {
     }}>
       {metric.source_url ? (
         <a href={metric.source_url} target="_blank" rel="noopener noreferrer"
+           onClick={handleSourceLinkClick}
            style={{ color: SOFT, textDecoration: 'none', borderBottom: '1px dotted rgba(44,50,84,.3)' }}
            onMouseEnter={(e) => { e.currentTarget.style.color = NAVY; }}
            onMouseLeave={(e) => { e.currentTarget.style.color = SOFT; }}>
@@ -2544,6 +2546,7 @@ function CompareMetricPanel({ metric, data, pinned, names, anchorId, displayMode
               href={metric.source_url}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={handleSourceLinkClick}
               style={{ color: SOFT, textDecoration: 'none', borderBottom: '1px dotted rgba(44,50,84,.3)' }}
               onMouseEnter={(e) => { e.currentTarget.style.color = NAVY; }}
               onMouseLeave={(e) => { e.currentTarget.style.color = SOFT; }}
@@ -2696,6 +2699,7 @@ function CompareView({ data, metricIds, setMetricIds, homeState, anchorId, displ
                   <React.Fragment>
                     {metric.source_url ? (
                       <a href={metric.source_url} target="_blank" rel="noopener noreferrer"
+                         onClick={handleSourceLinkClick}
                          style={{ color: MUTE, textDecoration: 'none', borderBottom: '1px dotted rgba(44,50,84,.3)' }}>
                         {metric.source_label} ↗
                       </a>
@@ -2940,6 +2944,7 @@ function MapView({ data, metricId, setMetricId, anchorId, setAnchorId, priceType
               <span className="at-section-dek" style={styles.sectionDek}>
                 {metric.source_url ? (
                   <a href={metric.source_url} target="_blank" rel="noopener noreferrer"
+                     onClick={handleSourceLinkClick}
                      style={{ color: MUTE, textDecoration: 'none', borderBottom: '1px dotted rgba(44,50,84,.3)' }}>
                     {metric.source_label} ↗
                   </a>
@@ -3071,6 +3076,21 @@ function MapView({ data, metricId, setMetricId, anchorId, setAnchorId, priceType
       </div>
     </React.Fragment>
   );
+}
+
+// A few metrics (currently only the derived "Rent in Hours of Work") have no
+// single external primary source — their source_url is the relative
+// "about.html" link to this tracker's own methods page. Opening that as a
+// plain target="_blank" anchor dumps the reader on the bare, chrome-less
+// about.html file instead of the in-app About view every other "About the
+// data" link uses. Anchors that carry this href call this on click so
+// AppMain (which owns the in-app About navigation) can intercept it instead
+// of letting the browser navigate/open a new tab.
+function handleSourceLinkClick(e) {
+  if (e.currentTarget.getAttribute('href') === 'about.html') {
+    e.preventDefault();
+    window.dispatchEvent(new CustomEvent('at-open-about'));
+  }
 }
 
 // ── Shell ────────────────────────────────────────────────────────────────────
@@ -3206,6 +3226,15 @@ function AppMain({ data }) {
     setView('about');
   };
   const aboutProps = { onClick: openAbout };
+  // Card "view source" links for derived metrics (e.g. Rent in Hours of
+  // Work) that point at about.html dispatch this instead of navigating —
+  // see handleSourceLinkClick — so they open the in-app About view like
+  // every other "About the data" link rather than a bare new tab.
+  useEffect(() => {
+    const onOpenAbout = () => openAbout({ preventDefault() {} });
+    window.addEventListener('at-open-about', onOpenAbout);
+    return () => window.removeEventListener('at-open-about', onOpenAbout);
+  }, [view]);
   const validAnchor = (a) => ANCHORS.some(x => x.id === a) || /^y:\d{4}$/.test(a || '');
   const [anchorId, setAnchorId] = useState(validAnchor(hash.anchor) ? hash.anchor : '2019');
   const [displayMode, setDisplayMode] = useState(hash.mode === 'pct' ? 'pct' : 'level');
