@@ -304,25 +304,6 @@
       "yoy_change": 3.54,
       "n_obs": 317
     },
-    "rent": {
-      "id": "rent",
-      "label": "Rent (CPI)",
-      "subtitle": "Rent of Primary Residence CPI",
-      "category": "big",
-      "units": "Index (1982–84 = 100)",
-      "description": "CPI for rent of primary residence, all urban consumers, not seasonally adjusted. Tracks rents paid by all tenants, including long-standing leases.",
-      "color": "#4338CA",
-      "fred_id": "CUUR0000SEHA",
-      "is_new": false,
-      "invert_color": false,
-      "overlay_only": false,
-      "rebase": true,
-      "last_updated": "2026-07-15",
-      "latest_value": 446.945,
-      "latest_date": "2026-06-01",
-      "yoy_change": 2.84,
-      "n_obs": 317
-    },
     "zori_rent": {
       "id": "zori_rent",
       "label": "Rent (Market)",
@@ -536,25 +517,6 @@
       "yoy_change": 8.91,
       "n_obs": 317
     },
-    "mean_weeks_unemployed": {
-      "id": "mean_weeks_unemployed",
-      "label": "Mean Weeks Unemployed",
-      "subtitle": "Average Duration of Unemployment",
-      "category": "labor",
-      "units": "Weeks",
-      "description": "Average number of weeks an unemployed person has been seeking work, monthly, seasonally adjusted.",
-      "color": "#22C55E",
-      "fred_id": "UEMPMEAN",
-      "is_new": false,
-      "invert_color": false,
-      "overlay_only": false,
-      "rebase": false,
-      "last_updated": "2026-07-15",
-      "latest_value": 25.5,
-      "latest_date": "2026-06-01",
-      "yoy_change": 10.39,
-      "n_obs": 317
-    },
     "income_20th": {
       "id": "income_20th",
       "label": "Income: 20th Percentile",
@@ -573,26 +535,6 @@
       "latest_value": 33775,
       "latest_date": "2024-01-01",
       "yoy_change": 5.74,
-      "n_obs": 18
-    },
-    "income_80th": {
-      "id": "income_80th",
-      "label": "Income: 80th Percentile",
-      "subtitle": "Household Income, Fourth-Quintile Upper Limit",
-      "category": "labor",
-      "units": "$",
-      "description": "The household income level that 80 percent of households fall below — the upper limit of the fourth quintile. Census ACS 1-year estimates, table B19080. Nominal dollars; use the Real toggle for inflation-adjusted values. No 2020 data.",
-      "color": "#65A30D",
-      "source_url": "https://data.census.gov/table?q=B19080",
-      "is_new": true,
-      "invert_color": true,
-      "overlay_only": false,
-      "rebase": false,
-      "source_note": "Census ACS 1-year, table B19080 (annual)",
-      "last_updated": "2026-07-15",
-      "latest_value": 163696,
-      "latest_date": "2024-01-01",
-      "yoy_change": 5.26,
       "n_obs": 18
     },
     "cpi_all_items": {
@@ -614,25 +556,6 @@
       "yoy_change": 3.46,
       "n_obs": 317
     },
-    "revolving_credit": {
-      "id": "revolving_credit",
-      "label": "Revolving Credit",
-      "subtitle": "Credit Cards & Other Revolving Debt",
-      "category": "debt",
-      "units": "$ Billions",
-      "description": "Total revolving consumer credit outstanding (mostly credit cards), owned and securitized. Federal Reserve G.19 release.",
-      "color": "#DC2626",
-      "fred_id": "REVOLSL",
-      "is_new": false,
-      "invert_color": false,
-      "overlay_only": false,
-      "rebase": false,
-      "last_updated": "2026-07-15",
-      "latest_value": 1344.208,
-      "latest_date": "2026-05-01",
-      "yoy_change": 3.42,
-      "n_obs": 317
-    },
     "student_loans": {
       "id": "student_loans",
       "label": "Student Loans",
@@ -652,25 +575,6 @@
       "yoy_change": 3.17,
       "n_obs": 81
     },
-    "auto_loans": {
-      "id": "auto_loans",
-      "label": "Auto Loans",
-      "subtitle": "Motor Vehicle Loan Debt Outstanding",
-      "category": "debt",
-      "units": "$ Billions",
-      "description": "Total motor vehicle loan debt owned and securitized. Federal Reserve G.19 release.",
-      "color": "#EF4444",
-      "fred_id": "MVLOASM",
-      "is_new": false,
-      "invert_color": false,
-      "overlay_only": false,
-      "rebase": false,
-      "last_updated": "2026-07-15",
-      "latest_value": 1559.772,
-      "latest_date": "2026-03-01",
-      "yoy_change": 0.3,
-      "n_obs": 105
-    },
     "credit_card_delinquency": {
       "id": "credit_card_delinquency",
       "label": "Credit Card Delinquency",
@@ -688,25 +592,6 @@
       "latest_value": 2.92,
       "latest_date": "2026-01-01",
       "yoy_change": -4.58,
-      "n_obs": 105
-    },
-    "consumer_loan_delinquency": {
-      "id": "consumer_loan_delinquency",
-      "label": "Consumer Loan Delinquency",
-      "subtitle": "Delinquency Rate, All Commercial Banks",
-      "category": "debt",
-      "units": "Rate (%)",
-      "description": "Share of consumer loan balances 30+ days delinquent at all commercial banks. Quarterly, seasonally adjusted.",
-      "color": "#F87171",
-      "fred_id": "DRCLACBS",
-      "is_new": false,
-      "invert_color": false,
-      "overlay_only": false,
-      "rebase": false,
-      "last_updated": "2026-07-15",
-      "latest_value": 2.64,
-      "latest_date": "2026-01-01",
-      "yoy_change": -4.69,
       "n_obs": 105
     },
     "mortgage_delinquency": {
@@ -927,20 +812,6 @@
         "n_states": 51
       },
       {
-        "id": "rent",
-        "label": "Rent (Market)",
-        "units": "$ per Month",
-        "color": "#7E22CE",
-        "national_id": "zori_rent",
-        "frequency": "Monthly",
-        "source_label": "Zillow ZORI (county data, renter-weighted)",
-        "source_url": "https://www.zillow.com/research/data/",
-        "description": "Typical market-rate asking rent. Zillow does not publish state ZORI, so this aggregates Zillow's county-level index using ACS renter-household weights; states where covered counties hold under half of renter households are omitted.",
-        "invert_color": false,
-        "rebase": false,
-        "n_states": 51
-      },
-      {
         "id": "rent_hours",
         "label": "Rent in Hours of Work",
         "units": "Hours of Work",
@@ -1048,20 +919,6 @@
         "source_label": "Census ACS 1-year, table B19080",
         "source_url": "https://data.census.gov/table?q=B19080",
         "description": "The household income level that 20 percent of the state's households fall below (lowest-quintile upper limit). Nominal dollars; the Real toggle deflates by national CPI-U. No 2020 data.",
-        "invert_color": true,
-        "rebase": false,
-        "n_states": 51
-      },
-      {
-        "id": "income_80th",
-        "label": "Income: 80th Percentile",
-        "units": "$",
-        "color": "#65A30D",
-        "national_id": "income_80th",
-        "frequency": "Annual",
-        "source_label": "Census ACS 1-year, table B19080",
-        "source_url": "https://data.census.gov/table?q=B19080",
-        "description": "The household income level that 80 percent of the state's households fall below (fourth-quintile upper limit). Nominal dollars; the Real toggle deflates by national CPI-U. No 2020 data.",
         "invert_color": true,
         "rebase": false,
         "n_states": 51

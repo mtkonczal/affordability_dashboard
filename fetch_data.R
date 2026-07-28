@@ -391,17 +391,12 @@ SERIES <- list(
     color       = "#C026D3",
     from        = "2000-01-01"
   ),
-  list(
-    id          = "rent",
-    fred_id     = "CUUR0000SEHA",
-    label       = "Rent (CPI)",
-    subtitle    = "Rent of Primary Residence CPI",
-    category    = "big",
-    units       = "Index (1982–84 = 100)",
-    description = "CPI for rent of primary residence, all urban consumers, not seasonally adjusted. Tracks rents paid by all tenants, including long-standing leases.",
-    color       = "#4338CA",
-    from        = "2000-01-01"
-  ),
+  # Rent is market rent (Zillow ZORI) only. CPI rent (CUUR0000SEHA) was cut in
+  # the July 2026 trim: two rent lines confused readers, the dollar figure is
+  # the clearer one, and the state rent metric was already ZORI-only — so
+  # keeping CPI rent nationally made national and state inconsistent. Cost of
+  # the cut: rent has no history before 2015, so the "Since 2000" and "Max"
+  # anchors show no rent line.
   list(
     id          = "zori_rent",
     source      = "zori",
@@ -548,23 +543,18 @@ SERIES <- list(
     color       = "#064E3B",
     from        = "2000-01-01"
   ),
-  list(
-    id          = "mean_weeks_unemployed",
-    fred_id     = "UEMPMEAN",
-    label       = "Mean Weeks Unemployed",
-    subtitle    = "Average Duration of Unemployment",
-    category    = "labor",
-    units       = "Weeks",
-    description = "Average number of weeks an unemployed person has been seeking work, monthly, seasonally adjusted.",
-    color       = "#22C55E",
-    from        = "2000-01-01"
-  ),
-  # Income distribution: the ACS publishes quintile upper limits (B19080),
-  # so the 20th and 80th percentiles are the exact published points closest
-  # to the requested 25th/75th — interpolating those would add assumptions
-  # that wouldn't survive a hostile fact-check. Nominal dollars (the Real
-  # toggle deflates them); the median income series stays CPI-U-RS-adjusted
-  # as published.
+  # Mean weeks unemployed (UEMPMEAN) was cut in the July 2026 trim — the median
+  # is the BLS headline, is not dragged by the long-term-unemployed tail, and
+  # two duration measures said the same thing.
+  # Income distribution: the ACS publishes quintile upper limits (B19080), so
+  # the 20th percentile is the exact published point closest to the requested
+  # 25th — interpolating would add assumptions that wouldn't survive a hostile
+  # fact-check. Nominal dollars (the Real toggle deflates them); the median
+  # income series stays CPI-U-RS-adjusted as published.
+  # The 80th percentile (B19080_004E) was cut in the July 2026 trim: it is an
+  # inequality statistic, not an affordability one. fetch_census.py still
+  # writes data/census/income_80th.csv — read_long_dir() ignores unreferenced
+  # files, so the column is there if it's ever wanted back.
   list(
     id          = "income_20th",
     source      = "census",
@@ -575,23 +565,6 @@ SERIES <- list(
     units       = "$",
     description = "The household income level that 20 percent of households fall below — the upper limit of the lowest quintile. Census ACS 1-year estimates, table B19080. Nominal dollars; use the Real toggle for inflation-adjusted values. No 2020 data.",
     color       = "#4D7C0F",
-    from        = "2005-01-01",
-    is_new      = TRUE,
-    optional    = TRUE,
-    invert_color = TRUE,
-    source_note = "Census ACS 1-year, table B19080 (annual)",
-    source_url  = "https://data.census.gov/table?q=B19080"
-  ),
-  list(
-    id          = "income_80th",
-    source      = "census",
-    src_id      = "income_80th",
-    label       = "Income: 80th Percentile",
-    subtitle    = "Household Income, Fourth-Quintile Upper Limit",
-    category    = "labor",
-    units       = "$",
-    description = "The household income level that 80 percent of households fall below — the upper limit of the fourth quintile. Census ACS 1-year estimates, table B19080. Nominal dollars; use the Real toggle for inflation-adjusted values. No 2020 data.",
-    color       = "#65A30D",
     from        = "2005-01-01",
     is_new      = TRUE,
     optional    = TRUE,
@@ -616,18 +589,12 @@ SERIES <- list(
   # release) cover the same concepts and let the existing CSV fetcher work
   # unchanged. SLOASM/MVLOASM are the monthly successors to the discontinued
   # quarterly SLOAS/MVLOAS series (verified current as of this fetch).
-  list(
-    id          = "revolving_credit",
-    fred_id     = "REVOLSL",
-    label       = "Revolving Credit",
-    subtitle    = "Credit Cards & Other Revolving Debt",
-    category    = "debt",
-    units       = "$ Billions",
-    description = "Total revolving consumer credit outstanding (mostly credit cards), owned and securitized. Federal Reserve G.19 release.",
-    color       = "#DC2626",
-    from        = "2000-01-01",
-    scale       = 0.001
-  ),
+  # The July 2026 trim cut two of these national $-billions aggregates —
+  # revolving credit (REVOLSL) and auto loans (MVLOASM) — because a national
+  # balance in the trillions doesn't tell a reader anything about their own
+  # finances, and NY Fed household debt per capita covers the concept per
+  # person and per state. Student loans stay: that total is a familiar
+  # organizing number in its own right.
   list(
     id          = "student_loans",
     fred_id     = "SLOASM",
@@ -641,18 +608,6 @@ SERIES <- list(
     scale       = 0.001
   ),
   list(
-    id          = "auto_loans",
-    fred_id     = "MVLOASM",
-    label       = "Auto Loans",
-    subtitle    = "Motor Vehicle Loan Debt Outstanding",
-    category    = "debt",
-    units       = "$ Billions",
-    description = "Total motor vehicle loan debt owned and securitized. Federal Reserve G.19 release.",
-    color       = "#EF4444",
-    from        = "2000-01-01",
-    scale       = 0.001
-  ),
-  list(
     id          = "credit_card_delinquency",
     fred_id     = "DRCCLACBS",
     label       = "Credit Card Delinquency",
@@ -663,17 +618,9 @@ SERIES <- list(
     color       = "#B91C1C",
     from        = "2000-01-01"
   ),
-  list(
-    id          = "consumer_loan_delinquency",
-    fred_id     = "DRCLACBS",
-    label       = "Consumer Loan Delinquency",
-    subtitle    = "Delinquency Rate, All Commercial Banks",
-    category    = "debt",
-    units       = "Rate (%)",
-    description = "Share of consumer loan balances 30+ days delinquent at all commercial banks. Quarterly, seasonally adjusted.",
-    color       = "#F87171",
-    from        = "2000-01-01"
-  ),
+  # Consumer loan delinquency (DRCLACBS) was cut in the July 2026 trim: it is a
+  # superset that already includes credit cards, so it read as a muted copy of
+  # the card line. Credit card + mortgage delinquency is the useful pair.
   list(
     id          = "mortgage_delinquency",
     fred_id     = "DRSFRMACBS",
@@ -1006,22 +953,7 @@ STATE_METRICS <- list(
     invert_color = TRUE,
     round_digits = 0
   ),
-  list(
-    id           = "income_80th",
-    label        = "Income: 80th Percentile",
-    units        = "$",
-    color        = "#65A30D",
-    national_id  = "income_80th",
-    frequency    = "Annual",
-    source_label = "Census ACS 1-year, table B19080",
-    source_url   = "https://data.census.gov/table?q=B19080",
-    description  = "The household income level that 80 percent of the state's households fall below (fourth-quintile upper limit). Nominal dollars; the Real toggle deflates by national CPI-U. No 2020 data.",
-    source       = "census",
-    src_id       = "income_80th",
-    from         = "2005-01-01",
-    invert_color = TRUE,
-    round_digits = 0
-  ),
+  # income_80th intentionally absent — see the SERIES comment above.
   list(
     id           = "rent_burden",
     label        = "Rent Burden",

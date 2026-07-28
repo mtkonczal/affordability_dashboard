@@ -21,7 +21,7 @@ window.ABOUT_CONTENT = `
       <thead><tr><th>Series</th><th>Source</th><th>Updates</th><th>Notes</th></tr></thead>
       <tbody>
         <tr>
-          <td><b>Groceries, electricity, rent (CPI), cars, car insurance, health insurance, childcare, inflation</b></td>
+          <td><b>Groceries, electricity, cars, car insurance, health insurance, childcare, inflation</b></td>
           <td>BLS Consumer Price Index, via FRED and the BLS public API</td>
           <td><span class="freq m">Monthly</span></td>
           <td>Seasonally adjusted where published. Index series display as cumulative % change, never raw index points. Each card links to its FRED series ID.</td>
@@ -48,7 +48,7 @@ window.ABOUT_CONTENT = `
           <td><b>Rent (market)</b></td>
           <td>Zillow Observed Rent Index (ZORI)</td>
           <td><span class="freq m">Monthly</span></td>
-          <td>Typical <i>asking</i> rent for a new lease, in dollars — a different concept from CPI rent, which tracks all tenants including long-standing leases. Smoothed, seasonally adjusted.</td>
+          <td>Typical <i>asking</i> rent for a new lease, in dollars. This is the tracker's only rent measure: CPI rent averages over all tenants, including long-standing leases, so it understates what someone signing a lease today pays. Smoothed, seasonally adjusted; 2015 onward, so the longest anchors show no rent line.</td>
         </tr>
         <tr>
           <td><b>Median home price</b></td>
@@ -69,10 +69,10 @@ window.ABOUT_CONTENT = `
           <td>Real hourly earnings are derived: nominal earnings deflated by CPI-U, expressed in the latest month's dollars.</td>
         </tr>
         <tr>
-          <td><b>Credit card, student loan &amp; auto debt; delinquency rates</b></td>
+          <td><b>Student loan debt; credit card &amp; mortgage delinquency rates</b></td>
           <td>Federal Reserve (G.19 release; bank call reports), via FRED</td>
           <td><span class="freq m">Monthly</span> <span class="freq q">Quarterly</span></td>
-          <td>Balances owned and securitized; delinquency is 30+ days at all commercial banks.</td>
+          <td>Balances owned and securitized; delinquency is 30+ days at all commercial banks. Household debt per capita (below) carries the broader debt picture per person and per state.</td>
         </tr>
         <tr>
           <td><b>ACA benchmark premium</b></td>
@@ -99,10 +99,10 @@ window.ABOUT_CONTENT = `
           <td>Share of renter households paying 30%+ of income on gross rent. 2005 onward; no 2020 point. Households where the ratio cannot be computed are excluded.</td>
         </tr>
         <tr>
-          <td><b>Income: 20th &amp; 80th percentile</b></td>
+          <td><b>Income: 20th percentile</b></td>
           <td>Census ACS 1-year estimates, table B19080</td>
           <td><span class="freq a">Annual</span></td>
-          <td>Quintile upper limits: the income levels 20% and 80% of households fall below. The ACS publishes quintile limits, not arbitrary percentiles — 20th/80th are the exact published points, so the tracker uses them rather than interpolating a 25th/75th. Nominal dollars (the Real toggle deflates them); median income remains inflation-adjusted as published.</td>
+          <td>A quintile upper limit: the income level 20% of households fall below. The ACS publishes quintile limits, not arbitrary percentiles, so the tracker uses the published 20th point rather than interpolating a 25th. Nominal dollars (the Real toggle deflates them); median income remains inflation-adjusted as published.</td>
         </tr>
         <tr>
           <td><b>Rent in hours of work</b></td>
@@ -186,10 +186,10 @@ window.ABOUT_CONTENT = `
           <td>Share of renter households paying 30%+ of income on gross rent. 2005 onward, no 2020 point.</td>
         </tr>
         <tr>
-          <td><b>Income: 20th &amp; 80th percentile</b></td>
+          <td><b>Income: 20th percentile</b></td>
           <td>Census ACS 1-year, table B19080</td>
           <td><span class="freq a">Annual</span></td>
-          <td>Quintile upper limits — the exact percentiles the ACS publishes (see the national table's note). Nominal dollars.</td>
+          <td>A quintile upper limit — the exact percentile the ACS publishes (see the national table's note). Nominal dollars.</td>
         </tr>
         <tr>
           <td><b>Rent in hours of work</b></td>
