@@ -1,0 +1,6 @@
+# Demo Changes — July 28, 2026
+
+- **Missing values (7058dad):** Fixed broken/wrong source metadata for three BLS-only CPI series (car insurance, health insurance, childcare) that aren't carried on FRED, corrected the health insurance series to pull the right BLS item code (SEME instead of the medicinal-drugs code SEMF), and made "view source" links for derived metrics (like Rent in Hours of Work) open the in-app About view instead of the bare about.html page.
+- **First cuts (91a3db0):** Trimmed six redundant or lower-value indicators (CPI rent, mean weeks unemployed, income 80th percentile, revolving credit, auto loans, consumer loan delinquency) from both the national and state data, keeping the clearer or more affordability-relevant series in each pair.
+- **Test cases (7871d60):** Added a full Node-based test suite (data contract + helper-logic tests), GitHub Actions workflows for running tests and updating data, and expanded CLAUDE.md/README documentation.
+- **About the data cleaned up (9145e65):** Restyled the About page — removed section-number tags and the callout "method" boxes, widened paragraphs to match table width, and switched cadence badges to muted bordered pills consistent with the rest of the tracker's UI.
