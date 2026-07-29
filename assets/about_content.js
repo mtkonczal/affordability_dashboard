@@ -23,16 +23,22 @@ window.ABOUT_CONTENT = `
       <thead><tr><th>Series</th><th>Source</th><th>Updates</th><th>Notes</th></tr></thead>
       <tbody>
         <tr>
-          <td><b>Groceries, electricity, cars, car insurance, health insurance, childcare, inflation</b></td>
+          <td><b>Groceries (all), new &amp; used cars, car insurance, childcare, inflation</b></td>
           <td>BLS Consumer Price Index, via FRED and the BLS public API</td>
           <td><span class="freq m">Monthly</span></td>
-          <td>Seasonally adjusted where the BLS publishes it that way. These are price indexes, so they display as cumulative percent change rather than index points.</td>
+          <td>Seasonally adjusted where the BLS publishes it that way. These are price indexes, so they display as cumulative percent change rather than index points. There is no CPI card for health insurance: the CPI health insurance index prices only the share of a premium that insurers retain for administration and profit, not what a household pays, so it can fall in a year when premiums rise sharply. The ACA benchmark premium below is the premium series.</td>
         </tr>
         <tr>
-          <td><b>Eggs, ground beef, chicken, milk, bread, bananas, potatoes</b></td>
+          <td><b>Eggs, ground beef, chicken, milk, bread, coffee, bacon, butter</b></td>
           <td>BLS Average Price data (US city average)</td>
           <td><span class="freq m">Monthly</span></td>
-          <td>Actual retail dollar prices, not indexes. Not seasonally adjusted, so egg and produce prices swing with the season.</td>
+          <td>Actual retail dollar prices, not indexes. Not seasonally adjusted, so egg and meat prices swing with the season. BLS publishes these nationally and by region but not by state, so they appear only on the national view. Two gaps worth knowing before you quote them: BLS skipped the coffee series in a number of months, including most of 2008&ndash;09 and 2018&ndash;19, and the butter series begins in April 2018 &mdash; the earlier butter series ended in 2012 and the two are not spliced. Missing months are left open rather than filled in.</td>
+        </tr>
+        <tr>
+          <td><b>Electricity, natural gas</b></td>
+          <td>BLS Average Price data (US city average)</td>
+          <td><span class="freq m">Monthly</span></td>
+          <td>Dollars per kilowatt-hour and dollars per therm &mdash; the units on a utility bill. Electricity was previously shown as a CPI index, which could only be read as percent change; natural gas is new to the tracker. Not seasonally adjusted, and household energy is strongly seasonal, so compare a month with the same month a year earlier rather than with the month before. National and regional only, not by state; the state view carries an average monthly residential electricity bill from the EIA instead.</td>
         </tr>
         <tr>
           <td><b>Gasoline</b></td>
@@ -65,16 +71,16 @@ window.ABOUT_CONTENT = `
           <td>Average rate on a 30-year fixed conforming loan.</td>
         </tr>
         <tr>
-          <td><b>Wages, unemployment, job openings, quits, unemployment duration</b></td>
-          <td>BLS (CES, CPS, JOLTS), via FRED</td>
+          <td><b>Wages, unemployment</b></td>
+          <td>BLS (CES, CPS), via FRED</td>
           <td><span class="freq m">Monthly</span></td>
-          <td>Wages are average hourly earnings of all private employees. Real hourly earnings are derived: nominal earnings deflated by CPI-U and expressed in the latest month's dollars.</td>
+          <td>Wages are average hourly earnings of all private employees, in nominal dollars; switch the page to Real to see them deflated by CPI-U and restated in the latest month's dollars. The tracker no longer carries job openings, the quit rate, or unemployment duration &mdash; they measure labor-market slack rather than what a household can afford.</td>
         </tr>
         <tr>
-          <td><b>Student loan debt; credit card &amp; mortgage delinquency rates</b></td>
-          <td>Federal Reserve (G.19 release; bank call reports), via FRED</td>
-          <td><span class="freq m">Monthly</span> <span class="freq q">Quarterly</span></td>
-          <td>Student loan balances are those owned and securitized. Delinquency is 30+ days late at all commercial banks. For debt per person and per state, use household debt per capita below — it comes from a different panel and a stricter delinquency threshold, so don't mix the two.</td>
+          <td><b>Credit card &amp; mortgage delinquency rates</b></td>
+          <td>Federal Reserve (bank call reports), via FRED</td>
+          <td><span class="freq q">Quarterly</span></td>
+          <td>Delinquency is 30+ days late at all commercial banks. For debt per person and per state, use household debt per capita below — it comes from a different panel and a stricter delinquency threshold, so don't mix the two. The national student loan balance is no longer shown: a trillion-dollar aggregate says little about any household, and student loan debt per capita covers the concept per person and per state.</td>
         </tr>
         <tr>
           <td><b>ACA benchmark premium</b></td>
@@ -124,8 +130,9 @@ window.ABOUT_CONTENT = `
       by CPI-U (all items) and restates them in the latest month's dollars, so the newest
       point is unchanged and earlier points are lifted into today's money. Real is a no-op
       for rates, durations, and counts, which are already comparable over time, and for
-      series that arrive inflation-adjusted (median household income, real hourly earnings),
-      which are never deflated twice.
+      series that arrive inflation-adjusted (median household income), which are never
+      deflated twice. There is no separate real-wage card: the wage card in Real mode
+      <i>is</i> the real wage.
     </p>
 
     <p class="lead">

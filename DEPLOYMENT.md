@@ -9,9 +9,9 @@ pieces fit together.
 
 1. **Add the API-key secrets.** Settings → Secrets and variables → Actions →
    New repository secret:
-   - `BLS_KEY` (required) — several series (car insurance, health insurance,
-     childcare, and the meat/dairy/produce items) come from the BLS API
-     rather than FRED's public CSV endpoint.
+   - `BLS_KEY` (required) — several series (car insurance, childcare, the
+     average-price grocery items, and electricity/natural gas per unit) come
+     from the BLS API rather than FRED's public CSV endpoint.
    - `CENSUS_API_KEY` (required) — county renter-household weights for the
      state rent aggregation. Free signup:
      https://api.census.gov/data/key_signup.html

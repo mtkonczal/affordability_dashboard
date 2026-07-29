@@ -187,6 +187,10 @@ test('isDeflatable: dollars and index levels yes, rates and counts no', () => {
   assert.equal(isDeflatable({ id: 'eggs', units: '$ per Dozen' }), true);
   assert.equal(isDeflatable({ id: 'groceries', units: 'Index (1982–84 = 100)' }), true);
   assert.equal(isDeflatable({ id: 'unemployment', units: 'Rate (%)' }), false);
+  // job_openings and median_weeks_unemployed were cut in the July 2026 trim, so
+  // no live series carries these units any more. The fixtures stay: the rule
+  // under test is "only $ and Index units deflate", and a count/duration series
+  // is the case most likely to be added back and silently mis-deflated.
   assert.equal(isDeflatable({ id: 'job_openings', units: 'Thousands of Jobs' }), false);
   assert.equal(isDeflatable({ id: 'median_weeks_unemployed', units: 'Weeks' }), false);
   assert.equal(isDeflatable(null), false);

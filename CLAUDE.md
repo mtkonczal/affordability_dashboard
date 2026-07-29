@@ -61,6 +61,20 @@ install, ~2 seconds. Two suites, described in `tests/README.md`:
 - `tests/helpers.test.js` pins the pure logic in index.html's first babel
   block, including the editorial rules in `buildFactText` (percentage points on
   rate series, no index levels in a public fact) and the Dec-2019 anchor.
+- `tests/source_parity.test.js` — **run this after every `SERIES` edit.** Parses
+  `SERIES` out of `fetch_data.R` (via `tests/lib/rseries.js`) and checks the
+  committed payloads actually came from it: same ids in the same order, identical
+  verbatim metadata, `rebase` derived from the units string, `manifest.json` in
+  step with `app_data.js`, and no `source = "bls"` entry advertising a `fred_id`
+  it wasn't fetched from. The other suites only compare artifacts to each other,
+  so **editing fetch_data.R without re-running it used to be invisible** — and a
+  later routine refresh would then silently move a published number. Fix a
+  failure with `Rscript fetch_data.R`, not by editing the test. If a refresh has
+  to wait, add the field to `KNOWN_STALE` with a reason; a companion test fails
+  once an exemption is no longer needed, so they get removed rather than
+  accumulating. `rseries.js` depends on `SERIES` keeping its current formatting
+  and throws loudly if that changes, since a silent parse of zero entries would
+  make the whole suite vacuous.
 
 `tests/lib/load.js` runs each artifact with `new Function('window', src)` plus
 a stub `window`/`document` — which works only because every script in this
@@ -162,6 +176,15 @@ and PNG export are still covered only by the manual pass in `What to Check.md`.
   category grouping and color families are kept. National picker rows are
   collapsible (collapsed by default, "N of M selected" + Show/Hide chevron);
   the category pill still bulk-toggles without expanding.
+- Six categories. `overall` ("All prices (CPI)") holds `cpi_all_items` alone —
+  it moved out of `labor` in the July 2026 trim because headline CPI is the
+  price level every other card is measured against and the deflator behind the
+  Real toggle, not a labor statistic. Its label sorts first, so it leads the
+  picker without breaking the alphabetical rule. Adding a category means
+  updating three places in index.html (`CATEGORY_META`, `CATEGORY_LABELS`,
+  `ESP_CATEGORY_COLOR`) plus the hardcoded `known` set in
+  `tests/data_contract.test.js` — a series in an unknown category silently
+  vanishes from the National view, which is what that test guards.
 - The choropleth lazy-loads topojson-client + the full d3 bundle (the
   standalone d3-geo UMD breaks without d3-array/internmap — don't swap it
   in) and the us-atlas `states-10m.json` topology from jsDelivr on first
@@ -216,7 +239,20 @@ and PNG export are still covered only by the manual pass in `What to Check.md`.
 
 - **National series:** append to `SERIES` in `fetch_data.R`, run the script.
   Colors are family-coordinated by category (daily = teal, groceries = amber,
-  big = indigo/violet, labor = green, debt = red).
+  big = indigo/violet, labor = green, debt = red); `ESP_CATEGORY_COLOR` in
+  index.html overrides these at render time, so the hex here only matters for
+  anything reading the payload directly.
+- **BLS average price (a dollar figure, not an index):** add a
+  `source = "bls"` entry with `bls_id = "APU…"` and the same string as
+  `fred_id` (the id pattern is `APU` + `0000` for the US city average + the BLS
+  item code, e.g. `APU000072610` = electricity per kWh). Prefer these over the
+  matching CPI subindex whenever a reader would quote the number: "19.8 cents a
+  kilowatt-hour" travels, "the index is at 305.7" does not. Three caveats to
+  carry into the series `description`: average prices are **not seasonally
+  adjusted**, BLS leaves months unpublished in some series (coffee) and
+  restarts others under a new id (butter, 2018), and **there are no state
+  average prices** — national and 4-region only, so these can never feed the
+  state or map views.
 - **State metric:** append to `STATE_METRICS` (a FRED ID pattern or a custom
   source), run the script. The front end picks it up from `states_index.js`.
 - **Annual indicator (stat tile):** drop a `state,value` CSV in `data/annual/`,

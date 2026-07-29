@@ -555,8 +555,8 @@ function scaleByCPI(series, date, refPrice, anchorDate = '2025-01-01') {
 }
 
 const CATEGORY_LABELS = {
-  labor: 'Work & Wages', daily: 'Daily', groceries: 'Groceries', big: 'Big-ticket',
-  debt: 'Debt',
+  overall: 'All prices', labor: 'Work & Wages', daily: 'Daily',
+  groceries: 'Groceries', big: 'Big-ticket', debt: 'Debt',
 };
 function categoryLabel(category) {
   return CATEGORY_LABELS[category] || 'Big-ticket';
@@ -686,9 +686,12 @@ function loadDataFile(src) {
 // so the newest point is unchanged and earlier points rise into today's
 // dollars. Only dollar levels and price *indexes* can be deflated; rates (%),
 // durations and counts are already normalized over time, so Real is a no-op for
-// them. A few series arrive already inflation-adjusted (Census real income; our
-// derived real earnings) — never double-deflate those.
-const ALREADY_REAL_IDS = new Set(['income', 'us_median_income', 'real_hourly_earnings']);
+// them. A few series arrive already inflation-adjusted (the Census real median
+// income series, as published) — never double-deflate those. The derived
+// real_hourly_earnings card used to be in this set; it was cut in the July 2026
+// trim because the Real toggle applied to nominal hourly earnings produces the
+// same series, so keeping both meant showing one line twice.
+const ALREADY_REAL_IDS = new Set(['income', 'us_median_income']);
 function isDeflatable(item) {
   if (!item) return false;
   if (item.already_real || ALREADY_REAL_IDS.has(item.id)) return false;
@@ -769,7 +772,13 @@ const PAGE_BG = EMBED ? '#FFFFFF' : BEIGE;
 
 // Alphabetical by label (comms request); chips within each row are
 // alphabetized too, in NationalView.
+// "All prices (CPI)" holds headline CPI alone. It moved out of Work & wages in
+// the July 2026 trim — it is the price level everything else is measured
+// against and the deflator behind the Real toggle, not a labor statistic — and
+// its label happens to sort first, so it leads the picker without breaking the
+// alphabetical rule.
 const CATEGORY_META = [
+  { id: 'overall',   label: 'All prices (CPI)' },
   { id: 'big',       label: 'Big-ticket' },
   { id: 'daily',     label: 'Daily items' },
   { id: 'debt',      label: 'Debt' },
@@ -797,6 +806,7 @@ const ESP_SERIES = ['#2c3254', '#70ad8f', '#ebc382', '#472b51', '#b0645f', '#7f8
 // National single-series cards are colored by category, preserving the
 // one-family-per-category cue while pulling every family into the ESP palette.
 const ESP_CATEGORY_COLOR = {
+  overall:   '#7f8c53', // Olive — headline CPI, its own family of one
   big:       '#2c3254', // Warm Navy
   labor:     '#70ad8f', // Soft Green
   groceries: '#ebc382', // Warm Gold
@@ -807,7 +817,7 @@ const ESP_CATEGORY_COLOR = {
 // into the same ESP families: work/wages → green, housing → navy, daily →
 // purple, health → gold, debt → brick.
 const ESP_METRIC_COLOR = {
-  wages: '#70ad8f', hourly_earnings: '#70ad8f', real_hourly_earnings: '#70ad8f',
+  wages: '#70ad8f', hourly_earnings: '#70ad8f',
   income: '#70ad8f', unemployment: '#70ad8f', income_20th: '#70ad8f',
   home_prices: '#2c3254', rent: '#2c3254', zori_rent: '#2c3254', rent_hours: '#2c3254', rent_burden: '#2c3254',
   electricity_bill: '#472b51',
@@ -1610,9 +1620,13 @@ function HoursToAfford({ data }) {
 // ── National view ────────────────────────────────────────────────────────────
 // Default card set (comms request, July 2026): a cross-category headline mix
 // rather than one whole category.
+// real_hourly_earnings was cut in the July 2026 trim; nominal hourly_earnings
+// takes its slot and reads as real whenever the Real toggle is on. Electricity
+// joins the default set now that it is priced in dollars per kWh rather than
+// index points.
 const DEFAULT_NATIONAL_IDS = [
   'car_insurance', 'aca_benchmark_premium', 'gas',
-  'credit_card_delinquency', 'eggs', 'real_hourly_earnings',
+  'credit_card_delinquency', 'eggs', 'hourly_earnings', 'electricity',
 ];
 function NationalView({ data, anchorId, displayMode, priceType }) {
   const cpiData = data.cpi_all_items ? data.cpi_all_items.data : null;

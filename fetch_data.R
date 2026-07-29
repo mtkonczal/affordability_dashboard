@@ -163,14 +163,19 @@ fetch_bls <- function(bls_id, from = "2000-01-01") {
 
 # ── National series configuration ─────────────────────────────────────────────
 # To add a new item: append an entry here. The HTML picks it up automatically
-# via manifest.json / app_data.js — no HTML edits required.
+# via manifest.json / app_data.js — no HTML edits required, PROVIDED the entry
+# reuses an existing category. A brand-new category value must also be added to
+# CATEGORY_META, CATEGORY_LABELS and ESP_CATEGORY_COLOR in index.html and to the
+# `known` set in tests/data_contract.test.js; a series in an unrecognized
+# category silently vanishes from the National view (that test is the guard).
 #
 # Fields:
 #   id           : slug used for filenames and JS lookups
 #   fred_id      : FRED series identifier
 #   label        : short display name
 #   subtitle     : one-line description shown under the chart title
-#   category     : chip grouping ("daily" | "groceries" | "big" | "labor" | "debt")
+#   category     : chip grouping ("overall" | "daily" | "groceries" | "big" |
+#                  "labor" | "debt"). "overall" holds headline CPI alone.
 #   units        : axis label / tooltip suffix
 #   description  : longer text shown in tooltip / card header
 #   color        : hex color for the chart line. Colors are assigned in
@@ -212,15 +217,41 @@ SERIES <- list(
     color       = "#0D9488",
     from        = "2000-01-01"
   ),
+  # Household energy is priced in dollars per unit, not in index points. The
+  # July 2026 trim swapped the electricity CPI index (CUSR0000SEHF01) for the
+  # BLS average price per kWh: "electricity costs 19.8 cents a kilowatt-hour,
+  # up from 13.3 cents in 2019" is quotable, "the index is at 305.7" is not.
+  # Cost of the swap: average prices are NSA (the CPI subindex was seasonally
+  # adjusted), and BLS cautions that average prices measure the level in a
+  # month rather than change over time — which is exactly what a $-level card
+  # is for. Piped gas per therm is the heating-bill counterpart and had no card
+  # at all before. Both series are national/regional only — no state figures,
+  # so neither feeds the state or map views.
   list(
     id          = "electricity",
-    fred_id     = "CUSR0000SEHF01",
+    source      = "bls",
+    bls_id      = "APU000072610",
+    fred_id     = "APU000072610",
     label       = "Electricity",
-    subtitle    = "Electricity CPI",
+    subtitle    = "Average Price, per Kilowatt-Hour",
     category    = "daily",
-    units       = "Index (1982–84 = 100)",
-    description = "CPI for electricity, all urban consumers, seasonally adjusted.",
+    units       = "$ per kWh",
+    description = "Average retail price of electricity per kilowatt-hour in U.S. city averages, from the BLS Average Price data. Not seasonally adjusted — electricity prices peak in summer, so compare a month with the same month a year earlier rather than with the month before.",
     color       = "#14B8A6",
+    from        = "2000-01-01"
+  ),
+  list(
+    id          = "utility_gas",
+    source      = "bls",
+    bls_id      = "APU000072620",
+    fred_id     = "APU000072620",
+    label       = "Natural Gas",
+    subtitle    = "Average Price, per Therm",
+    category    = "daily",
+    units       = "$ per Therm",
+    description = "Average retail price of utility (piped) natural gas per therm in U.S. city averages, from the BLS Average Price data — the unit a gas heating bill is measured in. Not seasonally adjusted.",
+    color       = "#0E7490",
+    is_new      = TRUE,
     from        = "2000-01-01"
   ),
   # ── Groceries (amber/orange family) ──
@@ -298,30 +329,55 @@ SERIES <- list(
     color       = "#D97706",
     from        = "2000-01-01"
   ),
+  # Bananas (APU0000711211) and white potatoes (APU0000712112) were cut in the
+  # July 2026 trim: both are famously flat — bananas moved less than 2% over the
+  # year — so they diluted the basket rather than adding to it. Coffee, bacon
+  # and butter replace them; coffee in particular is the sharpest single grocery
+  # line on the page.
   list(
-    id          = "bananas",
+    id          = "coffee",
     source      = "bls",
-    bls_id      = "APU0000711211",
-    fred_id     = "APU0000711211",
-    label       = "Bananas",
-    subtitle    = "per Pound",
+    bls_id      = "APU0000717311",
+    fred_id     = "APU0000717311",
+    label       = "Coffee",
+    subtitle    = "100% Ground Roast, per Pound",
     category    = "groceries",
     units       = "$ per Pound",
-    description = "Average retail price of bananas in U.S. city averages, from the BLS Average Price data.",
-    color       = "#EAB308",
+    description = "Average retail price of 100% ground roast coffee in U.S. city averages, from the BLS Average Price data. BLS did not publish this series in some months (including most of 2008–09 and 2018–19), so the line has gaps; the gaps are left open rather than interpolated.",
+    color       = "#78350F",
+    is_new      = TRUE,
     from        = "2000-01-01"
   ),
   list(
-    id          = "potatoes",
+    id          = "bacon",
     source      = "bls",
-    bls_id      = "APU0000712112",
-    fred_id     = "APU0000712112",
-    label       = "Potatoes",
-    subtitle    = "White, per Pound",
+    bls_id      = "APU0000704111",
+    fred_id     = "APU0000704111",
+    label       = "Bacon",
+    subtitle    = "Sliced, per Pound",
     category    = "groceries",
     units       = "$ per Pound",
-    description = "Average retail price of white potatoes in U.S. city averages, from the BLS Average Price data.",
+    description = "Average retail price of sliced bacon in U.S. city averages, from the BLS Average Price data.",
     color       = "#B45309",
+    is_new      = TRUE,
+    from        = "2000-01-01"
+  ),
+  # Butter has no long history: the old salted-grade-AA-stick series (710111)
+  # was discontinued in 2012 and its replacement (FS1101) starts in April 2018,
+  # with no bridge between them. So the "Since 2000" and "Max" anchors show no
+  # butter line — same trade-off the ZORI rent series carries.
+  list(
+    id          = "butter",
+    source      = "bls",
+    bls_id      = "APU0000FS1101",
+    fred_id     = "APU0000FS1101",
+    label       = "Butter",
+    subtitle    = "Sticks, per Pound",
+    category    = "groceries",
+    units       = "$ per Pound",
+    description = "Average retail price of butter sold in sticks in U.S. city averages, from the BLS Average Price data. This series begins in April 2018 — the earlier salted grade AA series was discontinued in 2012 and the two are not spliced.",
+    color       = "#EAB308",
+    is_new      = TRUE,
     from        = "2000-01-01"
   ),
   # ── Big Items (indigo/violet family) ──
@@ -339,6 +395,10 @@ SERIES <- list(
     color       = "#6366F1",
     from        = "2000-01-01"
   ),
+  # New vehicles was proposed for the July 2026 trim (+0.5% over the year, and
+  # used vehicles are the line that matters more to a household buying on a
+  # budget) but kept on request — a flat new-car price is itself a finding, and
+  # the new/used pair is how the sticker-price story usually gets told.
   list(
     id          = "new_cars",
     fred_id     = "CUSR0000SETA01",
@@ -361,22 +421,14 @@ SERIES <- list(
     color       = "#A855F7",
     from        = "2000-01-01"
   ),
-  list(
-    id          = "health_insurance",
-    source      = "bls",
-    bls_id      = "CUSR0000SEME",   # item code SEME = Health insurance (SEMF is
-                                    # Medicinal drugs — a prior version of this
-                                    # entry pulled the wrong item code).
-    source_note = "BLS · Health Insurance CPI (not on FRED)",
-    source_url  = "https://data.bls.gov/timeseries/CUSR0000SEME",
-    label       = "Health Insurance",
-    subtitle    = "Health Insurance CPI",
-    category    = "big",
-    units       = "Index (1982–84 = 100)",
-    description = "CPI for health insurance, all urban consumers, seasonally adjusted (fetched via the BLS API; not carried on FRED). Captures the cost of insurance retained by insurers (administrative costs, profit), not total medical care.",
-    color       = "#4F46E5",
-    from        = "2005-12-01"
-  ),
+  # Health insurance CPI (CUSR0000SEME) was cut in the July 2026 trim, and this
+  # one is worth spelling out. The CPI health insurance index does not track
+  # what a household pays in premiums — BLS prices only the portion insurers
+  # retain for administration and profit, and pushes the rest into the medical
+  # services it buys. So the index fell about 2% over a year in which the ACA
+  # benchmark premium rose about 26%. A reader who takes it at face value
+  # concludes health insurance got cheaper. The ACA benchmark premium (below)
+  # is the premium series, in dollars, with state detail.
   list(
     id          = "childcare",
     source      = "bls",
@@ -508,44 +560,16 @@ SERIES <- list(
     from        = "2000-01-01",
     invert_color = TRUE
   ),
-  list(
-    id          = "job_openings",
-    fred_id     = "JTSJOL",
-    label       = "Job Openings",
-    subtitle    = "JOLTS Survey, Total Nonfarm",
-    category    = "labor",
-    units       = "Thousands of Jobs",
-    description = "Total nonfarm job openings from the Job Openings and Labor Turnover Survey (JOLTS). A signal of labor demand.",
-    color       = "#34D399",
-    from        = "2000-01-01",
-    invert_color = TRUE
-  ),
-  list(
-    id          = "quits_rate",
-    fred_id     = "JTSQUR",
-    label       = "Quit Rate",
-    subtitle    = "JOLTS Survey, Total Nonfarm",
-    category    = "labor",
-    units       = "Rate (%)",
-    description = "Quits as a percent of total employment, total nonfarm, monthly, seasonally adjusted (JOLTS). A higher quit rate indicates worker confidence in finding new jobs.",
-    color       = "#047857",
-    from        = "2000-01-01",
-    invert_color = TRUE
-  ),
-  list(
-    id          = "median_weeks_unemployed",
-    fred_id     = "UEMPMED",
-    label       = "Median Weeks Unemployed",
-    subtitle    = "Median Duration of Unemployment",
-    category    = "labor",
-    units       = "Weeks",
-    description = "Median number of weeks an unemployed person has been seeking work, monthly, seasonally adjusted.",
-    color       = "#064E3B",
-    from        = "2000-01-01"
-  ),
-  # Mean weeks unemployed (UEMPMEAN) was cut in the July 2026 trim — the median
-  # is the BLS headline, is not dragged by the long-term-unemployed tail, and
-  # two duration measures said the same thing.
+  # The labor-market slack series — job openings (JTSJOL), the quit rate
+  # (JTSQUR) and median weeks unemployed (UEMPMED) — were cut in the July 2026
+  # trim. They are labor-economist indicators rather than affordability ones:
+  # "7,594 thousand job openings" and "a 1.9% quit rate" are Fed-watcher
+  # numbers, several steps removed from a household budget. Mean weeks
+  # unemployed (UEMPMEAN) went in the earlier trim for overlapping the median.
+  # What's left in this category is the pair that matters for affordability —
+  # what people earn (wages, 20th-percentile income, rent in hours of work) set
+  # against what things cost — plus the unemployment rate, which carries the
+  # labor-market story on its own and is the one series here with state detail.
   # Income distribution: the ACS publishes quintile upper limits (B19080), so
   # the 20th percentile is the exact published point closest to the requested
   # 25th — interpolating would add assumptions that wouldn't survive a hostile
@@ -577,9 +601,13 @@ SERIES <- list(
     fred_id     = "CPIAUCSL",
     label       = "Inflation (CPI)",
     subtitle    = "All Items, Seasonally Adjusted",
-    category    = "labor",
+    # Its own category, not "labor". Headline CPI is the price level every other
+    # card is measured against and the deflator behind the Real toggle — filed
+    # under Work & Wages it read like a labor statistic. The category label
+    # sorts first alphabetically, so it also leads the picker.
+    category    = "overall",
     units       = "Index (1982–84 = 100)",
-    description = "CPI for all urban consumers, all items, seasonally adjusted — the broadest measure of the price level. Used here to compute real (inflation-adjusted) wages.",
+    description = "CPI for all urban consumers, all items, seasonally adjusted — the broadest measure of the price level, and the series the Real (inflation-adjusted) toggle uses to deflate every dollar figure on this page.",
     color       = "#64748B",
     from        = "2000-01-01"
   ),
@@ -593,20 +621,10 @@ SERIES <- list(
   # revolving credit (REVOLSL) and auto loans (MVLOASM) — because a national
   # balance in the trillions doesn't tell a reader anything about their own
   # finances, and NY Fed household debt per capita covers the concept per
-  # person and per state. Student loans stay: that total is a familiar
-  # organizing number in its own right.
-  list(
-    id          = "student_loans",
-    fred_id     = "SLOASM",
-    label       = "Student Loans",
-    subtitle    = "Student Loan Debt Outstanding",
-    category    = "debt",
-    units       = "$ Billions",
-    description = "Total student loan debt owned and securitized. Federal Reserve G.19 release.",
-    color       = "#991B1B",
-    from        = "2006-01-01",
-    scale       = 0.001
-  ),
+  # person and per state. The July 2026 trim finished the job and cut student
+  # loans (SLOASM) too, for the same reason: the $1.86 trillion national total
+  # is a familiar number but not an actionable one, and NY Fed student loan debt
+  # per capita says the same thing per person and per state.
   list(
     id          = "credit_card_delinquency",
     fred_id     = "DRCCLACBS",
@@ -1324,51 +1342,12 @@ for (cfg in SERIES) {
   if (!is.null(result)) all_data[[cfg$id]] <- result
 }
 
-# ── Derived series: real (inflation-adjusted) hourly earnings ──────────────────
-# Nominal average hourly earnings deflated by CPI-U (all items), re-expressed
-# in the latest month's dollars so the newest point matches the nominal
-# series and earlier points show what that paycheck is worth today. This is
-# the standard "real wage" construction; no separate wage price index exists.
-if (!is.null(all_data$hourly_earnings) && !is.null(all_data$cpi_all_items)) {
-  wage_df <- all_data$hourly_earnings$data
-  cpi_df  <- all_data$cpi_all_items$data
-  merged  <- merge(wage_df, cpi_df, by = "date", suffixes = c("_wage", "_cpi"))
-  merged  <- merged[order(merged$date), ]
-  latest_cpi <- tail(merged$value_cpi, 1)
-  real_df <- data.frame(
-    date  = merged$date,
-    value = round(merged$value_wage * (latest_cpi / merged$value_cpi), 3)
-  )
-
-  write.csv(real_df, file.path("data", "real_hourly_earnings.csv"), row.names = FALSE)
-
-  latest_val  <- tail(real_df$value, 1)
-  latest_date <- tail(real_df$date,  1)
-  change      <- yoy_pct(real_df)
-
-  all_data$real_hourly_earnings <- list(
-    id           = "real_hourly_earnings",
-    label        = "Real Hourly Earnings",
-    subtitle     = "Inflation-Adjusted, Today's Dollars",
-    category     = "labor",
-    units        = "$ per Hour",
-    description  = "Average hourly earnings of all private-sector employees, deflated by CPI-U (all items, seasonally adjusted) and expressed in the most recent month's dollars. Shows whether paychecks are keeping up with prices.",
-    color        = "#059669",
-    source_note  = "Derived: BLS CES0500000003 ÷ FRED CPIAUCSL",
-    source_url   = "https://fred.stlouisfed.org/series/CES0500000003",
-    is_new       = FALSE,
-    invert_color = TRUE,
-    overlay_only = FALSE,
-    rebase       = FALSE,
-    last_updated = format(Sys.Date(), "%Y-%m-%d"),
-    latest_value = round(latest_val, 3),
-    latest_date  = latest_date,
-    yoy_change   = if (!is.na(change)) change else NULL,
-    n_obs        = nrow(real_df),
-    data         = real_df
-  )
-  cat(sprintf("\nDerived real_hourly_earnings ✓  (%.2f on %s)\n", latest_val, latest_date))
-}
+# Derived real hourly earnings was cut in the July 2026 trim. It was nominal
+# average hourly earnings deflated by CPI-U — precisely what the page-wide
+# Nominal/Real toggle already does to the hourly_earnings card, so the two sat
+# side by side showing the same line twice, one of them permanently in real
+# dollars regardless of the toggle. The toggle is the single mechanism now.
+# (ALREADY_REAL_IDS in index.html no longer needs to exempt it.)
 
 # ── Derived series: rent in hours of work ──────────────────────────────────────
 # Market rent (ZORI, $/month) divided by average hourly earnings — how many

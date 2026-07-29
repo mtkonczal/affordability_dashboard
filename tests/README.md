@@ -4,6 +4,7 @@
 node tests/run.js            # everything
 node --test tests/data_contract.test.js
 node --test tests/helpers.test.js
+node --test tests/source_parity.test.js
 ```
 
 No dependencies, no build step, no `package.json`. Node 18+ and the repo as it
@@ -33,6 +34,36 @@ verifies:
 - `rent_hours` really equals rent ÷ wages (it depends on ordering inside
   `STATE_METRICS`)
 - annual stat-tile CSVs exist and their attached values are numbers
+
+**`source_parity.test.js` — run this after every change to `SERIES`.** It parses
+the `SERIES` list straight out of `fetch_data.R` and checks that the committed
+payloads actually came from it: same ids in the same order, and identical
+`label` / `subtitle` / `category` / `units` / `description` / `color` /
+`fred_id` / `source_url` / `source_note` / `is_new` / `invert_color` /
+`overlay_only`, plus `rebase` derived from the units string rather than set by
+hand. It also checks `manifest.json` against `app_data.js`, and that a
+`source = "bls"` entry doesn't advertise a `fred_id` it wasn't fetched from.
+
+This exists because the other two suites only compare the artifacts to each
+other, so **editing `fetch_data.R` without re-running it was invisible.** That
+really happened: commit `7058dad` fixed the source metadata for three BLS-only
+CPI series and never regenerated `data/`, and the repo carried two different
+answers for months. The nasty part isn't the stale metadata — it's that the next
+routine refresh silently applies the pending edit and moves a published number
+for reasons unconnected to that day's commit. `groceries` was one field away from
+shifting ~7% with no visible cause.
+
+If it fails, the fix is normally `Rscript fetch_data.R`, not a test edit. When a
+refresh genuinely has to wait, add the field to `KNOWN_STALE` with a comment
+saying why — and note that a further test **fails once an exemption stops being
+necessary**, so exemptions get deleted after a refresh instead of piling up and
+hiding the next real regression.
+
+The R parsing lives in `lib/rseries.js`. It is not a general R parser: it relies
+on `SERIES` keeping its current formatting (one `  list(` per entry, one
+`    key = value` per line, no multi-line strings) and **throws** if that stops
+holding, because a parser that silently returns nothing would turn this suite
+into one that always passes.
 
 **`helpers.test.js`** pins the pure logic in `index.html`'s first
 `<script type="text/babel">` block: `fmtVal`, `ordinal`, the anchor resolution
