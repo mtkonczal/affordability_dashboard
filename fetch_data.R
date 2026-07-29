@@ -568,7 +568,7 @@ SERIES <- list(
     id          = "income_20th",
     source      = "census",
     src_id      = "income_20th",
-    label       = "Income: 20th Percentile",
+    label       = "Income: 20th Percentile (Nominal)",
     subtitle    = "Household Income, Lowest-Quintile Upper Limit",
     category    = "labor",
     units       = "$",
@@ -707,11 +707,10 @@ SERIES <- list(
     subtitle     = "Real Median Household Income, US",
     category     = "labor",
     units        = "$",
-    description  = "Real (CPI-U-RS-adjusted) median household income in the United States, annual, from the Census Bureau. Used as the national comparison line on state income charts.",
+    description  = "Real (CPI-U-RS-adjusted) median household income in the United States, annual, from the Census Bureau. Also drawn as the national comparison line on state income charts.",
     color        = "#7C3AED",
     from         = "2000-01-01",
-    invert_color = TRUE,
-    overlay_only = TRUE
+    invert_color = TRUE
   )
   # ── Add future national series above this comment ──
 )
@@ -805,7 +804,7 @@ STATE_METRICS <- list(
   ),
   list(
     id           = "income",
-    label        = "Median Household Income",
+    label        = "Real Median Household Income",
     units        = "$",
     color        = "#7C3AED",
     national_id  = "us_median_income",
@@ -942,7 +941,7 @@ STATE_METRICS <- list(
   # ── Census ACS annual series (data/census/, scripts/fetch_census.py) ──
   list(
     id           = "income_20th",
-    label        = "Income: 20th Percentile",
+    label        = "Income: 20th Percentile (Nominal)",
     units        = "$",
     color        = "#4D7C0F",
     national_id  = "income_20th",

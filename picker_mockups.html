@@ -1,0 +1,1219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>National tab: twelve ways to pick a metric — Affordability Tracker design review</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+<!-- ESP licensed Publico Banner (Medium), same data-URI loader the tracker uses.
+     Reserved here for the measured height numbers only. -->
+<script src="assets/fonts_publico.js"></script>
+
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    /* ESP C3 tokens */
+    --navy:#2c3254; --beige:#f4f2e4; --paper:#FFFDF2; --white:#fff;
+    --green:#70ad8f; --gold:#ebc382; --purple:#472b51; --brick:#b0645f;
+    --rule:#caccd4; --head:#232849; --body:#3c4164; --mute:#6B6E78;
+    --hair:rgba(44,50,84,.18); --hair2:rgba(44,50,84,.09);
+  }
+  html{scroll-behavior:smooth}
+  body{
+    font-family:'Public Sans',system-ui,sans-serif;
+    background:var(--beige); color:var(--body);
+    font-size:15px; line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  .banner{font-family:'Publico Banner',Georgia,serif}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 40px}
+  a{color:var(--navy)}
+
+  /* ── Masthead ───────────────────────────────────────────── */
+  .top{background:var(--navy);color:var(--paper);padding:52px 0 44px}
+  .eyebrow{font-size:10.5px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--gold)}
+  .top h1{font-size:47px;line-height:1.08;font-weight:600;letter-spacing:-.02em;color:var(--paper);margin:16px 0 18px;max-width:20ch}
+  .top p{max-width:62ch;color:rgba(244,242,228,.82);font-size:16.5px}
+  .top p+p{margin-top:12px}
+  .top b{color:var(--paper);font-weight:600}
+
+  /* ── Section furniture ──────────────────────────────────── */
+  section{padding:52px 0}
+  .sec-lab{font-size:10.5px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--mute);margin-bottom:10px}
+  h2{font-size:31px;font-weight:600;letter-spacing:-.015em;color:var(--head);line-height:1.15}
+  h3{font-size:19px;font-weight:600;color:var(--head)}
+  .lede{max-width:66ch;margin-top:12px;font-size:16px}
+  .rule{border:0;border-top:1px solid var(--hair)}
+
+  /* ── The height gauge: this page measures its own mockups ── */
+  .gauge{margin-top:30px;border-top:1px solid var(--navy);padding-top:4px}
+  .grow{display:grid;grid-template-columns:230px 1fr 78px;align-items:center;
+        gap:14px;padding:7px 0;border-bottom:1px solid var(--hair2);
+        background:none;border-left:0;border-right:0;border-top:0;width:100%;
+        text-align:left;font:inherit;color:inherit;cursor:pointer}
+  .grow:hover{background:rgba(44,50,84,.05)}
+  .grow:focus-visible{outline:2px solid var(--navy);outline-offset:2px}
+  .grow-name{font-size:13px;font-weight:600;color:var(--head);display:flex;gap:8px;align-items:baseline}
+  .grow-name i{font-style:normal;color:var(--mute);font-weight:700;font-size:10.5px;letter-spacing:.1em}
+  .grow-track{height:13px;background:rgba(44,50,84,.07);position:relative}
+  .grow-fill{position:absolute;left:0;top:0;bottom:0;background:var(--navy);transition:width .5s ease}
+  .grow.is-now .grow-fill{background:var(--brick)}
+  .grow.is-pick .grow-fill{background:var(--green)}
+  .grow-px{font-size:13px;font-weight:700;color:var(--head);text-align:right;font-variant-numeric:tabular-nums}
+  .gauge-key{display:flex;gap:22px;flex-wrap:wrap;margin-top:14px;font-size:12px;color:var(--mute)}
+  .gauge-key span{display:inline-flex;align-items:center;gap:7px}
+  .sw{width:11px;height:11px;display:inline-block}
+
+  /* ── Option card ────────────────────────────────────────── */
+  .opt{padding:46px 0;border-top:1px solid var(--navy)}
+  .opt-head{display:grid;grid-template-columns:1fr auto;gap:24px;align-items:start}
+  .opt-n{font-size:11px;font-weight:700;letter-spacing:.2em;color:var(--mute);text-transform:uppercase}
+  .opt h3{font-size:26px;letter-spacing:-.015em;margin-top:6px}
+  .opt-thesis{max-width:64ch;margin-top:10px;font-size:16px}
+  .tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:14px}
+  .tag{font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+       padding:3px 8px;border:1px solid var(--hair);color:var(--navy);background:var(--paper)}
+  .tag.rethink{border-color:var(--purple);color:var(--purple)}
+  .tag.recut{border-color:var(--gold);background:#faf3e3;color:#8a6412}
+  .tag.pick{border-color:var(--green);background:#eaf1ec;color:#3E6E57}
+  .hbadge{text-align:right;flex-shrink:0}
+  .hbadge .n{font-size:44px;line-height:.9;color:var(--navy);display:block}
+  .hbadge .u{font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--mute);display:block;margin-top:6px}
+
+  .verdict{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:0;
+           margin-top:22px;border:1px solid var(--hair);background:var(--paper)}
+  .verdict div{padding:13px 16px;border-right:1px solid var(--hair2)}
+  .verdict div:last-child{border-right:0}
+  .verdict dt{font-size:9.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--mute)}
+  .verdict dd{font-size:13.5px;line-height:1.5;margin-top:5px;color:var(--body)}
+
+  /* ── Mockup frame: mimics the real product's surfaces ───── */
+  .mock{margin-top:26px;border:1px solid var(--hair);background:var(--beige);overflow:hidden}
+  .mock-tabs{background:var(--paper);border-bottom:1px solid var(--hair);padding:9px 16px;display:flex;gap:7px;align-items:center}
+  .vtab{font-size:12.5px;font-weight:600;color:var(--navy);border:1px solid var(--navy);background:transparent;padding:6px 14px;border-radius:3px;cursor:default}
+  .vtab.on{background:var(--navy);color:var(--paper);font-weight:700}
+  .mock-sel{background:var(--paper);border-bottom:1px solid var(--hair)}
+  .foldline{display:flex;align-items:center;gap:10px;padding:5px 16px;background:#eaf1ec;
+            border-bottom:1px solid rgba(112,173,143,.5);
+            font-size:10.5px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:#3E6E57}
+  .mock-body{padding:16px}
+
+  /* controls, copied from the tracker's styles object */
+  .btn{font-family:inherit;font-size:12px;font-weight:600;letter-spacing:.03em;background:transparent;
+       color:var(--navy);border:1px solid var(--navy);padding:7px 15px;border-radius:3px;cursor:pointer}
+  .btn.on{background:var(--navy);color:var(--paper);font-weight:700}
+  .btn:focus-visible{outline:2px solid var(--purple);outline-offset:2px}
+  .chip{font-family:inherit;font-size:13px;font-weight:600;padding:6px 12px 6px 10px;border:1px solid var(--navy);
+        background:transparent;color:var(--navy);border-radius:3px;cursor:pointer;display:inline-flex;align-items:center;gap:8px}
+  .chip.on{background:var(--navy);color:var(--paper)}
+  .chip .box{width:12px;height:12px;border-radius:2px;border:1.5px solid rgba(44,50,84,.4);flex-shrink:0;
+             display:inline-flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;color:var(--paper)}
+  .chip.on .box{border-color:currentColor}
+  .catpill{font-family:inherit;font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+           padding:6px 12px;border:1px solid var(--navy);background:transparent;color:var(--navy);border-radius:3px;cursor:pointer}
+  .catpill.some{background:rgba(44,50,84,.1)}
+  .catpill.all{background:var(--navy);color:var(--paper)}
+  .lnk{font-family:inherit;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+       background:none;border:0;color:var(--navy);text-decoration:underline;text-underline-offset:3px;cursor:pointer;padding:0}
+  .srch{font-family:inherit;font-size:14px;font-weight:500;color:var(--head);background:var(--white);
+        border:1px solid var(--navy);border-radius:3px;padding:9px 12px;width:100%}
+  .srch::placeholder{color:var(--mute);font-weight:400}
+  .tok{font-size:12px;font-weight:600;background:var(--navy);color:var(--paper);border:0;border-radius:3px;
+       padding:5px 7px 5px 9px;display:inline-flex;align-items:center;gap:7px;cursor:pointer}
+  .tok span{opacity:.7;font-weight:400;font-size:13px}
+  .kbd{font-size:10px;font-weight:700;border:1px solid var(--hair);background:var(--white);color:var(--mute);padding:1px 5px;border-radius:2px}
+  .ctl-lab{font-size:10px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--mute)}
+
+  /* mini chart cards */
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:1px;background:var(--hair)}
+  .mc{background:var(--white);padding:12px 13px 10px}
+  .mc-lab{font-size:12px;font-weight:700;color:var(--head);letter-spacing:.01em}
+  .mc-val{font-size:25px;line-height:1.1;color:var(--navy);margin-top:5px}
+  .mc-val em{font-style:normal;font-size:12px;font-weight:600;color:var(--mute);font-family:'Public Sans',sans-serif}
+  .mc svg{display:block;margin-top:7px;width:100%;height:38px}
+  .mc-foot{margin-top:6px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+  .bdg{font-size:9.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:2px 6px;border:1px solid;border-radius:2px}
+  .bdg.up{background:#f4e6e4;color:#8A4640;border-color:rgba(176,100,95,.45)}
+  .bdg.dn{background:#eaf1ec;color:#3E6E57;border-color:rgba(112,173,143,.55)}
+  .mc-src{font-size:10px;color:var(--mute)}
+
+  .myread{margin-top:15px;border-left:2px solid var(--green);padding:1px 0 1px 15px;max-width:64ch;font-size:14.5px}
+  .myread b{display:block;font-size:9.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#3E6E57;margin-bottom:4px}
+  .myread em{font-style:normal;font-weight:600;color:var(--head)}
+  .stub{color:var(--mute);font-size:12.5px;font-style:italic;padding:10px 2px}
+
+  /* drawers / panels */
+  .panel{background:var(--white);border:1px solid var(--navy);border-radius:3px;padding:14px}
+  .panel-h{font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--mute);margin:0 0 8px}
+  .flow{display:flex;flex-wrap:wrap;gap:7px;align-items:center}
+  .cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:14px 20px}
+  .dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0}
+
+  /* picker table */
+  table.pick{width:100%;border-collapse:collapse;font-size:12.5px;background:var(--white)}
+  table.pick th{font-size:9.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);
+                text-align:left;padding:8px 10px;border-bottom:1px solid var(--hair);background:rgba(44,50,84,.045);cursor:pointer;white-space:nowrap}
+  table.pick th.num,table.pick td.num{text-align:right;font-variant-numeric:tabular-nums}
+  table.pick td{padding:7px 10px;border-bottom:1px solid var(--hair2)}
+  table.pick tr[data-row]{cursor:pointer}
+  table.pick tr[data-row]:hover td{background:rgba(44,50,84,.045)}
+  table.pick tr.sel td{background:rgba(112,173,143,.14)}
+  .tscroll{max-height:230px;overflow:auto;border:1px solid var(--hair)}
+
+  /* leaderboard */
+  .lb{display:grid;gap:2px}
+  .lbr{display:grid;grid-template-columns:22px 172px 1fr 66px;gap:10px;align-items:center;
+       background:none;border:0;padding:3px 4px;cursor:pointer;font:inherit;color:inherit;text-align:left}
+  .lbr:hover{background:rgba(44,50,84,.06)}
+  .lbr.on{background:var(--navy);color:var(--paper)}
+  .lbr .r{font-size:10px;font-weight:700;color:var(--mute)}
+  .lbr.on .r{color:rgba(255,253,242,.6)}
+  .lbr .nm{font-size:12.5px;font-weight:600}
+  .lbr .bar{height:9px;background:rgba(44,50,84,.1);position:relative}
+  .lbr .bar i{position:absolute;left:0;top:0;bottom:0;background:var(--brick);display:block}
+  .lbr .pc{font-size:12px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums}
+
+  /* left rail option */
+  .rail{display:grid;grid-template-columns:216px 1fr;min-height:300px}
+  .rail-side{background:var(--paper);border-right:1px solid var(--hair);padding:14px 12px;max-height:360px;overflow:auto}
+  .rail-grp{font-size:9.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--mute);margin:12px 0 6px}
+  .rail-grp:first-child{margin-top:0}
+  .rail-item{display:flex;align-items:center;gap:8px;width:100%;background:none;border:0;padding:4px 5px;
+             font:inherit;font-size:12.5px;color:var(--navy);cursor:pointer;text-align:left;border-radius:2px}
+  .rail-item:hover{background:rgba(44,50,84,.07)}
+  .rail-item.on{background:var(--navy);color:var(--paper);font-weight:600}
+
+  /* modal */
+  .modal-scrim{position:fixed;inset:0;background:rgba(14,19,32,.55);display:none;z-index:50;
+               align-items:center;justify-content:center;padding:24px}
+  .modal-scrim.open{display:flex}
+  .modal{background:var(--beige);border:1px solid var(--navy);width:min(880px,100%);max-height:86vh;overflow:auto}
+  .modal-h{position:sticky;top:0;background:var(--paper);border-bottom:1px solid var(--hair);padding:16px 20px;
+           display:flex;gap:14px;align-items:center}
+  .modal-h h4{font-size:17px;font-weight:600;color:var(--head);flex:1}
+  .modal-b{padding:20px}
+
+  /* footnote / recommendation */
+  .rec{background:var(--navy);color:var(--paper);padding:40px;margin-top:8px}
+  .rec h2{color:var(--paper)}
+  .rec p{color:rgba(244,242,228,.85);max-width:66ch;margin-top:12px}
+  .rec ol{margin:18px 0 0 20px;max-width:66ch}
+  .rec li{margin-bottom:9px;color:rgba(244,242,228,.9)}
+  .rec b{color:var(--gold);font-weight:600}
+  .notes{background:var(--paper);border:1px solid var(--hair);padding:24px 26px;margin-top:26px}
+  .notes h3{margin-bottom:10px}
+  .notes ul{margin:0 0 0 18px}
+  .notes li{margin-bottom:8px;max-width:76ch}
+  footer{padding:34px 0 60px;color:var(--mute);font-size:12.5px}
+
+  @media(max-width:860px){
+    .wrap{padding:0 20px}
+    .top h1{font-size:34px}
+    h2{font-size:25px}
+    .opt-head{grid-template-columns:1fr}
+    .hbadge{text-align:left}
+    .grow{grid-template-columns:130px 1fr 60px}
+    .rail{grid-template-columns:1fr}
+    .rail-side{border-right:0;border-bottom:1px solid var(--hair)}
+    .lbr{grid-template-columns:20px 1fr 56px}
+    .lbr .bar{display:none}
+  }
+  @media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <p class="eyebrow">Affordability Tracker · National tab · design review</p>
+    <h1>Twelve ways to pick a metric</h1>
+    <p>The National tab opens with about <b>340 pixels of selector</b> — six collapsed category rows and a Select&nbsp;all line — before a single chart. Every metric outside the default seven costs two clicks: expand a row, then find a chip inside it. There is no way to search.</p>
+    <p>These twelve mockups are live, not screenshots: click them. Each one is <b>measured by the page itself</b> on load, so the height numbers below are real, not asserted. Built for the people who actually use this tab — organizers, state party staff, fact-checkers, reporters, and operatives who arrive knowing the number they need.</p>
+  </div>
+</header>
+
+<section class="wrap" id="gauge-sec">
+  <p class="sec-lab">Compare</p>
+  <h2>How much scroll each one costs</h2>
+  <p class="lede">Bar length is the measured height of the selector — everything a reader passes through before the first chart. Click a row to jump to that mockup.</p>
+  <div class="gauge" id="gauge"></div>
+  <div class="gauge-key">
+    <span><i class="sw" style="background:var(--brick)"></i> What's live now</span>
+    <span><i class="sw" style="background:var(--navy)"></i> Proposed</span>
+    <span><i class="sw" style="background:var(--green)"></i> Recommended combination</span>
+  </div>
+</section>
+
+<hr class="rule" />
+
+<section class="wrap">
+  <p class="sec-lab">Diagnosis</p>
+  <h2>What's live now, and what's wrong with it</h2>
+  <p class="lede">Reproduced faithfully — six accordion rows, a bulk-toggle pill, a count, a Show/Hide chevron. Expand Groceries to see the second click.</p>
+
+  <div class="mock" data-opt="now" data-name="Live now" data-kind="now">
+    <div class="mock-tabs"><button class="vtab on">National</button><button class="vtab">My State</button><button class="vtab">Compare States</button><button class="vtab">Map</button></div>
+    <div class="mock-sel" data-sel style="padding:16px;display:flex;flex-direction:column;gap:10px" id="now-sel"></div>
+    <div class="foldline" data-fold>▲ First chart starts here</div>
+    <div class="mock-body"><div class="cards" id="now-cards"></div></div>
+  </div>
+
+  <div class="notes">
+    <h3>Three separate problems, often blamed on one</h3>
+    <ul>
+      <li><b>Height.</b> Six rows of chrome push the charts below the fold on a laptop. The accordion was added to tame 41 chips, but collapsing rows traded one problem for another: less clutter, more depth.</li>
+      <li><b>Naming.</b> <b>Big-ticket</b> currently holds childcare, new cars, used cars, car insurance, the ACA benchmark premium, the uninsured rate, rent, home prices, the mortgage rate, and rent burden. That is four different household bills in one drawer. A reporter looking for health insurance will not open “Big-ticket,” and a category nobody opens may as well not exist.</li>
+      <li><b>No search.</b> With 30 metrics, the fastest possible interface is a text field. Someone who knows they want eggs should type <span class="kbd">e</span><span class="kbd">g</span><span class="kbd">g</span> and be done. Right now they must guess that eggs live under Groceries and click twice.</li>
+    </ul>
+  </div>
+</section>
+
+<hr class="rule" />
+
+<section class="wrap" style="padding-bottom:8px">
+  <p class="sec-lab">Options</p>
+  <h2>Twelve directions, roughly by how much has to change</h2>
+  <p class="lede">Ordered by how much has to change, not by preference. Tags say whether the option keeps today's six categories, recuts them into plain language, or drops grouping as the way to navigate. Options eight, nine and ten are the same experiment at three settings — every metric visible, at zero groups, four groups and six.</p>
+</section>
+
+<div class="wrap">
+
+<!-- ── 1 ─────────────────────────────────────────────────── -->
+<article class="opt" id="opt-1">
+  <div class="opt-head">
+    <div>
+      <p class="opt-n">Option one</p>
+      <h3>Search first</h3>
+      <p class="opt-thesis">One field, always focused-ready. Type three letters, hit Enter, get the chart. Selected metrics sit beside the field as removable tokens so the current state is readable at a glance. Categories move into the search results as a grey label — still there, no longer a gate.</p>
+      <div class="tags"><span class="tag">Light change</span><span class="tag">Categories become labels</span><span class="tag">Keeps all 30</span></div>
+    </div>
+    <div class="hbadge"><span class="n banner" data-h>—</span><span class="u">px of selector</span></div>
+  </div>
+  <div class="mock" data-opt="1" data-name="Search first">
+    <div class="mock-tabs"><button class="vtab on">National</button><button class="vtab">My State</button><button class="vtab">Compare States</button><button class="vtab">Map</button></div>
+    <div class="mock-sel" data-sel style="padding:12px 16px">
+      <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+        <div style="position:relative;flex:0 0 300px;max-width:100%">
+          <input class="srch" id="s1" placeholder="Search 30 metrics — try “egg”, “rent”, “gas”" autocomplete="off" aria-label="Search metrics" />
+        </div>
+        <div class="flow" id="t1" style="flex:1"></div>
+      </div>
+      <div id="r1" style="margin-top:10px"></div>
+    </div>
+    <div class="foldline" data-fold>▲ First chart starts here</div>
+    <div class="mock-body"><div class="cards" id="c1"></div></div>
+  </div>
+  <dl class="verdict">
+    <div><dt>Best for</dt><dd>Anyone who arrives with a metric in mind — which is most of this audience.</dd></div>
+    <div><dt>Tradeoff</dt><dd>Poor for browsing. A reader who doesn't know what's available sees nothing until they type.</dd></div>
+    <div><dt>Build</dt><dd>Small. One input, a filter over <code>allItems</code>, token rendering. No data changes.</dd></div>
+  </dl>
+</article>
+
+<!-- ── 2 ─────────────────────────────────────────────────── -->
+<article class="opt" id="opt-2">
+  <div class="opt-head">
+    <div>
+      <p class="opt-n">Option two</p>
+      <h3>One “Add a metric” menu</h3>
+      <p class="opt-thesis">The whole picker collapses to a single button. Open it and today's six categories appear as sections in one scrolling panel with a filter box at the top — so the grouping survives, but it costs one click total instead of one per category. The bar itself only ever shows what's on.</p>
+      <div class="tags"><span class="tag">Light change</span><span class="tag">Keeps the 6 categories</span></div>
+    </div>
+    <div class="hbadge"><span class="n banner" data-h>—</span><span class="u">px of selector</span></div>
+  </div>
+  <div class="mock" data-opt="2" data-name="One “Add a metric” menu">
+    <div class="mock-tabs"><button class="vtab on">National</button><button class="vtab">My State</button><button class="vtab">Compare States</button><button class="vtab">Map</button></div>
+    <div class="mock-sel" data-sel style="padding:12px 16px">
+      <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+        <button class="btn on" id="b2">Add a metric ▾</button>
+        <div class="flow" id="t2" style="flex:1"></div>
+        <button class="lnk" id="x2">Clear all</button>
+      </div>
+      <div id="p2" style="display:none;margin-top:12px"></div>
+    </div>
+    <div class="foldline" data-fold>▲ First chart starts here</div>
+    <div class="mock-body"><div class="cards" id="c2"></div></div>
+  </div>
+  <dl class="verdict">
+    <div><dt>Best for</dt><dd>Shipping fast. It is the current picker, folded behind one button.</dd></div>
+    <div><dt>Tradeoff</dt><dd>Hides the menu of what's available, and keeps the category names that are the deeper problem.</dd></div>
+    <div><dt>Build</dt><dd>Small. Same chip components, moved into a popover.</dd></div>
+  </dl>
+</article>
+
+<!-- ── 3 ─────────────────────────────────────────────────── -->
+<article class="opt" id="opt-3">
+  <div class="opt-head">
+    <div>
+      <p class="opt-n">Option three</p>
+      <h3>Five plain-language tabs</h3>
+      <p class="opt-thesis">One row, five household-shaped groups, pick one at a time. This is the biggest simplification available: no counts, no chevrons, no multi-select state to reason about. The tab you're on <em>is</em> the set of charts. Names come from how the audience talks — “Rent&nbsp;&amp;&nbsp;homes,” not “Big-ticket” — and headline CPI is pinned to every tab rather than given a category of its own, since it's the yardstick the other 29 are measured against.</p>
+      <div class="tags"><span class="tag">Moderate change</span><span class="tag recut">Recuts to 5 groups</span><span class="tag rethink">Drops cross-category mixing</span></div>
+    </div>
+    <div class="hbadge"><span class="n banner" data-h>—</span><span class="u">px of selector</span></div>
+  </div>
+  <div class="mock" data-opt="3" data-name="Five plain-language tabs">
+    <div class="mock-tabs"><button class="vtab on">National</button><button class="vtab">My State</button><button class="vtab">Compare States</button><button class="vtab">Map</button></div>
+    <div class="mock-sel" data-sel style="padding:11px 16px">
+      <div class="flow" id="t3"></div>
+    </div>
+    <div class="foldline" data-fold>▲ First chart starts here</div>
+    <div class="mock-body"><div class="cards" id="c3"></div></div>
+  </div>
+  <dl class="verdict">
+    <div><dt>Best for</dt><dd>First-time readers and embeds. Nothing to learn; the whole control is one row.</dd></div>
+    <div><dt>Tradeoff</dt><dd>Kills the comms team's “throw groceries in with rent” move. Would need Compare States to absorb that job.</dd></div>
+    <div><dt>Build</dt><dd>Moderate. New category map in <code>CATEGORY_META</code> plus a single-select state; the contract test's <code>known</code> set has to move with it.</dd></div>
+  </dl>
+</article>
+
+<!-- ── 4 ─────────────────────────────────────────────────── -->
+<article class="opt" id="opt-4">
+  <div class="opt-head">
+    <div>
+      <p class="opt-n">Option four</p>
+      <h3>Headline row, then everything else</h3>
+      <p class="opt-thesis">The seven default metrics stay visible as toggles — they are the editorial answer to “what should I look at?” — and all 30 sit one click away in a drawer. Keeps the curated front door without hiding the depth behind it.</p>
+      <div class="tags"><span class="tag">Light change</span><span class="tag">Keeps the 6 categories</span><span class="tag">Editorial default stays visible</span></div>
+    </div>
+    <div class="hbadge"><span class="n banner" data-h>—</span><span class="u">px of selector</span></div>
+  </div>
+  <div class="mock" data-opt="4" data-name="Headline row + drawer">
+    <div class="mock-tabs"><button class="vtab on">National</button><button class="vtab">My State</button><button class="vtab">Compare States</button><button class="vtab">Map</button></div>
+    <div class="mock-sel" data-sel style="padding:12px 16px">
+      <div style="display:flex;gap:10px;align-items:baseline;margin-bottom:9px">
+        <span class="ctl-lab">Most asked about</span>
+      </div>
+      <div class="flow" id="t4"></div>
+      <div style="margin-top:10px;display:flex;gap:14px;align-items:center">
+        <button class="btn" id="b4">Browse all 30 metrics ▾</button>
+        <span style="font-size:12px;color:var(--mute)" id="n4"></span>
+      </div>
+      <div id="p4" style="display:none;margin-top:12px"></div>
+    </div>
+    <div class="foldline" data-fold>▲ First chart starts here</div>
+    <div class="mock-body"><div class="cards" id="c4"></div></div>
+  </div>
+  <dl class="verdict">
+    <div><dt>Best for</dt><dd>Balancing a landing view against a research tool. Closest to what's live, minus the accordion.</dd></div>
+    <div><dt>Tradeoff</dt><dd>Two tiers means two places to look for a metric. Needs the drawer to have search or it inherits today's guessing game.</dd></div>
+    <div><dt>Build</dt><dd>Small. <code>DEFAULT_NATIONAL_IDS</code> already exists; it becomes the visible row.</dd></div>
+  </dl>
+</article>
+
+<!-- ── 5 ─────────────────────────────────────────────────── -->
+<article class="opt" id="opt-5">
+  <div class="opt-head">
+    <div>
+      <p class="opt-n">Option five</p>
+      <h3>Story starters</h3>
+      <p class="opt-thesis">Stop asking which indicators and start asking which argument. Seven buttons, each loading a hand-built set of charts that answers one question an organizer actually gets asked. “Rent is eating paychecks” loads rent, hourly earnings, and rent in hours of work together — a comparison a category list can't express.</p>
+      <div class="tags"><span class="tag rethink">Rethink</span><span class="tag recut">Replaces categories with frames</span><span class="tag">Editorially curated</span></div>
+    </div>
+    <div class="hbadge"><span class="n banner" data-h>—</span><span class="u">px of selector</span></div>
+  </div>
+  <div class="mock" data-opt="5" data-name="Story starters">
+    <div class="mock-tabs"><button class="vtab on">National</button><button class="vtab">My State</button><button class="vtab">Compare States</button><button class="vtab">Map</button></div>
+    <div class="mock-sel" data-sel style="padding:12px 16px">
+      <div style="display:flex;gap:10px;align-items:baseline;margin-bottom:9px"><span class="ctl-lab">Start with a question</span></div>
+      <div class="flow" id="t5"></div>
+      <div style="margin-top:9px"><button class="lnk" id="b5">Or pick metrics one at a time</button></div>
+    </div>
+    <div class="foldline" data-fold>▲ First chart starts here</div>
+    <div class="mock-body"><div class="cards" id="c5"></div></div>
+  </div>
+  <dl class="verdict">
+    <div><dt>Best for</dt><dd>Activists and operatives who need a chart that makes a point, not a chart of a series.</dd></div>
+    <div><dt>Tradeoff</dt><dd>Editorial. Every frame is a claim ESP is making, which is a feature for comms and a liability for a tracker that fact-checkers cite. Needs the “pick metrics one at a time” escape hatch.</dd></div>
+    <div><dt>Build</dt><dd>Moderate. A presets array of id lists, plus copy review for the seven names. Pairs naturally with deep links — each frame becomes a shareable URL.</dd></div>
+  </dl>
+</article>
+
+<!-- ── 6 ─────────────────────────────────────────────────── -->
+<article class="opt" id="opt-6">
+  <div class="opt-head">
+    <div>
+      <p class="opt-n">Option six</p>
+      <h3>Move it to a left rail</h3>
+      <p class="opt-thesis">The most direct answer to “we scroll too far”: take the selector out of the vertical stack entirely. Charts start at the top of the page. All 30 metrics stay permanently visible and scannable in a column, grouped and checkable, with no expand step at all.</p>
+      <div class="tags"><span class="tag rethink">Rethink</span><span class="tag recut">Recut groups, all visible</span><span class="tag pick">Zero vertical cost</span></div>
+    </div>
+    <div class="hbadge"><span class="n banner" data-h>—</span><span class="u">px of selector</span></div>
+  </div>
+  <div class="mock" data-opt="6" data-name="Left rail">
+    <div class="mock-tabs"><button class="vtab on">National</button><button class="vtab">My State</button><button class="vtab">Compare States</button><button class="vtab">Map</button></div>
+    <div class="mock-sel" data-sel style="height:0;border:0"></div>
+    <div class="foldline" data-fold>▲ First chart starts here</div>
+    <div class="rail">
+      <div class="rail-side">
+        <input class="srch" id="s6" placeholder="Filter…" aria-label="Filter metrics" style="font-size:12.5px;padding:6px 9px;margin-bottom:10px" autocomplete="off" />
+        <div id="t6"></div>
+      </div>
+      <div class="mock-body"><div class="cards" id="c6"></div></div>
+    </div>
+  </div>
+  <dl class="verdict">
+    <div><dt>Best for</dt><dd>Desktop research sessions — flipping between metrics without losing your place.</dd></div>
+    <div><dt>Tradeoff</dt><dd>Costs about 220px of chart width, and the ESP embed is already narrow. On mobile the rail has to become a sheet, so you build two interfaces. Also diverges from My State / Compare / Map, which all use a top bar.</dd></div>
+    <div><dt>Build</dt><dd>Larger. New page layout for one of four views, plus a mobile fallback.</dd></div>
+  </dl>
+</article>
+
+<!-- ── 7 ─────────────────────────────────────────────────── -->
+<article class="opt" id="opt-7">
+  <div class="opt-head">
+    <div>
+      <p class="opt-n">Option seven</p>
+      <h3>Sticky one-line toolbar</h3>
+      <p class="opt-thesis">A single line that never grows: the metrics you have on, as tokens, overflowing into “+4 more,” and one button that opens a full-screen picker. Because it's one line, it can stick to the top of the window while you scroll charts — so changing the selection never means scrolling back up.</p>
+      <div class="tags"><span class="tag">Moderate change</span><span class="tag">Keeps the 6 categories</span><span class="tag pick">Smallest footprint</span></div>
+    </div>
+    <div class="hbadge"><span class="n banner" data-h>—</span><span class="u">px of selector</span></div>
+  </div>
+  <div class="mock" data-opt="7" data-name="Sticky one-line toolbar">
+    <div class="mock-tabs"><button class="vtab on">National</button><button class="vtab">My State</button><button class="vtab">Compare States</button><button class="vtab">Map</button></div>
+    <div class="mock-sel" data-sel style="padding:8px 16px">
+      <div style="display:flex;gap:10px;align-items:center">
+        <span class="ctl-lab" style="flex-shrink:0">Showing</span>
+        <div class="flow" id="t7" style="flex:1;overflow:hidden;flex-wrap:nowrap"></div>
+        <button class="btn on" id="b7" style="flex-shrink:0">Change metrics</button>
+      </div>
+    </div>
+    <div class="foldline" data-fold>▲ First chart starts here</div>
+    <div class="mock-body"><div class="cards" id="c7"></div></div>
+  </div>
+  <dl class="verdict">
+    <div><dt>Best for</dt><dd>Long sessions and long pages. The only option where the control is reachable from the bottom of the page.</dd></div>
+    <div><dt>Tradeoff</dt><dd>A modal is a heavier interaction than a chip, and “+4 more” hides state. Sticky elements inside the ESP iframe need testing against the parent page's own header.</dd></div>
+    <div><dt>Build</dt><dd>Moderate. Modal, focus trap, Escape handling, overflow measurement.</dd></div>
+  </dl>
+</article>
+
+<!-- ── 8 ──────────────────────────────────── -->
+<article class="opt" id="opt-8">
+  <div class="opt-head">
+    <div>
+      <p class="opt-n">Option eight</p>
+      <h3>Everything, ungrouped</h3>
+      <p class="opt-thesis">The baseline test: does grouping earn its keep at all? All 30 metrics in one alphabetical row, no headers, no drawers, no counts — plus a filter field for anyone who would rather type. Thirty items is right at the edge where a flat list still works, because scanning an A–Z list costs recognition, not recall. Nobody has to know that eggs live under Groceries.</p>
+      <div class="tags"><span class="tag">Lightest change</span><span class="tag rethink">Drops grouping entirely</span><span class="tag">Strictly A–Z</span></div>
+      <p class="myread"><b>My read</b>I would ship this over the status quo tomorrow. It is less code than what is live, it removes the guessing step, and it makes the real question visible: if a flat list feels fine, the six categories were furniture, not navigation. What it cannot do is teach a newcomer the shape of the collection, and it strands the bulk move — <em>add all the groceries</em> — that comms asked for. Treat it as the control condition the other eleven have to beat.</p>
+    </div>
+    <div class="hbadge"><span class="n banner" data-h>—</span><span class="u">px of selector</span></div>
+  </div>
+  <div class="mock" data-opt="8" data-name="Everything, ungrouped">
+    <div class="mock-tabs"><button class="vtab on">National</button><button class="vtab">My State</button><button class="vtab">Compare States</button><button class="vtab">Map</button></div>
+    <div class="mock-sel" data-sel style="padding:12px 16px">
+      <div style="display:flex;gap:12px;align-items:center;margin-bottom:10px;flex-wrap:wrap">
+        <input class="srch" id="sA" placeholder="Filter…" aria-label="Filter metrics" style="flex:0 0 170px;padding:7px 10px;font-size:13px" autocomplete="off" />
+        <span style="font-size:12px;color:var(--mute)" id="nA"></span>
+        <button class="lnk" id="xA">Clear all</button>
+      </div>
+      <div class="flow" id="tA"></div>
+    </div>
+    <div class="foldline" data-fold>▲ First chart starts here</div>
+    <div class="mock-body"><div class="cards" id="cA"></div></div>
+  </div>
+  <dl class="verdict">
+    <div><dt>Best for</dt><dd>Finding out whether the taxonomy is an aid or inherited furniture. Least code of anything here.</dd></div>
+    <div><dt>Tradeoff</dt><dd>Thirty chips is a wall of words, and the long labels — “Income: 20th Percentile,” “Household Debt per Capita” — make ragged rows. No bulk select, and no sense of coverage.</dd></div>
+    <div><dt>Build</dt><dd>Smallest here. Delete the accordion and the category loop; sort by label.</dd></div>
+  </dl>
+</article>
+
+<!-- ── 9 ──────────────────────────────────── -->
+<article class="opt" id="opt-9">
+  <div class="opt-head">
+    <div>
+      <p class="opt-n">Option nine</p>
+      <h3>Four types, all visible</h3>
+      <p class="opt-thesis">The same everything-visible bet as option eight, with the smallest number of labels that still means something: <b>Home</b>, <b>Food</b>, <b>Bills, cars &amp; care</b>, <b>Paychecks &amp; debt</b>. Four columns fit one screen-width, so a reader takes in all four headings at a glance instead of holding six in memory. Headline CPI is pinned rather than filed, because it is the yardstick, not a type.</p>
+      <div class="tags"><span class="tag">Moderate change</span><span class="tag recut">Recuts to 4 types</span><span class="tag">Zero clicks to find</span></div>
+      <p class="myread"><b>My read</b>Four is the right instinct and this particular four has a flaw I would not ship. <em>Bills, cars &amp; care</em> holds the electric bill, a used car, and a health premium — which is the same sin “Big-ticket” commits today, with a more honest name. At four groups one of them is always the leftovers, so four only works if every group is defined by a principle instead of by what did not fit. The cut I would actually argue for is cash flow: <em>what it costs</em>, <em>what you earn</em>, <em>what you owe</em>, and <em>whether it adds up</em> (rent in hours of work, rent burden, the uninsured rate). No junk drawer — and it surfaces something worth knowing, which is that this tracker carries twenty price series against three income series. For a tool named for affordability, that ratio is the finding, not the filing system.</p>
+    </div>
+    <div class="hbadge"><span class="n banner" data-h>—</span><span class="u">px of selector</span></div>
+  </div>
+  <div class="mock" data-opt="9" data-name="Four types, all visible">
+    <div class="mock-tabs"><button class="vtab on">National</button><button class="vtab">My State</button><button class="vtab">Compare States</button><button class="vtab">Map</button></div>
+    <div class="mock-sel" data-sel style="padding:14px 16px">
+      <div class="cols" id="tB" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr))"></div>
+      <p style="font-size:11.5px;color:var(--mute);margin-top:10px">Inflation (CPI) is pinned to the top of the charts on every set — it is what the other 29 are measured against.</p>
+    </div>
+    <div class="foldline" data-fold>▲ First chart starts here</div>
+    <div class="mock-body"><div class="cards" id="cB"></div></div>
+  </div>
+  <dl class="verdict">
+    <div><dt>Best for</dt><dd>Readers who bounce off any list of six. Four headings can be read as a sentence about a household.</dd></div>
+    <div><dt>Tradeoff</dt><dd>One group is inevitably a grab-bag, and a 10-item column is long enough that people start scanning past things. Wants sub-labels, which quietly puts you back at six.</dd></div>
+    <div><dt>Build</dt><dd>Moderate. New grouping in <code>CATEGORY_META</code> plus the pinned-CPI rule; colors need reassigning since the families no longer map one-to-one.</dd></div>
+  </dl>
+</article>
+
+<!-- ── 10 ─────────────────────────────────────────────────── -->
+<article class="opt" id="opt-10">
+  <div class="opt-head">
+    <div>
+      <p class="opt-n">Option ten</p>
+      <h3>Flat grid, no accordions</h3>
+      <p class="opt-thesis">The opposite bet: pay the height once, up front, and never charge a click again. All 30 metrics in six labelled columns, recut into plain-language groups, everything visible and one tap from on to off. Taller than what's live — but where today's 340px shows you nothing, this shows you the whole collection.</p>
+      <div class="tags"><span class="tag">Moderate change</span><span class="tag recut">Recuts to 6 plain-language groups</span><span class="tag">Zero clicks to find</span></div>
+    </div>
+    <div class="hbadge"><span class="n banner" data-h>—</span><span class="u">px of selector</span></div>
+  </div>
+  <div class="mock" data-opt="10" data-name="Flat grid, no accordions">
+    <div class="mock-tabs"><button class="vtab on">National</button><button class="vtab">My State</button><button class="vtab">Compare States</button><button class="vtab">Map</button></div>
+    <div class="mock-sel" data-sel style="padding:14px 16px">
+      <div class="cols" id="t8"></div>
+    </div>
+    <div class="foldline" data-fold>▲ First chart starts here</div>
+    <div class="mock-body"><div class="cards" id="c8"></div></div>
+  </div>
+  <dl class="verdict">
+    <div><dt>Best for</dt><dd>Making the collection legible with the most structure of the three all-visible options.</dd></div>
+    <div><dt>Tradeoff</dt><dd>The tallest option here. Worth testing as a collapsed-after-first-use variant: full grid on arrival, one line thereafter.</dd></div>
+    <div><dt>Build</dt><dd>Small to moderate. Existing chips, new grouping, delete the accordion state.</dd></div>
+  </dl>
+</article>
+
+<!-- ── 11 ─────────────────────────────────────────────────── -->
+<article class="opt" id="opt-11">
+  <div class="opt-head">
+    <div>
+      <p class="opt-n">Option eleven</p>
+      <h3>The picker shows the numbers</h3>
+      <p class="opt-thesis">A sortable table instead of chips: metric, latest reading, change since Dec 2019, source cadence. Sort by change and the question “what's gotten most expensive” is answered before you open a single chart. For a fact-checker on deadline this can be the whole visit — the number is right there, citable, and the chart is confirmation.</p>
+      <div class="tags"><span class="tag rethink">Rethink</span><span class="tag">Category becomes a column</span><span class="tag pick">The control is also an answer</span></div>
+    </div>
+    <div class="hbadge"><span class="n banner" data-h>—</span><span class="u">px of selector</span></div>
+  </div>
+  <div class="mock" data-opt="11" data-name="Sortable table picker">
+    <div class="mock-tabs"><button class="vtab on">National</button><button class="vtab">My State</button><button class="vtab">Compare States</button><button class="vtab">Map</button></div>
+    <div class="mock-sel" data-sel style="padding:12px 16px">
+      <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap">
+        <input class="srch" id="s9" placeholder="Search…" aria-label="Search metrics" style="flex:0 0 190px;padding:7px 10px;font-size:13px" autocomplete="off" />
+        <span style="font-size:12px;color:var(--mute)">Click any column head to sort · click a row to add or remove it</span>
+      </div>
+      <div class="tscroll"><table class="pick" id="t9"></table></div>
+    </div>
+    <div class="foldline" data-fold>▲ First chart starts here</div>
+    <div class="mock-body"><div class="cards" id="c9"></div></div>
+  </div>
+  <dl class="verdict">
+    <div><dt>Best for</dt><dd>Fact-checkers and reporters. Also the most defensible: every number visible carries its own date.</dd></div>
+    <div><dt>Tradeoff</dt><dd>Reads as a spreadsheet, not a landing page. Index series can only show % change, never a level, so one column is unavoidably ragged.</dd></div>
+    <div><dt>Build</dt><dd>Moderate. Values and ranks are already in the payload; needs careful unit handling (percentage points on rate series).</dd></div>
+  </dl>
+</article>
+
+<!-- ── 12 ────────────────────────────────────────────────── -->
+<article class="opt" id="opt-12">
+  <div class="opt-head">
+    <div>
+      <p class="opt-n">Option twelve</p>
+      <h3>Ranked by what moved most</h3>
+      <p class="opt-thesis">The selector becomes a leaderboard, ordered by change since the page's anchor and redrawn when the anchor changes. It answers the single most common question this tab gets — “what's gone up the most?” — as the navigation itself. Click a bar to pin its chart below.</p>
+      <div class="tags"><span class="tag rethink">Rethink</span><span class="tag rethink">Drops categories entirely</span><span class="tag">Responds to the anchor control</span></div>
+    </div>
+    <div class="hbadge"><span class="n banner" data-h>—</span><span class="u">px of selector</span></div>
+  </div>
+  <div class="mock" data-opt="12" data-name="Moved-most leaderboard">
+    <div class="mock-tabs"><button class="vtab on">National</button><button class="vtab">My State</button><button class="vtab">Compare States</button><button class="vtab">Map</button></div>
+    <div class="mock-sel" data-sel style="padding:12px 16px">
+      <div style="display:flex;gap:10px;align-items:center;margin-bottom:9px;flex-wrap:wrap">
+        <span class="ctl-lab">Biggest increases since Dec 2019</span>
+        <button class="lnk" id="b10">Show all 30</button>
+      </div>
+      <div class="lb" id="t10"></div>
+    </div>
+    <div class="foldline" data-fold>▲ First chart starts here</div>
+    <div class="mock-body"><div class="cards" id="c10"></div></div>
+  </div>
+  <dl class="verdict">
+    <div><dt>Best for</dt><dd>Press hits. It surfaces coffee at +133% and ground beef at +77% without anyone hunting for them.</dd></div>
+    <div><dt>Tradeoff</dt><dd>Ranking mixed units invites bad comparisons — a rate moving 2.8 percentage points isn't “less” than coffee's 133%. The bars must be grouped by unit type or restricted to price series, and rate series need their own short list.</dd></div>
+    <div><dt>Build</dt><dd>Moderate. Recomputes on every anchor and Nominal/Real change; needs the unit-safety rules from <code>buildFactText</code> applied to the ordering.</dd></div>
+  </dl>
+</article>
+</div>
+
+<div class="wrap">
+  <div class="rec" id="rec">
+    <p class="eyebrow" style="color:var(--gold)">Recommendation</p>
+    <h2>Ship one, four, and eleven as one control</h2>
+    <p>None of the ten is sufficient alone, but three of them compose into a single 100-pixel bar that serves every person in this audience without a second interface:</p>
+    <ol>
+      <li><b>A search field on the left</b> (option one), focused by <span class="kbd">/</span>. Anyone who knows what they want is done in three keystrokes.</li>
+      <li><b>The seven headline metrics as toggles beside it</b> (option four). The curated view survives, and a first-time reader has something to click.</li>
+      <li><b>“All 30 metrics” opens the sortable table</b> (option eleven), sorted by change on open. Browsing and “what moved most” collapse into the same surface, so option twelve needs no separate home.</li>
+    </ol>
+    <p>Delete the six accordion rows. Then fix the naming independently, because no control shape rescues a drawer holding childcare, a used car, and a health premium. Options eight, nine and ten show the same 30 metrics at zero, four and six groups; my vote is six — <b>Overall inflation</b>, <b>Rent &amp; homes</b>, <b>Food</b>, <b>Bills &amp; getting around</b>, <b>Health &amp; care</b>, <b>Paychecks &amp; debt</b>. Four is tempting and one group always ends up a junk drawer (see option nine). That change is worth making whichever control wins &mdash; it also improves the state view, the map's measure pills, and the About page.</p>
+  </div>
+
+  <div class="notes">
+    <h3>Notes for whoever builds this</h3>
+    <ul>
+      <li><b>Alphabetical ordering is preserved</b> in every option that lists metrics, per the standing comms request. Options eleven and twelve sort by value or change instead, which is a deliberate exception — the sort <em>is</em> the feature — and both default to a stable secondary alphabetical sort within ties.</li>
+      <li><b>Index series never show a level.</b> Every mockup here shows CPI, groceries, cars, childcare, car insurance, and water &amp; sewer as cumulative % change since Dec 2019, never as index points. Rate series (mortgage, unemployment, delinquency, uninsured, rent burden) change in <em>percentage points</em>.</li>
+      <li><b>Real numbers, real dates.</b> The values and sparklines in these mockups are read from the committed payload, so nothing here is invented. They are nominal; the Nominal/Real toggle is out of scope for this review.</li>
+      <li><b>Embed mode.</b> Options six and seven need explicit testing in the ESP iframe — the left rail against the narrower column, the sticky bar against the parent page's header and the height-postMessage script.</li>
+      <li><b>Keyboard and focus</b> are wired in the search and table mockups, and the modal traps focus and closes on Escape. Whatever ships should hold that floor.</li>
+      <li><b>Tests to update.</b> Recutting categories means changing <code>CATEGORY_META</code>, <code>CATEGORY_LABELS</code>, and <code>ESP_CATEGORY_COLOR</code> in <code>index.html</code> plus the hardcoded <code>known</code> set in <code>tests/data_contract.test.js</code>, which exists precisely to catch a series stranded in an unknown category.</li>
+    </ul>
+  </div>
+</div>
+
+<footer class="wrap">
+  Mockups for internal review · Economic Security Project · generated 28 July 2026 · values from <code>data/app_data.js</code>
+</footer>
+
+<div class="modal-scrim" id="scrim" role="dialog" aria-modal="true" aria-labelledby="mtitle">
+  <div class="modal">
+    <div class="modal-h">
+      <h4 id="mtitle">Choose metrics</h4>
+      <input class="srch" id="sm" placeholder="Search…" aria-label="Search metrics" style="flex:0 0 210px;padding:7px 10px;font-size:13px" autocomplete="off" />
+      <button class="btn" id="mclose">Done</button>
+    </div>
+    <div class="modal-b"><div class="cols" id="tm"></div></div>
+  </div>
+</div>
+
+<script>
+/* ────────────────────────────────────────────────────────────
+   Metric data, read out of data/app_data.js. Sparklines are
+   ~26 evenly spaced points from Nov 2019 to the latest reading.
+   ch = change since Dec 2019: % for dollar/index series,
+   percentage points for rate series (pct:true).
+   ──────────────────────────────────────────────────────────── */
+const M = {
+  cpi_all_items:{l:"Inflation (CPI)",c:"overall",u:"Index (1982–84 = 100)",idx:true,pct:false,v:332.568,dt:"2026-06-01",ch:28.6,sp:[257.879,259.25,255.802,259.316,260.911,264.961,270.654,273.91,280.845,287.674,294.957,296.349,298.832,302.845,304.609,307.696,309.698,313.023,313.569,315.631,318.961,320.62,323.291,326.031,330.293,332.568]},
+  zori_rent:{l:"Rent (Market)",c:"big",u:"$ per Month",idx:false,pct:false,v:1965,dt:"2026-06-01",ch:37.3,sp:[1427,1442,1441,1439,1456,1489,1547,1622,1680,1718,1771,1788,1803,1821,1829,1841,1861,1874,1887,1900,1914,1922,1936,1945,1951,1965]},
+  median_home_price:{l:"Median Home Price",c:"big",u:"$",idx:false,pct:false,v:410700,dt:"2026-04-01",ch:25.6,sp:[329000,317100,327900,338600,355000,367800,395200,414000,413500,437700,438000,442600,429000,418500,435400,423200,426800,414500,415300,419300,423100,416100,410100,412300,408500,410700]},
+  mortgage:{l:"30-Year Mortgage",c:"big",u:"Rate (%)",idx:false,pct:true,v:6.58,dt:"2026-07-23",ch:2.8,sp:[3.69,3.47,3.24,2.91,2.71,3.05,2.93,2.88,3.11,4.72,5.51,6.94,6.13,6.39,6.96,7.44,6.9,7.03,6.35,6.6,6.67,6.77,6.34,6.16,6.3,6.58]},
+  rent_burden:{l:"Rent Burden",c:"big",u:"% of Renters",idx:false,pct:true,v:51.8,dt:"2024-01-01",ch:3.4,sp:[51.1,51.9,51.8,51.8]},
+  rent_hours:{l:"Rent in Hours of Work",c:"labor",u:"Hours of Work",idx:false,pct:false,v:52.2,dt:"2026-06-01",ch:3.6,sp:[50.4,50.5,48.5,48.8,48.7,49.6,50.7,52.4,53.5,54,54.8,54.7,54.6,54.5,54,54,53.9,53.7,53.6,53.4,53.3,53,52.8,52.5,52.2,52.2]},
+  groceries:{l:"Groceries",c:"groceries",u:"Index (1982–84 = 100)",idx:true,pct:false,v:321.446,dt:"2026-06-01",ch:32.3,sp:[242.726,244.2,253.23,252.148,251.365,252.933,257.058,262.459,268.985,278.333,288.568,296.403,300.576,301.811,302.984,304.366,305.187,305.354,306.285,307.867,310.817,312.296,314.647,316.982,318.462,321.446]},
+  eggs:{l:"Eggs",c:"groceries",u:"$ per Dozen",idx:false,pct:false,v:2.141,dt:"2026-06-01",ch:39.5,sp:[1.405,1.449,1.64,1.328,1.45,1.625,1.642,1.835,1.788,2.046,2.707,2.902,4.25,3.27,2.094,2.072,2.522,2.864,3.08,3.37,4.953,4.548,3.587,2.712,2.348,2.141]},
+  milk:{l:"Milk",c:"groceries",u:"$ per Gallon",idx:false,pct:false,v:4.317,dt:"2026-06-01",ch:35.4,sp:[3.189,3.196,3.21,3.406,3.425,3.348,3.557,3.585,3.743,3.917,4.153,4.181,4.211,4.042,3.971,3.927,3.958,3.868,3.983,4.041,4.025,4.022,4.171,4.047,4.067,4.317]},
+  bread:{l:"Bread",c:"groceries",u:"$ per Pound",idx:false,pct:false,v:1.814,dt:"2026-06-01",ch:33.1,sp:[1.361,1.375,1.412,1.495,1.515,1.526,1.51,1.58,1.532,1.607,1.691,1.749,1.873,1.989,1.98,2.002,2.033,1.998,1.975,1.937,1.925,1.876,1.841,1.833,1.808,1.814]},
+  coffee:{l:"Coffee",c:"groceries",u:"$ per Pound",idx:false,pct:false,v:9.457,dt:"2026-06-01",ch:133.3,sp:[4.197,4.25,4.466,4.504,4.485,4.671,4.605,4.733,4.965,5.41,5.793,6.17,6.465,6.04,6.141,6.178,6.124,6.063,6.307,6.644,7.019,7.931,8.872,9.053,9.608,9.457]},
+  ground_beef:{l:"Ground Beef",c:"groceries",u:"$ per Pound",idx:false,pct:false,v:6.825,dt:"2026-06-01",ch:76.7,sp:[3.812,3.865,4.461,4.177,4.027,4.042,4.357,4.504,4.604,4.757,4.889,4.862,4.8,4.79,5.102,5.226,5.03,5.236,5.497,5.588,5.545,5.981,6.318,6.687,6.701,6.825]},
+  chicken_breast:{l:"Chicken Breast",c:"groceries",u:"$ per Pound",idx:false,pct:false,v:4.181,dt:"2026-06-01",ch:34.3,sp:[2.94,3.013,3.348,3.276,3.412,3.291,3.353,3.517,3.725,3.87,4.568,4.746,4.348,4.405,4.141,4.222,4.086,4.061,3.946,4.037,3.969,4.216,4.212,4.153,4.172,4.181]},
+  bacon:{l:"Bacon",c:"groceries",u:"$ per Pound",idx:false,pct:false,v:6.561,dt:"2026-06-01",ch:19.9,sp:[5.505,5.497,5.348,5.559,5.754,5.852,6.67,7.22,7.211,7.203,7.403,7.383,6.956,6.549,6.236,7.223,6.614,6.637,6.883,6.869,7.044,6.985,7.208,6.76,6.801,6.561]},
+  electricity:{l:"Electricity",c:"daily",u:"$ per kWh",idx:false,pct:false,v:0.198,dt:"2026-06-01",ch:48.9,sp:[0.133,0.134,0.134,0.137,0.136,0.138,0.142,0.144,0.142,0.15,0.16,0.167,0.165,0.165,0.169,0.169,0.173,0.173,0.178,0.177,0.179,0.182,0.19,0.189,0.19,0.198]},
+  utility_gas:{l:"Natural Gas",c:"daily",u:"$ per Therm",idx:false,pct:false,v:1.688,dt:"2026-06-01",ch:59.7,sp:[1.058,1.05,1.037,1.031,1.104,1.144,1.219,1.302,1.402,1.411,1.699,1.739,1.667,1.413,1.395,1.388,1.452,1.375,1.408,1.422,1.552,1.626,1.634,1.701,1.688,1.688]},
+  gas:{l:"Gasoline",c:"daily",u:"$ per Gallon",idx:false,pct:false,v:3.952,dt:"2026-07-27",ch:58.8,sp:[2.485,2.324,1.776,2.09,2.022,2.684,2.97,3.094,3.136,4.021,4.501,3.692,3.34,3.407,3.746,3.144,3.145,3.376,3.12,2.933,2.999,3.047,3,2.665,3.885,3.952]},
+  water_sewer_trash:{l:"Water & Sewer",c:"daily",u:"Index (1982–84 = 100)",idx:true,pct:false,v:331.474,dt:"2026-06-01",ch:33.6,sp:[247.582,249.751,250.921,253.974,255.65,259.204,260.4,263.747,265.365,269.621,271.925,276.759,278.464,285.052,289.005,291.683,297.079,300.178,302.106,306.336,310.239,315.585,319.403,322.728,328.792,331.474]},
+  car_insurance:{l:"Car Insurance",c:"big",u:"Index (1982–84 = 100)",idx:true,pct:false,v:858.747,dt:"2026-06-01",ch:49.8,sp:[572.459,573.008,486.861,563.101,538.133,556.576,568.842,569.076,569.534,584.751,603.94,627.689,651.318,672.231,705.668,746.002,783.882,821.514,843.642,867.438,888.526,889.621,896.219,897.307,890.113,858.747]},
+  new_cars:{l:"New Cars",c:"big",u:"Index (1982–84 = 100)",idx:true,pct:false,v:178.67,dt:"2026-06-01",ch:21.3,sp:[146.098,148.23,146.749,146.898,150.089,149.838,154.225,160.01,167.676,168.602,172.782,176.044,177.861,178.795,178.873,179.328,179.045,177.504,177.068,177.837,178.473,178.286,178.527,178.938,179.465,178.67]},
+  used_cars:{l:"Used Cars",c:"big",u:"Index (1982–84 = 100)",idx:true,pct:false,v:179.591,dt:"2026-06-01",ch:28.2,sp:[139.579,140.593,137.922,144.102,154.216,154.93,194.846,190.308,211.728,209.646,206.552,201.171,190.423,192.647,194.701,186.879,185.254,180.577,174.703,179.904,186.557,183.664,184.869,184.668,179.83,179.591]},
+  aca_benchmark_premium:{l:"ACA Benchmark Premium",c:"big",u:"$ per Month",idx:false,pct:false,v:625,dt:"2026-01-01",ch:30.8,sp:[462,452,438,456,477,497,625]},
+  uninsured_rate:{l:"Uninsured Rate",c:"big",u:"Rate (%)",idx:false,pct:true,v:8.2,dt:"2024-01-01",ch:-1,sp:[8.6,8,7.9,8.2]},
+  childcare:{l:"Childcare",c:"big",u:"Index (1982–84 = 100)",idx:true,pct:false,v:400.148,dt:"2026-06-01",ch:30.1,sp:[306.675,310.206,310.605,312.538,313.885,312.855,317.16,319.867,322.561,324.033,329.359,335.855,340.144,348.623,349.473,352.693,357.628,363.061,367.57,373.689,378.748,385.128,389.895,395.067,396.624,400.148]},
+  hourly_earnings:{l:"Hourly Earnings",c:"labor",u:"$ per Hour",idx:false,pct:false,v:37.64,dt:"2026-06-01",ch:32.6,sp:[28.34,28.54,29.72,29.49,29.91,30.03,30.54,30.98,31.39,31.8,32.34,32.7,33.02,33.43,33.85,34.08,34.52,34.89,35.22,35.6,35.94,36.28,36.7,37.02,37.35,37.64]},
+  income_20th:{l:"Income: 20th Percentile",c:"labor",u:"$",idx:false,pct:false,v:33775,dt:"2024-01-01",ch:24.7,sp:[28261,30623,31942,33775]},
+  unemployment:{l:"Unemployment Rate",c:"labor",u:"Rate (%)",idx:false,pct:true,v:4.2,dt:"2026-06-01",ch:0.6,sp:[3.6,3.5,13.2,8.4,6.7,6.1,5.9,4.7,3.9,3.7,3.6,3.5,3.5,3.4,3.5,3.9,3.7,3.9,4.2,4.1,4,4.3,4.3,4.4,4.3,4.2]},
+  credit_card_delinquency:{l:"Credit Card Delinquency",c:"debt",u:"Rate (%)",idx:false,pct:true,v:2.92,dt:"2026-01-01",ch:0.3,sp:[2.69,2.45,1.99,2.1,1.88,1.59,1.53,1.57,1.69,1.83,2.05,2.26,2.47,2.75,2.94,3.1,3.17,3.22,3.2,3.08,3.06,3.04,2.98,2.94,2.92]},
+  mortgage_delinquency:{l:"Mortgage Delinquency",c:"debt",u:"Rate (%)",idx:false,pct:true,v:1.89,dt:"2026-01-01",ch:-0.4,sp:[2.35,2.54,2.83,2.75,2.68,2.47,2.3,2.29,2.09,1.95,1.84,1.79,1.74,1.72,1.72,1.7,1.71,1.73,1.74,1.78,1.77,1.78,1.78,1.79,1.89]},
+  debt_per_capita:{l:"Household Debt per Capita",c:"debt",u:"$ per Person",idx:false,pct:false,v:63200,dt:"2025-12-01",ch:22.5,sp:[51580,52500,55480,59580,60690,61660,63200]},
+};
+const IDS = Object.keys(M);
+IDS.forEach(id => M[id].id = id);
+
+/* Today's six categories, as they exist in index.html */
+const CATS = [
+  ['overall','All prices (CPI)'], ['big','Big-ticket'], ['daily','Daily items'],
+  ['debt','Debt'], ['groceries','Groceries'], ['labor','Work & wages'],
+];
+const CAT_COLOR = {overall:'#7f8c53',big:'#2c3254',labor:'#70ad8f',groceries:'#ebc382',daily:'#472b51',debt:'#b0645f'};
+const inCat = c => IDS.filter(id => M[id].c === c).sort((a,b) => M[a].l.localeCompare(M[b].l));
+
+/* Proposed recut: six plain-language groups, named the way the audience talks.
+   Covers all 30 — Big-ticket's four unrelated bills are split apart. */
+const RECUT = [
+  ['Overall inflation', ['cpi_all_items']],
+  ['Rent & homes',      ['zori_rent','median_home_price','mortgage','rent_burden','rent_hours']],
+  ['Food',              ['groceries','eggs','milk','bread','coffee','ground_beef','chicken_breast','bacon']],
+  ['Bills & getting around', ['electricity','utility_gas','gas','water_sewer_trash','car_insurance','new_cars','used_cars']],
+  ['Health & care',     ['aca_benchmark_premium','uninsured_rate','childcare']],
+  ['Paychecks & debt',  ['hourly_earnings','income_20th','unemployment','credit_card_delinquency','mortgage_delinquency','debt_per_capita']],
+];
+RECUT.forEach(g => g[1].sort((a,b) => M[a].l.localeCompare(M[b].l)));
+/* Option three drops the Overall tab and pins CPI to every tab instead — it is
+   the yardstick the other 29 are measured against, not a category of its own. */
+const TABS5 = RECUT.slice(1);
+const PINNED = 'cpi_all_items';
+/* Option nine: the fewest labels that still mean something. CPI is pinned,
+   not filed. "Bills, cars & care" is the leftovers group — see the note. */
+const FOUR = [
+  ['Home',               ['zori_rent','median_home_price','mortgage','rent_burden','rent_hours']],
+  ['Food',               ['groceries','eggs','milk','bread','coffee','ground_beef','chicken_breast','bacon']],
+  ['Bills, cars & care', ['electricity','utility_gas','gas','water_sewer_trash','car_insurance','new_cars','used_cars','childcare','aca_benchmark_premium','uninsured_rate']],
+  ['Paychecks & debt',   ['hourly_earnings','income_20th','unemployment','credit_card_delinquency','mortgage_delinquency','debt_per_capita']],
+];
+FOUR.forEach(g => g[1].sort((a,b) => M[a].l.localeCompare(M[b].l)));
+
+const DEFAULTS = ['car_insurance','aca_benchmark_premium','gas','credit_card_delinquency','eggs','hourly_earnings','electricity'];
+
+const FRAMES = [
+  ['Rent is eating paychecks', ['zori_rent','hourly_earnings','rent_hours','rent_burden']],
+  ['The grocery bill',         ['groceries','eggs','ground_beef','coffee','milk']],
+  ['Bills at the meter',       ['electricity','utility_gas','gas','water_sewer_trash']],
+  ['Health care costs',        ['aca_benchmark_premium','uninsured_rate','childcare']],
+  ['Buying a home',            ['median_home_price','mortgage','zori_rent']],
+  ['Families are borrowing',   ['credit_card_delinquency','debt_per_capita','mortgage_delinquency']],
+  ["What's up the most",       ['coffee','ground_beef','utility_gas','gas']],
+];
+
+/* ── formatting, following the tracker's editorial rules ───── */
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function fmtDate(d){ const p = d.split('-'); return MONTHS[+p[1]-1] + ' ' + p[0]; }
+function chgStr(m){ return (m.ch >= 0 ? '+' : '') + m.ch.toFixed(1) + (m.pct ? ' pp' : '%'); }
+function unitTail(m){
+  if (m.idx) return 'since Dec 2019';
+  const per = m.u.split(' per ')[1];
+  if (per) return '/ ' + per.toLowerCase();
+  if (m.u === 'Hours of Work') return 'hours';
+  return '';
+}
+/* Index series show cumulative % change only — never index points. */
+function headline(m){
+  if (m.idx) return chgStr(m);
+  if (m.pct) return m.v.toFixed(m.v < 10 ? 2 : 1) + '%';
+  if (m.u.charAt(0) === '$') return m.v >= 1000
+    ? '$' + Math.round(m.v).toLocaleString('en-US')
+    : '$' + m.v.toFixed(m.v < 1 ? 3 : 2);
+  return m.v.toFixed(1);
+}
+function spark(m, w, h){
+  const s = m.sp, n = s.length, lo = Math.min.apply(null,s), hi = Math.max.apply(null,s);
+  const rng = (hi - lo) || 1, pad = 3;
+  const pts = s.map((v,i) => [
+    (i/(n-1))*(w-2) + 1,
+    h - pad - ((v-lo)/rng)*(h - pad*2)
+  ]);
+  const d = pts.map((p,i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
+  const col = CAT_COLOR[m.c];
+  const area = d + ' L' + (w-1) + ' ' + h + ' L1 ' + h + ' Z';
+  return '<svg viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none" aria-hidden="true">'
+    + '<path d="'+area+'" fill="'+col+'" opacity=".1"/>'
+    + '<path d="'+d+'" fill="none" stroke="'+col+'" stroke-width="1.6" stroke-linejoin="round"/></svg>';
+}
+function card(id){
+  const m = M[id];
+  return '<div class="mc"><div class="mc-lab">'+m.l+'</div>'
+    + '<div class="mc-val banner">'+headline(m)+' <em>'+unitTail(m)+'</em></div>'
+    + spark(m, 180, 38)
+    + '<div class="mc-foot"><span class="bdg '+(m.ch>=0?'up':'dn')+'">'+chgStr(m)+' since 2019</span>'
+    + '<span class="mc-src">'+fmtDate(m.dt)+'</span></div></div>';
+}
+function drawCards(el, ids){
+  if (!ids.length){ el.innerHTML = '<div class="stub">Nothing selected — pick a metric above.</div>'; return; }
+  el.innerHTML = ids.slice(0,6).map(card).join('')
+    + (ids.length > 6 ? '<div class="mc"><div class="stub" style="padding:20px 2px">+ '+(ids.length-6)+' more chart'+(ids.length-6>1?'s':'')+' below</div></div>' : '');
+}
+const dot = c => '<i class="dot" style="background:'+CAT_COLOR[c]+'"></i>';
+
+/* Options folded into the recommendation, highlighted in the gauge */
+const PICKS = {'1':1,'4':1,'11':1};
+let raf = null;
+
+/* ── shared per-option selection state ───────────────────── */
+function makeState(initial){ return new Set(initial); }
+const state = {};
+/* Keys 'A' and 'B' are the two all-visible options added later; the numeric
+   element ids elsewhere (t3, c9, s1 …) are stable handles, not option numbers. */
+['now','1','2','3','4','5','6','7','8','9','10','A','B'].forEach(k => state[k] = makeState(DEFAULTS));
+
+/* ═══ Live now ════════════════════════════════════════════ */
+(function(){
+  const sel = document.getElementById('now-sel'), cards = document.getElementById('now-cards');
+  const open = new Set();
+  function render(){
+    sel.innerHTML = CATS.map(function(c){
+      const items = inCat(c[0]), on = items.filter(i => state.now.has(i)).length;
+      const isOpen = open.has(c[0]);
+      return '<div style="border-bottom:1px solid var(--hair2);padding-bottom:'+(isOpen?12:6)+'px">'
+        + '<div style="display:flex;align-items:center;gap:12px">'
+        + '<button class="catpill '+(on===0?'':on===items.length?'all':'some')+'" data-cat="'+c[0]+'" style="width:130px">'+c[1]+'</button>'
+        + '<button data-open="'+c[0]+'" style="flex:1;display:flex;align-items:center;justify-content:space-between;background:none;border:0;cursor:pointer;padding:6px 4px;font:inherit">'
+        + '<span style="font-size:12.5px;font-style:italic;color:'+(on?'var(--head)':'var(--mute)')+'">'+(on? on+' of '+items.length+' selected' : items.length+' metrics')+'</span>'
+        + '<span style="font-size:11px;font-weight:700;color:var(--navy)">'+(isOpen?'Hide':'Show')+' ⌄</span></button></div>'
+        + (isOpen ? '<div class="flow" style="margin-top:8px">' + items.map(function(id){
+            const s = state.now.has(id);
+            return '<button class="chip'+(s?' on':'')+'" data-id="'+id+'"><span class="box" style="'+(s?'background:'+CAT_COLOR[M[id].c]+';border-color:'+CAT_COLOR[M[id].c]:'')+'">'+(s?'✓':'')+'</span>'+M[id].l+'</button>';
+          }).join('') + '</div>' : '')
+        + '</div>';
+    }).join('')
+    + '<div style="display:flex;gap:16px"><button class="lnk" data-all>Select all</button><button class="lnk" data-none>Clear all</button></div>';
+    drawCards(cards, IDS.filter(i => state.now.has(i)));
+    measure();
+  }
+  sel.addEventListener('click', function(e){
+    const t = e.target.closest('button'); if (!t) return;
+    if (t.dataset.open != null){ open.has(t.dataset.open) ? open.delete(t.dataset.open) : open.add(t.dataset.open); }
+    else if (t.dataset.cat){ const items = inCat(t.dataset.cat);
+      const all = items.every(i => state.now.has(i));
+      items.forEach(i => all ? state.now.delete(i) : state.now.add(i)); }
+    else if (t.dataset.id){ state.now.has(t.dataset.id) ? state.now.delete(t.dataset.id) : state.now.add(t.dataset.id); }
+    else if (t.hasAttribute('data-all')) IDS.forEach(i => state.now.add(i));
+    else if (t.hasAttribute('data-none')) state.now.clear();
+    render();
+  });
+  render();
+})();
+
+/* ═══ 1 · Search first ════════════════════════════════════ */
+(function(){
+  const inp = document.getElementById('s1'), toks = document.getElementById('t1'),
+        res = document.getElementById('r1'), cards = document.getElementById('c1');
+  const S = state['1'];
+  function paint(){
+    toks.innerHTML = IDS.filter(i => S.has(i)).map(i =>
+      '<button class="tok" data-id="'+i+'">'+M[i].l+' <span>×</span></button>').join('')
+      || '<span style="font-size:12.5px;color:var(--mute);font-style:italic">No metrics selected</span>';
+    drawCards(cards, IDS.filter(i => S.has(i)));
+    measure();
+  }
+  function results(){
+    const q = inp.value.trim().toLowerCase();
+    if (!q){ res.innerHTML = '<div style="font-size:12px;color:var(--mute)">Press <span class="kbd">/</span> anywhere to jump to this field. Nothing typed, nothing in the way.</div>'; measure(); return; }
+    const hits = IDS.filter(i => M[i].l.toLowerCase().indexOf(q) > -1).sort((a,b)=>M[a].l.localeCompare(M[b].l));
+    res.innerHTML = hits.length
+      ? '<div class="panel" style="padding:8px">' + hits.slice(0,7).map(i =>
+          '<button data-id="'+i+'" style="display:flex;width:100%;gap:9px;align-items:center;background:none;border:0;padding:6px 7px;font:inherit;font-size:13px;cursor:pointer;text-align:left">'
+          + dot(M[i].c) + '<b style="font-weight:600;color:var(--head)">'+M[i].l+'</b>'
+          + '<span style="color:var(--mute);font-size:11.5px">'+CATS.filter(c=>c[0]===M[i].c)[0][1]+'</span>'
+          + '<span style="margin-left:auto;font-weight:700;color:var(--navy)">'+headline(M[i])+'</span>'
+          + '<span style="color:var(--mute);font-size:11px">'+(S.has(i)?'remove':'add')+'</span></button>').join('') + '</div>'
+      : '<div class="stub">Nothing matches “'+inp.value+'”.</div>';
+    measure();
+  }
+  inp.addEventListener('input', results);
+  res.addEventListener('click', e => { const t = e.target.closest('[data-id]'); if(!t) return;
+    S.has(t.dataset.id) ? S.delete(t.dataset.id) : S.add(t.dataset.id); paint(); results(); });
+  toks.addEventListener('click', e => { const t = e.target.closest('[data-id]'); if(!t) return;
+    S.delete(t.dataset.id); paint(); results(); });
+  document.addEventListener('keydown', e => {
+    if (e.key === '/' && document.activeElement.tagName !== 'INPUT'){ e.preventDefault(); inp.focus(); inp.scrollIntoView({block:'center'}); }
+  });
+  paint(); results();
+})();
+
+/* ═══ 2 · One menu ════════════════════════════════════════ */
+(function(){
+  const btn = document.getElementById('b2'), pan = document.getElementById('p2'),
+        toks = document.getElementById('t2'), cards = document.getElementById('c2'),
+        clr = document.getElementById('x2');
+  const S = state['2']; let open = false;
+  function paint(){
+    toks.innerHTML = IDS.filter(i=>S.has(i)).map(i =>
+      '<button class="tok" data-id="'+i+'">'+M[i].l+' <span>×</span></button>').join('')
+      || '<span style="font-size:12.5px;color:var(--mute);font-style:italic">No metrics selected</span>';
+    pan.style.display = open ? 'block' : 'none';
+    if (open) pan.innerHTML = '<div class="panel"><input class="srch" id="s2" placeholder="Filter 30 metrics…" style="padding:7px 10px;font-size:13px;margin-bottom:12px" autocomplete="off"/><div class="cols">'
+      + CATS.map(c => '<div><p class="panel-h">'+dot(c[0])+' '+c[1]+'</p>'
+        + inCat(c[0]).map(i => '<label style="display:flex;gap:8px;align-items:center;font-size:12.5px;padding:2.5px 0;cursor:pointer">'
+          + '<input type="checkbox" data-id="'+i+'"'+(S.has(i)?' checked':'')+' /> '+M[i].l+'</label>').join('')
+        + '</div>').join('') + '</div></div>';
+    drawCards(cards, IDS.filter(i=>S.has(i)));
+    measure();
+  }
+  btn.addEventListener('click', () => { open = !open; btn.textContent = open ? 'Done ▴' : 'Add a metric ▾'; paint(); });
+  clr.addEventListener('click', () => { S.clear(); paint(); });
+  pan.addEventListener('change', e => { if(!e.target.dataset.id) return;
+    e.target.checked ? S.add(e.target.dataset.id) : S.delete(e.target.dataset.id);
+    drawCards(cards, IDS.filter(i=>S.has(i)));
+    toks.innerHTML = IDS.filter(i=>S.has(i)).map(i => '<button class="tok" data-id="'+i+'">'+M[i].l+' <span>×</span></button>').join(''); });
+  pan.addEventListener('input', e => { if (e.target.id !== 's2') return;
+    const q = e.target.value.toLowerCase();
+    pan.querySelectorAll('label').forEach(l => { l.style.display = l.textContent.toLowerCase().indexOf(q) > -1 ? 'flex' : 'none'; }); });
+  toks.addEventListener('click', e => { const t = e.target.closest('[data-id]'); if(!t) return; S.delete(t.dataset.id); paint(); });
+  paint();
+})();
+
+/* ═══ 3 · Five tabs ═══════════════════════════════════════ */
+(function(){
+  const tabs = document.getElementById('t3'), cards = document.getElementById('c3');
+  let active = 0;
+  function paint(){
+    tabs.innerHTML = TABS5.map((t,i) => '<button class="btn'+(i===active?' on':'')+'" data-i="'+i+'">'+t[0]+'</button>').join('')
+      + '<span style="font-size:11.5px;color:var(--mute);margin-left:6px">Inflation (CPI) stays on every tab — it’s the yardstick</span>';
+    drawCards(cards, [PINNED].concat(TABS5[active][1]));
+    measure();
+  }
+  tabs.addEventListener('click', e => { const t = e.target.closest('[data-i]'); if(!t) return; active = +t.dataset.i; paint(); });
+  paint();
+})();
+
+/* ═══ 4 · Headline row + drawer ═══════════════════════════ */
+(function(){
+  const row = document.getElementById('t4'), btn = document.getElementById('b4'),
+        pan = document.getElementById('p4'), cards = document.getElementById('c4'),
+        note = document.getElementById('n4');
+  const S = state['4']; let open = false;
+  function paint(){
+    row.innerHTML = DEFAULTS.slice().sort((a,b)=>M[a].l.localeCompare(M[b].l)).map(i => {
+      const s = S.has(i);
+      return '<button class="chip'+(s?' on':'')+'" data-id="'+i+'"><span class="box" style="'+(s?'background:'+CAT_COLOR[M[i].c]+';border-color:'+CAT_COLOR[M[i].c]:'')+'">'+(s?'✓':'')+'</span>'+M[i].l+'</button>';
+    }).join('');
+    const extra = IDS.filter(i => S.has(i) && DEFAULTS.indexOf(i) < 0);
+    note.textContent = extra.length ? extra.length + ' more added from the full list' : '23 more available';
+    pan.style.display = open ? 'block' : 'none';
+    if (open) pan.innerHTML = '<div class="panel"><div class="cols">'
+      + CATS.map(c => '<div><p class="panel-h">'+dot(c[0])+' '+c[1]+'</p>'
+        + inCat(c[0]).map(i => '<label style="display:flex;gap:8px;align-items:center;font-size:12.5px;padding:2.5px 0;cursor:pointer">'
+          + '<input type="checkbox" data-id="'+i+'"'+(S.has(i)?' checked':'')+' /> '+M[i].l+'</label>').join('') + '</div>').join('')
+      + '</div></div>';
+    drawCards(cards, IDS.filter(i=>S.has(i)));
+    measure();
+  }
+  row.addEventListener('click', e => { const t = e.target.closest('[data-id]'); if(!t) return;
+    S.has(t.dataset.id) ? S.delete(t.dataset.id) : S.add(t.dataset.id); paint(); });
+  btn.addEventListener('click', () => { open = !open; btn.textContent = open ? 'Hide the full list ▴' : 'Browse all 30 metrics ▾'; paint(); });
+  pan.addEventListener('change', e => { if(!e.target.dataset.id) return;
+    e.target.checked ? S.add(e.target.dataset.id) : S.delete(e.target.dataset.id); paint(); });
+  paint();
+})();
+
+/* ═══ 5 · Story starters ══════════════════════════════════ */
+(function(){
+  const row = document.getElementById('t5'), cards = document.getElementById('c5'), esc = document.getElementById('b5');
+  let active = 0, manual = false;
+  function paint(){
+    row.innerHTML = FRAMES.map((f,i) => '<button class="btn'+(i===active&&!manual?' on':'')+'" data-i="'+i+'">'+f[0]+'</button>').join('');
+    if (manual){
+      row.innerHTML += '<div style="flex-basis:100%;height:1px"></div><div class="panel" style="margin-top:6px;width:100%"><div class="cols">'
+        + RECUT.map(g => '<div><p class="panel-h">'+g[0]+'</p>'
+          + g[1].map(i => '<label style="display:flex;gap:8px;align-items:center;font-size:12.5px;padding:2px 0;cursor:pointer"><input type="checkbox" data-id="'+i+'" /> '+M[i].l+'</label>').join('')
+          + '</div>').join('') + '</div></div>';
+    }
+    drawCards(cards, FRAMES[active][1]);
+    measure();
+  }
+  row.addEventListener('click', e => { const t = e.target.closest('[data-i]'); if(!t) return; active = +t.dataset.i; manual = false; paint(); });
+  esc.addEventListener('click', () => { manual = !manual; esc.textContent = manual ? 'Back to the questions' : 'Or pick metrics one at a time'; paint(); });
+  paint();
+})();
+
+/* ═══ 6 · Left rail ═══════════════════════════════════════ */
+(function(){
+  const side = document.getElementById('t6'), cards = document.getElementById('c6'), inp = document.getElementById('s6');
+  const S = state['6'];
+  function paint(){
+    const q = inp.value.trim().toLowerCase();
+    side.innerHTML = RECUT.map(g => {
+      const items = g[1].filter(i => !q || M[i].l.toLowerCase().indexOf(q) > -1);
+      if (!items.length) return '';
+      return '<p class="rail-grp">'+g[0]+'</p>' + items.map(i =>
+        '<button class="rail-item'+(S.has(i)?' on':'')+'" data-id="'+i+'">'+dot(M[i].c)+'<span>'+M[i].l+'</span></button>').join('');
+    }).join('') || '<div class="stub">No matches.</div>';
+    drawCards(cards, IDS.filter(i=>S.has(i)));
+    measure();
+  }
+  side.addEventListener('click', e => { const t = e.target.closest('[data-id]'); if(!t) return;
+    S.has(t.dataset.id) ? S.delete(t.dataset.id) : S.add(t.dataset.id); paint(); });
+  inp.addEventListener('input', paint);
+  paint();
+})();
+
+/* ═══ 7 · Sticky one-line toolbar + modal ═════════════════ */
+const modal = (function(){
+  const scrim = document.getElementById('scrim'), body = document.getElementById('tm'),
+        close = document.getElementById('mclose'), search = document.getElementById('sm');
+  let S = null, after = null, last = null;
+  function fill(){
+    body.innerHTML = CATS.map(c => '<div><p class="panel-h">'+dot(c[0])+' '+c[1]+'</p>'
+      + inCat(c[0]).map(i => '<label style="display:flex;gap:8px;align-items:center;font-size:13px;padding:3px 0;cursor:pointer">'
+        + '<input type="checkbox" data-id="'+i+'"'+(S.has(i)?' checked':'')+' /> '+M[i].l
+        + '<span style="margin-left:auto;color:var(--mute);font-size:11.5px">'+headline(M[i])+'</span></label>').join('')
+      + '</div>').join('');
+  }
+  function open(set, cb){ S = set; after = cb; last = document.activeElement; fill();
+    scrim.classList.add('open'); search.value = ''; search.focus(); }
+  function shut(){ scrim.classList.remove('open'); if (last) last.focus(); if (after) after(); }
+  close.addEventListener('click', shut);
+  scrim.addEventListener('mousedown', e => { if (e.target === scrim) shut(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && scrim.classList.contains('open')) shut(); });
+  body.addEventListener('change', e => { if(!e.target.dataset.id) return;
+    e.target.checked ? S.add(e.target.dataset.id) : S.delete(e.target.dataset.id); if (after) after(); });
+  search.addEventListener('input', () => { const q = search.value.toLowerCase();
+    body.querySelectorAll('label').forEach(l => { l.style.display = l.textContent.toLowerCase().indexOf(q) > -1 ? 'flex' : 'none'; }); });
+  return {open: open};
+})();
+
+(function(){
+  const toks = document.getElementById('t7'), btn = document.getElementById('b7'), cards = document.getElementById('c7');
+  const S = state['7'];
+  function paint(){
+    const on = IDS.filter(i=>S.has(i));
+    toks.innerHTML = on.slice(0,4).map(i => '<button class="tok" data-id="'+i+'">'+M[i].l+' <span>×</span></button>').join('')
+      + (on.length > 4 ? '<span style="font-size:12px;font-weight:700;color:var(--navy);white-space:nowrap">+'+(on.length-4)+' more</span>' : '')
+      + (on.length ? '' : '<span style="font-size:12.5px;color:var(--mute);font-style:italic">Nothing selected</span>');
+    drawCards(cards, on);
+    measure();
+  }
+  btn.addEventListener('click', () => modal.open(S, paint));
+  toks.addEventListener('click', e => { const t = e.target.closest('[data-id]'); if(!t) return; S.delete(t.dataset.id); paint(); });
+  paint();
+})();
+
+/* ═══ 8 · Everything, ungrouped ══════════════════ */
+(function(){
+  const cloud = document.getElementById('tA'), cards = document.getElementById('cA'),
+        inp = document.getElementById('sA'), note = document.getElementById('nA'),
+        clr = document.getElementById('xA');
+  const S = state['A'];
+  const AZ = IDS.slice().sort((a,b) => M[a].l.localeCompare(M[b].l));
+  function paint(){
+    const q = inp.value.trim().toLowerCase();
+    const show = AZ.filter(i => !q || M[i].l.toLowerCase().indexOf(q) > -1);
+    cloud.innerHTML = show.map(function(i){ const s = S.has(i);
+      return '<button class="chip'+(s?' on':'')+'" data-id="'+i+'"><span class="box" style="'+(s?'background:'+CAT_COLOR[M[i].c]+';border-color:'+CAT_COLOR[M[i].c]:'')+'">'+(s?'\u2713':'')+'</span>'+M[i].l+'</button>';
+    }).join('') || '<div class="stub">No matches.</div>';
+    note.textContent = show.length + (q ? ' of 30 metrics' : ' metrics, A\u2013Z') + ' \u00b7 ' + IDS.filter(i=>S.has(i)).length + ' on';
+    drawCards(cards, IDS.filter(i=>S.has(i)));
+    measure();
+  }
+  cloud.addEventListener('click', e => { const t = e.target.closest('[data-id]'); if(!t) return;
+    S.has(t.dataset.id) ? S.delete(t.dataset.id) : S.add(t.dataset.id); paint(); });
+  inp.addEventListener('input', paint);
+  clr.addEventListener('click', () => { S.clear(); paint(); });
+  paint();
+})();
+
+/* ═══ 9 · Four types, all visible ═══════════════ */
+(function(){
+  const grid = document.getElementById('tB'), cards = document.getElementById('cB');
+  const S = state['B'];
+  function paint(){
+    grid.innerHTML = FOUR.map(function(g){
+      return '<div><p class="panel-h">'+g[0]+' <span style="color:var(--rule);letter-spacing:0">'+g[1].length+'</span></p>'
+        + g[1].map(function(i){ const s = S.has(i);
+            return '<button class="rail-item'+(s?' on':'')+'" data-id="'+i+'" style="padding:3px 6px">'+dot(M[i].c)+'<span>'+M[i].l+'</span></button>';
+          }).join('') + '</div>';
+    }).join('');
+    drawCards(cards, [PINNED].concat(IDS.filter(i => S.has(i) && i !== PINNED)));
+    measure();
+  }
+  grid.addEventListener('click', e => { const t = e.target.closest('[data-id]'); if(!t) return;
+    S.has(t.dataset.id) ? S.delete(t.dataset.id) : S.add(t.dataset.id); paint(); });
+  paint();
+})();
+
+/* ═══ 10 · Flat grid ══════════════════════════════════════ */
+(function(){
+  const grid = document.getElementById('t8'), cards = document.getElementById('c8');
+  const S = state['8'];
+  function paint(){
+    grid.innerHTML = RECUT.map(g => '<div><p class="panel-h">'+g[0]+'</p>'
+      + g[1].map(i => { const s = S.has(i);
+        return '<button class="rail-item'+(s?' on':'')+'" data-id="'+i+'" style="padding:3px 6px">'+dot(M[i].c)+'<span>'+M[i].l+'</span></button>'; }).join('')
+      + '</div>').join('');
+    drawCards(cards, IDS.filter(i=>S.has(i)));
+    measure();
+  }
+  grid.addEventListener('click', e => { const t = e.target.closest('[data-id]'); if(!t) return;
+    S.has(t.dataset.id) ? S.delete(t.dataset.id) : S.add(t.dataset.id); paint(); });
+  paint();
+})();
+
+/* ═══ 11 · Sortable table ═════════════════════════════════ */
+(function(){
+  const tbl = document.getElementById('t9'), cards = document.getElementById('c9'), inp = document.getElementById('s9');
+  const S = state['9']; let sort = 'ch', dir = -1;
+  const COLS = [['l','Metric',''],['v','Latest','num'],['ch','Since Dec 2019','num'],['dt','As of','num'],['c','Group','']];
+  function paint(){
+    const q = inp.value.trim().toLowerCase();
+    const rows = IDS.filter(i => !q || M[i].l.toLowerCase().indexOf(q) > -1).sort((a,b) => {
+      const A = M[a][sort], B = M[b][sort];
+      const c = typeof A === 'number' ? (A-B)*dir : String(A).localeCompare(String(B))*dir;
+      return c || M[a].l.localeCompare(M[b].l);   /* stable alphabetical tiebreak */
+    });
+    tbl.innerHTML = '<thead><tr>' + COLS.map(c =>
+        '<th data-s="'+c[0]+'" class="'+c[2]+'">'+c[1]+(sort===c[0]?(dir<0?' ↓':' ↑'):'')+'</th>').join('') + '</tr></thead><tbody>'
+      + rows.map(i => { const m = M[i];
+        return '<tr data-row data-id="'+i+'" class="'+(S.has(i)?'sel':'')+'">'
+          + '<td><span style="display:inline-flex;gap:7px;align-items:center">'+(S.has(i)?'<b style="color:#3E6E57">✓</b>':'<span style="color:var(--rule)">＋</span>')+'<b style="font-weight:600;color:var(--head)">'+m.l+'</b></span></td>'
+          + '<td class="num">'+(m.idx ? '<span style="color:var(--mute)">index</span>' : headline(m))+'</td>'
+          + '<td class="num" style="font-weight:700;color:'+(m.ch>=0?'#8A4640':'#3E6E57')+'">'+chgStr(m)+'</td>'
+          + '<td class="num" style="color:var(--mute)">'+fmtDate(m.dt)+'</td>'
+          + '<td style="color:var(--mute)">'+dot(m.c)+' '+CATS.filter(c=>c[0]===m.c)[0][1]+'</td></tr>';
+      }).join('') + '</tbody>';
+    drawCards(cards, IDS.filter(i=>S.has(i)));
+    measure();
+  }
+  tbl.addEventListener('click', e => {
+    const th = e.target.closest('th');
+    if (th){ if (sort === th.dataset.s) dir = -dir; else { sort = th.dataset.s; dir = (sort === 'l' || sort === 'c') ? 1 : -1; } paint(); return; }
+    const tr = e.target.closest('[data-row]'); if(!tr) return;
+    S.has(tr.dataset.id) ? S.delete(tr.dataset.id) : S.add(tr.dataset.id); paint();
+  });
+  inp.addEventListener('input', paint);
+  paint();
+})();
+
+/* ═══ 12 · Leaderboard ═══════════════════════════════════ */
+(function(){
+  const lb = document.getElementById('t10'), cards = document.getElementById('c10'), more = document.getElementById('b10');
+  const S = state['10']; let all = false;
+  /* Price series only: ranking a rate's percentage-point move against a
+     price's percent move would be a unit error. */
+  const priced = IDS.filter(i => !M[i].pct).sort((a,b) => M[b].ch - M[a].ch || M[a].l.localeCompare(M[b].l));
+  function paint(){
+    const show = all ? priced : priced.slice(0,6);
+    const max = M[priced[0]].ch;
+    lb.innerHTML = show.map((i,n) => { const m = M[i];
+      return '<button class="lbr'+(S.has(i)?' on':'')+'" data-id="'+i+'">'
+        + '<span class="r">'+(n+1)+'</span><span class="nm">'+m.l+'</span>'
+        + '<span class="bar"><i style="width:'+(m.ch/max*100).toFixed(1)+'%"></i></span>'
+        + '<span class="pc">+'+m.ch.toFixed(1)+'%</span></button>';
+    }).join('')
+    + '<p style="font-size:11.5px;color:var(--mute);margin-top:8px">Price and dollar series only — rate series (mortgage, unemployment, delinquency) move in percentage points and rank separately.</p>';
+    drawCards(cards, IDS.filter(i=>S.has(i)));
+    measure();
+  }
+  lb.addEventListener('click', e => { const t = e.target.closest('[data-id]'); if(!t) return;
+    S.has(t.dataset.id) ? S.delete(t.dataset.id) : S.add(t.dataset.id); paint(); });
+  more.addEventListener('click', () => { all = !all; more.textContent = all ? 'Show the top six' : 'Show all 30'; paint(); });
+  paint();
+})();
+
+/* ═══ Measure every mockup and build the comparison gauge ══ */
+function measure(){
+  if (raf) cancelAnimationFrame(raf);
+  raf = requestAnimationFrame(function(){
+    const mocks = Array.prototype.slice.call(document.querySelectorAll('.mock[data-opt]'));
+    const rows = mocks.map(function(mk){
+      const sel = mk.querySelector('[data-sel]');
+      const h = Math.round(sel.getBoundingClientRect().height);
+      const opt = mk.dataset.opt;
+      const art = mk.closest('article');
+      if (art){ const b = art.querySelector('[data-h]'); if (b) b.textContent = h; }
+      const fold = mk.querySelector('[data-fold]');
+      if (fold) fold.textContent = h === 0
+        ? '▲ First chart starts at the very top — nothing above it'
+        : '▲ First chart starts here — ' + h + 'px in';
+      return {opt: opt, name: mk.dataset.name, h: h, now: mk.dataset.kind === 'now', id: art ? art.id : 'gauge-sec'};
+    }).sort(function(a,b){ return a.h - b.h; });
+    const max = Math.max.apply(null, rows.map(function(r){ return r.h; })) || 1;
+    document.getElementById('gauge').innerHTML = rows.map(function(r){
+      return '<button class="grow'+(r.now?' is-now':'')+(PICKS[r.opt]?' is-pick':'')+'" data-go="'+r.id+'">'
+        + '<span class="grow-name">'+(r.now?'':'<i>'+r.opt+'</i>')+r.name+'</span>'
+        + '<span class="grow-track"><i class="grow-fill" style="width:'+Math.max(r.h/max*100,0.6).toFixed(1)+'%"></i></span>'
+        + '<span class="grow-px">'+r.h+' px</span></button>';
+    }).join('');
+  });
+}
+document.getElementById('gauge').addEventListener('click', function(e){
+  const t = e.target.closest('[data-go]'); if (!t) return;
+  const el = document.getElementById(t.dataset.go); if (el) el.scrollIntoView({block:'start'});
+});
+window.addEventListener('resize', measure);
+window.addEventListener('load', measure);
+measure();
+</script>
+</body>
+</html>
