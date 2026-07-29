@@ -11,6 +11,9 @@
 <!-- ESP licensed Publico Banner (Medium), same data-URI loader the tracker uses.
      Reserved here for the measured height numbers only. -->
 <script src="assets/fonts_publico.js"></script>
+<!-- The real committed national payload. The three prototype tabs read every
+     value, date and time series out of this — nothing in them is hardcoded. -->
+<script src="data/app_data.js"></script>
 
 <style>
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -143,6 +146,41 @@
   .myread{margin-top:15px;border-left:2px solid var(--green);padding:1px 0 1px 15px;max-width:64ch;font-size:14.5px}
   .myread b{display:block;font-size:9.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#3E6E57;margin-bottom:4px}
   .myread em{font-style:normal;font-weight:600;color:var(--head)}
+  /* The merged proposal. No inner scroll, no border, no panel background —
+     the three things that made the option-6 rail read as bolted on. */
+  .railc{display:grid;grid-template-columns:254px 1fr}
+  .railc-side{padding:16px 20px 26px 14px}
+  .railc-grp{font-size:9.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+             color:var(--mute);margin:19px 0 5px;padding-left:6px}
+  .railc-grp:first-of-type{margin-top:0}
+  .mrow{display:grid;grid-template-columns:14px 1fr auto;gap:9px;align-items:center;width:100%;
+        background:none;border:0;padding:5px 6px;font:inherit;font-size:13px;color:var(--navy);
+        cursor:pointer;text-align:left;border-radius:2px}
+  .mrow:hover{background:rgba(44,50,84,.07)}
+  .mrow.on{background:rgba(112,173,143,.17);color:var(--head);font-weight:600}
+  .mrow:focus-visible{outline:2px solid var(--navy);outline-offset:1px}
+  .mrow-mark{color:var(--rule);font-size:12px;text-align:center}
+  .mrow.on .mrow-mark{color:#3E6E57;font-weight:800}
+  .mrow-ch{font-size:11.5px;font-weight:600;color:var(--mute);font-variant-numeric:tabular-nums}
+  .mrow.on .mrow-ch{color:#8A4640}
+  .annot{display:flex;gap:10px;align-items:center;margin-top:18px;padding-top:12px;border-top:1px dashed var(--rule)}
+  .annot p{font-size:11.5px;color:var(--mute);font-style:italic;line-height:1.45}
+  .merge{border-top:3px solid var(--green);padding:46px 0}
+  .merge .opt-n{color:#3E6E57}
+  .lanes{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:0;margin-top:22px;
+         border:1px solid var(--hair);background:var(--paper)}
+  .lane{padding:15px 17px;border-right:1px solid var(--hair2)}
+  .lane:last-child{border-right:0}
+  .lane h4{font-size:12px;font-weight:700;color:var(--head);margin-bottom:6px}
+  .lane h4 span{display:inline-block;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;
+                color:#3E6E57;border:1px solid rgba(112,173,143,.6);background:#eaf1ec;padding:1px 6px;
+                border-radius:2px;margin-right:7px;vertical-align:1px}
+  .lane p{font-size:13px;line-height:1.5}
+  .steps{counter-reset:st;margin-top:20px}
+  .step{display:grid;grid-template-columns:30px 1fr;gap:14px;padding:13px 0;border-top:1px solid var(--hair2)}
+  .step b{font-size:19px;color:var(--green);line-height:1}
+  .step p{font-size:14px;max-width:70ch}
+  .step p em{font-style:normal;font-weight:600;color:var(--paper)}
   .stub{color:var(--mute);font-size:12.5px;font-style:italic;padding:10px 2px}
 
   /* drawers / panels */
@@ -223,8 +261,156 @@
   }
   @media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
 </style>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     Second stylesheet: the page-level tab bar and the three WORKING
+     prototypes. Everything above this line styles the review document;
+     everything below it styles running software. Kept separate so the two
+     can't accidentally restyle each other.
+     ═══════════════════════════════════════════════════════════════════ -->
+<style>
+  /* ── Page tabs ─────────────────────────────────────────── */
+  .ptabs{position:sticky;top:0;z-index:40;background:var(--navy);
+         border-bottom:1px solid rgba(244,242,228,.16);
+         display:flex;gap:0;align-items:stretch;overflow-x:auto}
+  .ptab{font-family:inherit;font-size:12.5px;font-weight:600;letter-spacing:.02em;
+        background:none;border:0;border-bottom:3px solid transparent;
+        color:rgba(244,242,228,.62);padding:13px 18px 11px;cursor:pointer;white-space:nowrap}
+  .ptab:hover{color:var(--paper);background:rgba(244,242,228,.06)}
+  .ptab.on{color:var(--paper);border-bottom-color:var(--gold);font-weight:700}
+  .ptab i{font-style:normal;display:block;font-size:9.5px;font-weight:700;letter-spacing:.16em;
+          text-transform:uppercase;color:rgba(235,195,130,.75);margin-bottom:3px}
+  .ptab.on i{color:var(--gold)}
+  .ptabs-note{margin-left:auto;align-self:center;padding:0 18px;flex-shrink:0;
+              font-size:11px;color:rgba(244,242,228,.5);white-space:nowrap}
+  @media(max-width:860px){.ptabs-note{display:none}}
+
+  /* ── Prototype chrome: reproduces the real tracker's surfaces ── */
+  .proto{background:var(--beige);min-height:80vh}
+  .proto[hidden]{display:none}
+  .pt-top{background:var(--navy);color:var(--paper);padding:26px 0 22px}
+  .pt-top h1{font-size:29px;font-weight:600;letter-spacing:-.015em;color:var(--paper);margin-top:8px}
+  .pt-top p{font-size:13.5px;color:rgba(244,242,228,.72);max-width:74ch;margin-top:8px}
+  .pt-top p b{color:var(--gold);font-weight:600}
+  .pt-views{background:var(--paper);border-bottom:1px solid var(--hair)}
+  .pt-views .wrap{display:flex;gap:7px;align-items:center;padding-top:9px;padding-bottom:9px}
+  .pt-ctl{background:var(--paper);border-bottom:1px solid var(--hair)}
+  .pt-ctl .wrap{display:flex;gap:18px;align-items:center;flex-wrap:wrap;padding-top:10px;padding-bottom:10px}
+  .pt-ctl-grp{display:flex;gap:6px;align-items:center}
+  .pt-ctl .btn{font-size:11.5px;padding:5px 11px}
+  .pt-wide{max-width:1360px;margin:0 auto;padding:0 32px}
+  @media(max-width:700px){.pt-wide{padding:0 18px}}
+
+  /* Chart grid — the real thing: hairline-separated cards on the rule color */
+  .pt-charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));
+             gap:1px;background:var(--hair);border:1px solid var(--hair)}
+  .cc{background:var(--white);padding:16px 18px 13px;display:flex;flex-direction:column;gap:10px;min-width:0}
+  .cc-eyebrow{font-size:9.5px;font-weight:700;letter-spacing:.18em;text-transform:uppercase}
+  .cc-h{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+  .cc-l{font-family:'Publico Banner',Georgia,serif;font-size:18px;font-weight:500;line-height:1.15;color:var(--head)}
+  .cc-sub{font-family:Georgia,serif;font-style:italic;font-size:11.5px;color:var(--mute);margin-top:3px}
+  .cc-v{font-family:'Publico Banner',Georgia,serif;font-size:25px;line-height:1;color:var(--head)}
+  .cc-ch{font-size:10.5px;font-weight:700;margin-top:5px}
+  .cc-bdg{font-size:10.5px;display:flex;gap:13px;flex-wrap:wrap;padding:6px 9px;
+          background:rgba(44,50,84,.045);border:1px solid rgba(44,50,84,.08);border-radius:4px}
+  .cc-bdg s{text-decoration:none;color:var(--mute)}
+  .cc-canvas{position:relative;height:168px}
+  .cc-foot{display:flex;gap:7px;align-items:center;flex-wrap:wrap;font-size:10px;color:var(--mute)}
+  .cc-foot .btn{font-size:10px;padding:4px 9px;letter-spacing:.05em}
+  .pt-empty{padding:60px 24px;text-align:center;color:var(--mute);font-style:italic;
+            background:var(--white);border:1px dashed var(--rule)}
+
+  /* ── The merge: one row, two containers, a real breakpoint ── */
+  .mg-layout{display:block}
+  .mg-rail{display:none}
+  .mg-bar{display:block}
+  /* Above the breakpoint the rail appears and the menu bar disappears. This is
+     the actual switch — resize the window and watch it happen. */
+  @media(min-width:900px){
+    .mg-layout{display:grid;grid-template-columns:254px minmax(0,1fr);align-items:start}
+    .mg-rail{display:block}
+    .mg-bar{display:none}
+  }
+  .mg-side{padding:18px 22px 30px 0}
+  .mg-grp{font-size:9.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+          color:var(--mute);margin:20px 0 5px;padding-left:6px}
+  .mg-grp:first-of-type{margin-top:0}
+  .mg-barin{padding:11px 0 12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .mg-pop{margin-top:11px;background:var(--white);border:1px solid var(--navy);
+          border-radius:3px;padding:14px;max-width:420px}
+  .mg-head{display:flex;gap:12px;align-items:center;margin:9px 0 13px}
+  .mg-count{font-size:11.5px;color:var(--mute)}
+  /* Sticky fallback: the job the rail can't do once you've scrolled past it. */
+  .mg-sticky{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--navy);
+             color:var(--paper);padding:9px 16px;display:none;gap:11px;align-items:center;
+             box-shadow:0 -2px 14px rgba(14,19,32,.22)}
+  .mg-sticky.show{display:flex}
+  .mg-sticky span{font-size:11.5px;color:rgba(244,242,228,.72)}
+  .mg-sticky .btn{background:var(--paper);color:var(--navy);border-color:var(--paper);font-weight:700}
+  .mg-sheet{position:fixed;inset:auto 0 0 0;z-index:31;background:var(--paper);
+            border-top:2px solid var(--navy);max-height:72vh;overflow:auto;padding:16px;display:none}
+  .mg-sheet.show{display:block}
+
+  /* ── Pure option six: the rail exactly as originally specced, including
+        the three things the merge later removes — inner scroll, a border,
+        its own background. Left in on purpose so the A/B is honest. ── */
+  .r6-layout{display:grid;grid-template-columns:216px minmax(0,1fr);align-items:start}
+  .r6-side{background:var(--paper);border-right:1px solid var(--hair);padding:14px 12px;
+           max-height:360px;overflow:auto;position:sticky;top:47px}
+  .r6-grp{font-size:9.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+          color:var(--mute);margin:13px 0 5px}
+  .r6-grp:first-child{margin-top:0}
+  @media(max-width:760px){
+    .r6-layout{grid-template-columns:1fr}
+    .r6-side{border-right:0;border-bottom:1px solid var(--hair);position:static;max-height:none}
+  }
+
+  /* ── Shared list primitives for all three prototypes ── */
+  .prow{display:grid;grid-template-columns:14px minmax(0,1fr) auto;gap:9px;align-items:center;
+        width:100%;background:none;border:0;padding:5px 6px;font:inherit;font-size:13px;
+        color:var(--navy);cursor:pointer;text-align:left;border-radius:2px}
+  .prow:hover{background:rgba(44,50,84,.07)}
+  .prow.on{background:rgba(112,173,143,.17);color:var(--head);font-weight:600}
+  .prow:focus-visible{outline:2px solid var(--navy);outline-offset:1px}
+  /* Long labels — "Household Debt per Capita", "Income: 20th Percentile" —
+     wrap rather than push the change number out of a 254px rail. */
+  .prow>span:nth-child(2){line-height:1.3;overflow-wrap:break-word;min-width:0}
+  .prow-mark{color:var(--rule);font-size:12px;text-align:center;align-self:start;margin-top:2px}
+  .prow.on .prow-mark{color:#3E6E57;font-weight:800}
+  .prow-ch{font-size:11.5px;font-weight:600;color:var(--mute);font-variant-numeric:tabular-nums}
+  .prow.on .prow-ch{color:#8A4640}
+  .pitem{display:flex;align-items:center;gap:8px;width:100%;background:none;border:0;
+         padding:4px 5px;font:inherit;font-size:12.5px;color:var(--navy);cursor:pointer;
+         text-align:left;border-radius:2px}
+  .pitem:hover{background:rgba(44,50,84,.07)}
+  .pitem.on{background:var(--navy);color:var(--paper);font-weight:600}
+  .pitem:focus-visible{outline:2px solid var(--navy);outline-offset:1px}
+
+  /* Callout above each prototype, so a reviewer knows what to try */
+  .try{background:#eaf1ec;border-left:3px solid var(--green);padding:12px 16px;margin:16px 0 0;
+       font-size:13px;max-width:80ch}
+  .try b{display:block;font-size:9.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+         color:#3E6E57;margin-bottom:4px}
+  .try em{font-style:normal;font-weight:600;color:var(--head)}
+  .pt-sec{padding:20px 0 60px}
+  .pt-h{display:flex;justify-content:space-between;align-items:baseline;gap:16px;
+        padding:16px 0 8px;flex-wrap:wrap}
+  .pt-h h2{font-size:20px}
+  .pt-h span{font-size:11.5px;color:var(--mute)}
+</style>
 </head>
 <body>
+
+<!-- ═══ Page tabs: the review document, then three running prototypes ═══ -->
+<nav class="ptabs" id="ptabs" aria-label="Page sections">
+  <button class="ptab on" data-page="review"><i>Document</i>Design review · twelve options</button>
+  <button class="ptab" data-page="merge"><i>Working prototype</i>The merge · 6 + 2 + 11</button>
+  <button class="ptab" data-page="rail"><i>Working prototype</i>Option 6 alone · left rail</button>
+  <button class="ptab" data-page="menu"><i>Working prototype</i>Option 2 alone · one menu</button>
+  <span class="ptabs-note">Prototypes run on the committed payload — real values, real charts</span>
+</nav>
+
+<div id="page-review">
 
 <header class="top">
   <div class="wrap">
@@ -232,6 +418,7 @@
     <h1>Twelve ways to pick a metric</h1>
     <p>The National tab opens with about <b>340 pixels of selector</b> — six collapsed category rows and a Select&nbsp;all line — before a single chart. Every metric outside the default seven costs two clicks: expand a row, then find a chip inside it. There is no way to search.</p>
     <p>These twelve mockups are live, not screenshots: click them. Each one is <b>measured by the page itself</b> on load, so the height numbers below are real, not asserted. Built for the people who actually use this tab — organizers, state party staff, fact-checkers, reporters, and operatives who arrive knowing the number they need.</p>
+    <p><b>Updated after the July review.</b> The team picked options <b>6</b>, <b>2</b> and <b>11</b> and ruled out 12, 10, 5 and 3. Those three favorites turn out to be one component in three states, so there is now a <a href="#merge" style="color:var(--gold)">merged proposal at the end</a> — and the closing recommendation has been rewritten around it.</p>
   </div>
 </header>
 
@@ -243,7 +430,7 @@
   <div class="gauge-key">
     <span><i class="sw" style="background:var(--brick)"></i> What's live now</span>
     <span><i class="sw" style="background:var(--navy)"></i> Proposed</span>
-    <span><i class="sw" style="background:var(--green)"></i> Recommended combination</span>
+    <span><i class="sw" style="background:var(--green)"></i> Team favorites, and the merge that holds all three</span>
   </div>
 </section>
 
@@ -640,16 +827,57 @@
 </div>
 
 <div class="wrap">
+<article class="merge" id="merge">
+  <div class="opt-head">
+    <div>
+      <p class="opt-n">The merge · six + two + eleven</p>
+      <h3>One list of rows, in two containers</h3>
+      <p class="opt-thesis">The three favorites are not three designs. Option six is the list of all 30 shown; option two is the same list hidden behind a button; option eleven is what a <em>row</em> of that list should say. Build one row component and two containers for it — a rail on wide screens, a menu below the breakpoint — and all three are satisfied by one piece of code, which is also the mobile fallback the rail needs regardless.</p>
+      <div class="tags"><span class="tag pick">Holds all three favorites</span><span class="tag">Rows carry the numbers</span><span class="tag recut">Six plain-language groups</span></div>
+    </div>
+    <div class="hbadge"><span class="n banner" data-h>—</span><span class="u">px of selector</span></div>
+  </div>
+
+  <div class="lanes">
+    <div class="lane"><h4><span>6</span>What the rail keeps</h4><p>Everything visible and grouped, permanently, off the vertical axis. Familiar from any shop filter: good for the regular who knows their dashboard, good for the newcomer taking in what exists.</p></div>
+    <div class="lane"><h4><span>2</span>What the menu keeps</h4><p>The same list, folded to one button — for narrow screens, and for the moment you have scrolled past the rail. Open state uses the transparent token, not the navy fill, and says what it does.</p></div>
+    <div class="lane"><h4><span>11</span>What the row keeps</h4><p>Name, change since Dec 2019, and a plus to add. The number does the messaging quietly, in the navigation, before a chart is drawn.</p></div>
+  </div>
+
+  <p class="myread"><b>The clean-rail fix</b>Three specific things made option six read as bolted on, and all three are in the CSS rather than the concept: a <em>max-height with overflow:auto</em> (the nested scrollbar), a <em>border-right</em> hairline that turned a margin into a panel, and a <em>different background</em> from the page. Gone here. The rail simply runs long in normal document flow and the page scrolls as one thing — which is how the shop filters this is modelled on actually behave. The cost of no inner scroll is that you cannot reach the rail from the bottom of a long page, which is exactly the job the option-2 menu picks up.</p>
+
+  <div style="display:flex;gap:8px;align-items:center;margin-top:24px;flex-wrap:wrap">
+    <span class="ctl-lab">Preview at</span>
+    <button class="btn on" id="wM">Wide screen — rail</button>
+    <button class="btn" id="mM">Narrow screen — menu</button>
+    <span style="font-size:12px;color:var(--mute)">Same rows, same state, two containers. The measured height above changes with it.</span>
+  </div>
+
+  <div class="mock" data-opt="merge" data-name="The merge (6 + 2 + 11)" data-kind="merge">
+    <div class="mock-tabs"><button class="vtab on">National</button><button class="vtab">My State</button><button class="vtab">Compare States</button><button class="vtab">Map</button></div>
+    <div class="mock-sel" data-sel id="selM"></div>
+    <div class="foldline" data-fold>▲ First chart starts here</div>
+    <div id="wrapM"></div>
+  </div>
+
+  <dl class="verdict">
+    <div><dt>Settle first</dt><dd>Embed width. A 254px rail narrows the chart grid inside the ESP iframe, and <code>100vh</code>/sticky behave badly there because height comes from the postMessage script, not the viewport. Test in <code>embed_test.html</code> before committing — that result decides whether the rail ships to the embed or only to the standalone page.</dd></div>
+    <div><dt>Settle second</dt><dd>Consistency. My State, Compare and Map all use a top bar; a rail on National alone is two navigation models in one product. Defensible — National is the only browse-heavy view — but it should be a decision, not a drift.</dd></div>
+    <div><dt>Deliberately not here</dt><dd>Sorting by change is <em>opt-in</em> inside “See all the numbers,” which opens A–Z. Defaulting that sort would be option twelve wearing a table’s clothes, and the team ruled twelve out.</dd></div>
+  </dl>
+</article>
+
   <div class="rec" id="rec">
-    <p class="eyebrow" style="color:var(--gold)">Recommendation</p>
-    <h2>Ship one, four, and eleven as one control</h2>
-    <p>None of the ten is sufficient alone, but three of them compose into a single 100-pixel bar that serves every person in this audience without a second interface:</p>
-    <ol>
-      <li><b>A search field on the left</b> (option one), focused by <span class="kbd">/</span>. Anyone who knows what they want is done in three keystrokes.</li>
-      <li><b>The seven headline metrics as toggles beside it</b> (option four). The curated view survives, and a first-time reader has something to click.</li>
-      <li><b>“All 30 metrics” opens the sortable table</b> (option eleven), sorted by change on open. Browsing and “what moved most” collapse into the same surface, so option twelve needs no separate home.</li>
-    </ol>
-    <p>Delete the six accordion rows. Then fix the naming independently, because no control shape rescues a drawer holding childcare, a used car, and a health premium. Options eight, nine and ten show the same 30 metrics at zero, four and six groups; my vote is six — <b>Overall inflation</b>, <b>Rent &amp; homes</b>, <b>Food</b>, <b>Bills &amp; getting around</b>, <b>Health &amp; care</b>, <b>Paychecks &amp; debt</b>. Four is tempting and one group always ends up a junk drawer (see option nine). That change is worth making whichever control wins &mdash; it also improves the state view, the map's measure pills, and the About page.</p>
+    <p class="eyebrow" style="color:var(--gold)">Recommendation, rewritten after the review</p>
+    <h2>Build the row once, then give it two homes</h2>
+    <p>My earlier pick was search plus a headline row plus the table. The team went a different way — and their three choices compose more cleanly than mine did, because 6, 2 and 11 are the same list at three levels of exposure. Nobody has to choose between them. Sequence it so every step ships value on its own and the rail arrives as an enhancement rather than a rewrite:</p>
+    <div class="steps">
+      <div class="step"><b>1</b><p><em>Ship option two properly.</em> The menu, with a filter field and the corrected open state — transparent token, labelled “Hide the list.” This alone deletes the accordion and roughly 340px of chrome, and you need this component for mobile no matter what wins.</p></div>
+      <div class="step"><b>2</b><p><em>Put option eleven’s numbers in its rows.</em> Name, change since Dec 2019, plus sign. Percentage points on the rate series, % change only on the index series — the rules already in <code>buildFactText</code> apply to navigation now too.</p></div>
+      <div class="step"><b>3</b><p><em>Promote the same rows to a rail above a width breakpoint,</em> with the menu still serving narrow screens and deep scroll. No inner scroll, no border, page background. Test in <code>embed_test.html</code> before it goes near the iframe.</p></div>
+      <div class="step"><b>4</b><p><em>Add “See all the numbers”</em> for the full sortable table, defaulting to A–Z. That is the one thing a rail genuinely cannot do, and it keeps sorting opt-in.</p></div>
+    </div>
+    <p>Two smaller notes. Ruling out 3, 10 and 12 says something consistent: categories and rankings should not <em>be</em> the navigation. That demotes the taxonomy work from an information-architecture project to a labelling fix — still split <b>Big-ticket</b>, but as group headers inside the rail. And nobody picked search, which I would push back on gently for a deadline audience: it costs nothing here, because it survives as the rail’s filter field rather than its own option.</p>
   </div>
 
   <div class="notes">
@@ -679,6 +907,15 @@
     <div class="modal-b"><div class="cols" id="tm"></div></div>
   </div>
 </div>
+</div><!-- /#page-review -->
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     Three working prototypes. Built entirely by the second script block from
+     window.AFFORDABILITY_DATA — real values, real dates, real Chart.js.
+     ═══════════════════════════════════════════════════════════════════ -->
+<div class="proto" id="page-merge" hidden></div>
+<div class="proto" id="page-rail" hidden></div>
+<div class="proto" id="page-menu" hidden></div>
 
 <script>
 /* ────────────────────────────────────────────────────────────
@@ -817,7 +1054,8 @@ function drawCards(el, ids){
 const dot = c => '<i class="dot" style="background:'+CAT_COLOR[c]+'"></i>';
 
 /* Options folded into the recommendation, highlighted in the gauge */
-const PICKS = {'1':1,'4':1,'11':1};
+/* Green in the gauge: the three the team picked, plus the merge of them. */
+const PICKS = {'2':1,'6':1,'11':1,'merge':1};
 let raf = null;
 
 /* ── shared per-option selection state ───────────────────── */
@@ -825,7 +1063,7 @@ function makeState(initial){ return new Set(initial); }
 const state = {};
 /* Keys 'A' and 'B' are the two all-visible options added later; the numeric
    element ids elsewhere (t3, c9, s1 …) are stable handles, not option numbers. */
-['now','1','2','3','4','5','6','7','8','9','10','A','B'].forEach(k => state[k] = makeState(DEFAULTS));
+['now','1','2','3','4','5','6','7','8','9','10','A','B','MG'].forEach(k => state[k] = makeState(DEFAULTS));
 
 /* ═══ Live now ════════════════════════════════════════════ */
 (function(){
@@ -1181,6 +1419,118 @@ const modal = (function(){
   paint();
 })();
 
+/* ═══ The merge · one row component, two containers ════ */
+(function(){
+  const sel = document.getElementById('selM'), wrap = document.getElementById('wrapM'),
+        wide = document.getElementById('wM'), narrow = document.getElementById('mM');
+  const S = state['MG'];
+  let mode = 'wide', open = false, q = '', numbers = false, sort = 'l', dir = 1;
+
+  /* The shared row: name, change since Dec 2019, plus-to-add. Rate series move
+     in percentage points, index series can only ever show change. */
+  function row(id){
+    const m = M[id], on = S.has(id);
+    return '<button class="mrow'+(on?' on':'')+'" data-id="'+id+'" aria-pressed="'+on+'">'
+      + '<span class="mrow-mark">'+(on?'\u2713':'\uff0b')+'</span>'
+      + '<span>'+m.l+'</span>'
+      + '<span class="mrow-ch">'+chgStr(m)+'</span></button>';
+  }
+  function groups(){
+    return RECUT.map(function(g){
+      const items = g[1].filter(i => !q || M[i].l.toLowerCase().indexOf(q) > -1);
+      if (!items.length) return '';
+      return '<p class="railc-grp">'+g[0]+'</p>' + items.map(row).join('');
+    }).join('') || '<div class="stub">No matches.</div>';
+  }
+  function head(){
+    const n = IDS.filter(i=>S.has(i)).length;
+    return '<input class="srch" id="qM" value="'+q.replace(/"/g,'&quot;')+'" placeholder="Filter 30 metrics\u2026" aria-label="Filter metrics" style="font-size:12.5px;padding:6px 9px" autocomplete="off" />'
+      + '<div style="display:flex;gap:12px;align-items:center;margin:9px 0 14px">'
+      + '<span style="font-size:11.5px;color:var(--mute)">'+n+' of 30 on</span>'
+      + '<button class="lnk" id="clM">Clear</button>'
+      + '<button class="lnk" id="nuM" style="margin-left:auto">See all the numbers</button></div>';
+  }
+  function paint(){
+    if (mode === 'wide'){
+      sel.style.padding = '0'; sel.style.height = '0'; sel.style.border = '0'; sel.innerHTML = '';
+      wrap.className = 'railc';
+      wrap.innerHTML = '<div class="railc-side">' + head() + groups()
+        + '<div class="annot"><button class="btn" id="stM" style="font-size:11px;padding:5px 11px;flex-shrink:0">Metrics</button>'
+        + '<p>Sticky. Appears once the rail has scrolled past, and opens this same list as the option-2 menu.</p></div></div>'
+        + '<div class="mock-body"><div class="cards" id="cM"></div></div>';
+    } else {
+      sel.style.padding = '12px 16px'; sel.style.height = 'auto';
+      sel.style.borderBottom = '1px solid var(--hair)';
+      sel.innerHTML = '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">'
+        + '<button class="btn'+(open?'':' on')+'" id="adM">'+(open?'Hide the list':'Add a metric \u25be')+'</button>'
+        + '<span style="font-size:12px;color:var(--mute)">'+IDS.filter(i=>S.has(i)).length+' on</span>'
+        + '<button class="lnk" id="nuM" style="margin-left:auto">See all the numbers</button></div>'
+        + (open ? '<div class="panel" style="margin-top:11px">' + head().replace(/<button class="lnk" id="nuM"[^<]*<\/button>/,'')
+            + '<div style="max-width:340px">' + groups() + '</div></div>' : '');
+      wrap.className = '';
+      wrap.innerHTML = '<div class="mock-body"><div class="cards" id="cM"></div></div>';
+    }
+    drawCards(document.getElementById('cM'), IDS.filter(i=>S.has(i)));
+    measure();
+  }
+
+  /* "See all the numbers" — option eleven in full, opening A\u2013Z on purpose. */
+  const scrim = document.createElement('div');
+  scrim.className = 'modal-scrim';
+  scrim.innerHTML = '<div class="modal"><div class="modal-h"><h4>All 30 metrics</h4>'
+    + '<span style="font-size:12px;color:var(--mute)">Sorted A\u2013Z \u00b7 click a column head to re-sort</span>'
+    + '<button class="btn" data-shut>Done</button></div>'
+    + '<div class="modal-b"><table class="pick" id="tZ"></table></div></div>';
+  document.body.appendChild(scrim);
+  function table(){
+    const COLS = [['l','Metric',''],['v','Latest','num'],['ch','Since Dec 2019','num'],['dt','As of','num']];
+    const rows = IDS.slice().sort(function(a,b){
+      const A = M[a][sort], B = M[b][sort];
+      const c = typeof A === 'number' ? (A-B)*dir : String(A).localeCompare(String(B))*dir;
+      return c || M[a].l.localeCompare(M[b].l);
+    });
+    scrim.querySelector('#tZ').innerHTML = '<thead><tr>' + COLS.map(c =>
+        '<th data-s="'+c[0]+'" class="'+c[2]+'">'+c[1]+(sort===c[0]?(dir<0?' \u2193':' \u2191'):'')+'</th>').join('')
+      + '</tr></thead><tbody>' + rows.map(function(i){ const m = M[i];
+        return '<tr data-row data-id="'+i+'" class="'+(S.has(i)?'sel':'')+'">'
+          + '<td><span style="display:inline-flex;gap:7px;align-items:center">'+(S.has(i)?'<b style="color:#3E6E57">\u2713</b>':'<span style="color:var(--rule)">\uff0b</span>')+'<b style="font-weight:600;color:var(--head)">'+m.l+'</b></span></td>'
+          + '<td class="num">'+(m.idx?'<span style="color:var(--mute)">index</span>':headline(m))+'</td>'
+          + '<td class="num" style="font-weight:700;color:'+(m.ch>=0?'#8A4640':'#3E6E57')+'">'+chgStr(m)+'</td>'
+          + '<td class="num" style="color:var(--mute)">'+fmtDate(m.dt)+'</td></tr>';
+      }).join('') + '</tbody>';
+  }
+  function shut(){ scrim.classList.remove('open'); }
+  scrim.addEventListener('click', function(e){
+    if (e.target === scrim || e.target.closest('[data-shut]')) return shut();
+    const th = e.target.closest('th');
+    if (th){ if (sort === th.dataset.s) dir = -dir; else { sort = th.dataset.s; dir = (sort === 'l') ? 1 : -1; } return table(); }
+    const tr = e.target.closest('[data-row]');
+    if (tr){ S.has(tr.dataset.id) ? S.delete(tr.dataset.id) : S.add(tr.dataset.id); table(); paint(); }
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && scrim.classList.contains('open')) shut(); });
+
+  function onClick(e){
+    const t = e.target.closest('button'); if (!t) return;
+    if (t.dataset.id){ S.has(t.dataset.id) ? S.delete(t.dataset.id) : S.add(t.dataset.id); paint(); }
+    else if (t.id === 'clM'){ S.clear(); paint(); }
+    else if (t.id === 'adM' || t.id === 'stM'){
+      if (t.id === 'stM'){ mode = 'narrow'; wide.classList.remove('on'); narrow.classList.add('on'); }
+      open = !open; paint();
+    }
+    else if (t.id === 'nuM'){ sort = 'l'; dir = 1; table(); scrim.classList.add('open'); }
+  }
+  sel.addEventListener('click', onClick);
+  wrap.addEventListener('click', onClick);
+  function onType(e){ if (e.target.id !== 'qM') return;
+    q = e.target.value.trim().toLowerCase(); paint();
+    const f = document.getElementById('qM'); if (f){ f.focus(); f.setSelectionRange(f.value.length, f.value.length); } }
+  sel.addEventListener('input', onType);
+  wrap.addEventListener('input', onType);
+  wide.addEventListener('click', () => { mode='wide'; open=false; wide.classList.add('on'); narrow.classList.remove('on'); paint(); });
+  narrow.addEventListener('click', () => { mode='narrow'; wide.classList.remove('on'); narrow.classList.add('on'); paint(); });
+  paint();
+})();
+
 /* ═══ Measure every mockup and build the comparison gauge ══ */
 function measure(){
   if (raf) cancelAnimationFrame(raf);
@@ -1196,12 +1546,13 @@ function measure(){
       if (fold) fold.textContent = h === 0
         ? '▲ First chart starts at the very top — nothing above it'
         : '▲ First chart starts here — ' + h + 'px in';
-      return {opt: opt, name: mk.dataset.name, h: h, now: mk.dataset.kind === 'now', id: art ? art.id : 'gauge-sec'};
+      return {opt: opt, name: mk.dataset.name, h: h, now: mk.dataset.kind === 'now',
+              merge: mk.dataset.kind === 'merge', id: art ? art.id : 'gauge-sec'};
     }).sort(function(a,b){ return a.h - b.h; });
     const max = Math.max.apply(null, rows.map(function(r){ return r.h; })) || 1;
     document.getElementById('gauge').innerHTML = rows.map(function(r){
       return '<button class="grow'+(r.now?' is-now':'')+(PICKS[r.opt]?' is-pick':'')+'" data-go="'+r.id+'">'
-        + '<span class="grow-name">'+(r.now?'':'<i>'+r.opt+'</i>')+r.name+'</span>'
+        + '<span class="grow-name">'+(r.now||r.merge?'':'<i>'+r.opt+'</i>')+r.name+'</span>'
         + '<span class="grow-track"><i class="grow-fill" style="width:'+Math.max(r.h/max*100,0.6).toFixed(1)+'%"></i></span>'
         + '<span class="grow-px">'+r.h+' px</span></button>';
     }).join('');
@@ -1214,6 +1565,732 @@ document.getElementById('gauge').addEventListener('click', function(e){
 window.addEventListener('resize', measure);
 window.addEventListener('load', measure);
 measure();
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     WORKING PROTOTYPES · three tabs, one engine
+     ───────────────────────────────────────────────────────────────────────
+     Everything below is running software rather than a mockup. It reads
+     window.AFFORDABILITY_DATA (the committed payload written by
+     fetch_data.R), draws real Chart.js line charts, and reproduces the
+     tracker's own editorial rules: index series never show a level, only
+     cumulative % change; rate series move in percentage points, not
+     percent; alphabetical ordering everywhere except the explicitly
+     sortable table.
+
+     Deliberately out of scope, matching the review document: the
+     Nominal/Real toggle. Adding it here would mean porting toReal() and
+     ALREADY_REAL_IDS, and it isn't what this review is deciding.
+     ═══════════════════════════════════════════════════════════════════ -->
+<script>
+(function(){
+'use strict';
+
+/* ══ 0 · Payload ══════════════════════════════════════════════════════════
+   overlay_only series (student-loan debt, 90+ card delinquency, the FHFA US
+   home-price index) are comparison lines drawn on other cards, never cards
+   of their own — so they are not pickable here either. */
+const P = window.AFFORDABILITY_DATA || {};
+const ALL = Object.keys(P).filter(id => !P[id].overlay_only);
+const lab = id => P[id].label;
+const AZ = arr => arr.slice().sort((a,b) => lab(a).localeCompare(lab(b)));
+const N = ALL.length;
+
+/* ══ 1 · Tokens, lifted verbatim from index.html ══════════════════════════ */
+const NAVY='#2c3254', PAPER='#FFFDF2', HEAD='#232849', MUTE='#6B6E78',
+      RED='#8A4640', GRN='#3E6E57', RULE='#caccd4';
+const ESP_CATEGORY_COLOR = {
+  overall:'#7f8c53', big:'#2c3254', labor:'#70ad8f',
+  groceries:'#ebc382', daily:'#472b51', debt:'#b0645f',
+};
+const CATEGORY_LABELS = {
+  overall:'All prices', labor:'Work & Wages', daily:'Daily',
+  groceries:'Groceries', big:'Big-ticket', debt:'Debt',
+};
+const colorFor = id => ESP_CATEGORY_COLOR[P[id].category] || P[id].color || NAVY;
+
+/* Today's six categories, for the pure option-2 menu — which keeps them on
+   purpose. The recut below is what options 6 and the merge use. */
+const CATS6 = [
+  ['overall','All prices (CPI)'], ['big','Big-ticket'], ['daily','Daily items'],
+  ['debt','Debt'], ['groceries','Groceries'], ['labor','Work & wages'],
+];
+const inCat = c => AZ(ALL.filter(id => P[id].category === c));
+
+/* The recut: six plain-language groups, named the way the audience talks.
+   Big-ticket's four unrelated household bills are split apart. */
+const RECUT = [
+  ['Overall inflation',        ['cpi_all_items']],
+  ['Rent & homes',             ['zori_rent','median_home_price','mortgage','rent_burden','rent_hours']],
+  ['Food',                     ['groceries','eggs','milk','bread','coffee','ground_beef','chicken_breast','bacon']],
+  ['Bills & getting around',   ['electricity','utility_gas','gas','water_sewer_trash','car_insurance','new_cars','used_cars']],
+  ['Health & care',            ['aca_benchmark_premium','uninsured_rate','childcare']],
+  ['Paychecks & debt',         ['hourly_earnings','income_20th','us_median_income','unemployment','credit_card_delinquency','mortgage_delinquency','debt_per_capita']],
+];
+/* A future data refresh that adds a series must not make it silently vanish
+   from the rail — the same failure mode data_contract.test.js guards against
+   for CATEGORY_META. Anything unfiled lands in a visible group and says so. */
+(function(){
+  const filed = new Set();
+  RECUT.forEach(g => { g[1] = g[1].filter(id => P[id]); g[1].forEach(id => filed.add(id)); });
+  const orphans = ALL.filter(id => !filed.has(id));
+  if (orphans.length){
+    console.warn('picker prototypes: series missing from RECUT →', orphans.join(', '));
+    RECUT.push(['Not yet filed', orphans]);
+  }
+  RECUT.forEach(g => g[1] = AZ(g[1]));
+})();
+
+const DEFAULTS = ['car_insurance','aca_benchmark_premium','gas','credit_card_delinquency',
+                  'eggs','hourly_earnings','electricity'].filter(id => P[id]);
+
+/* ══ 2 · Formatting, following the tracker's editorial rules ══════════════ */
+const ANCHORS = [
+  {id:'1y',   label:'1 Year',         phrase:'over the past year'},
+  {id:'2025', label:'Since Jan 2025', phrase:'since Jan 2025'},
+  {id:'2019', label:'Pre-COVID',      phrase:'since Dec 2019'},
+  {id:'2000', label:'Since 2000',     phrase:'since 2000'},
+  {id:'max',  label:'Max',            phrase:'all-time'},
+];
+function anchorById(id){ return ANCHORS.find(a => a.id === id) || ANCHORS[2]; }
+function anchorDate(id, data){
+  if (id === '1y'){ const d = new Date(); d.setFullYear(d.getFullYear()-1); return d.toISOString().slice(0,10); }
+  if (id === '2025') return '2025-01-01';
+  if (id === '2019') return '2019-12-01';
+  if (id === '2000') return '2000-01-01';
+  return (data && data.length) ? data[0].date : '1900-01-01';
+}
+const toDate = v => typeof v === 'number' ? new Date(v) : new Date(v + 'T12:00:00');
+function fmtDate(v, opts){ return toDate(v).toLocaleDateString('en-US', opts || {year:'numeric',month:'short'}); }
+/* Cadence inference, so an annual reading is labelled "2024" and a weekly one
+   carries its day — same idea as inferCadence() in index.html. */
+function cadence(data){
+  if (!data || data.length < 3) return 'monthly';
+  const gaps = data.slice(1).map((d,i) => Math.round((new Date(d.date) - new Date(data[i].date))/86400000));
+  const c = new Map(); gaps.forEach(g => c.set(g, (c.get(g)||0)+1));
+  let best = gaps[0]; gaps.forEach(g => { if (c.get(g) > c.get(best) || (c.get(g) === c.get(best) && g < best)) best = g; });
+  if (best >= 300) return 'annual';
+  if (best <= 10) return 'weekly';
+  return 'monthly';
+}
+function fmtObs(v, data, opts){
+  const cad = cadence(data);
+  if (cad === 'annual') return String(toDate(v).getFullYear());
+  if (cad === 'weekly') return fmtDate(v, {year:'numeric',month:'short',day:'numeric'});
+  return fmtDate(v, opts);
+}
+function fmtVal(val, units){
+  units = units || '';
+  if (units.indexOf('%') > -1) return val.toFixed(1) + '%';
+  if (units.toLowerCase().indexOf('hours') === 0) return val.toFixed(1) + ' hrs';
+  if (units.indexOf('$') > -1) return Math.abs(val) >= 1000
+    ? '$' + val.toLocaleString(undefined, {maximumFractionDigits:0})
+    : '$' + val.toFixed(2);
+  return val.toFixed(1);
+}
+const isRate  = id => (P[id].units || '').indexOf('%') > -1;
+const isIndex = id => !!P[id].rebase || /^Index/.test(P[id].units || '');
+
+function idxAtOrBefore(data, dateStr){
+  const cut = new Date(dateStr); let k = -1;
+  for (let i = 0; i < data.length; i++){ if (new Date(data[i].date) <= cut) k = i; else break; }
+  return k;
+}
+const obsAtOrBefore = (data, d) => { const k = idxAtOrBefore(data, d); return k < 0 ? null : data[k]; };
+const sliceFrom = (data, d) => { const cut = new Date(d); return data.filter(x => new Date(x.date) >= cut); };
+
+/* Change from an anchor to the latest reading. Rate series move in PERCENTAGE
+   POINTS — "up 12%" on a rate is a percent-of-a-percent that fact-checkers
+   flag. Returns null when the anchor lands on the last observation, because an
+   annual series with nothing published since isn't "unchanged", it's "no new
+   data since", and a 0.0% badge would claim the former. */
+function chgSince(id, from){
+  const d = P[id].data; if (!d || d.length < 2) return null;
+  const k = idxAtOrBefore(d, from);
+  if (k < 0 || k === d.length - 1) return null;
+  const a = d[k].value, b = d[d.length-1].value;
+  if (isRate(id)) return {v: b - a, pp: true, base: d[k]};
+  if (!a) return null;
+  return {v: (b/a - 1)*100, pp: false, base: d[k]};
+}
+const chgStr = c => c == null ? '—'
+  : (c.v >= 0 ? '+' : '−') + Math.abs(c.v).toFixed(1) + (c.pp ? ' pp' : '%');
+/* invert_color says whether high is good (e.g. wages up is not a red number). */
+const chgColor = (id, c) => c == null ? MUTE
+  : ((P[id].invert_color ? c.v < 0 : c.v >= 0) ? RED : GRN);
+
+const D19 = '2019-12-01';
+const rowChg = id => chgStr(chgSince(id, D19));
+
+/* Press-release sentence. Index series quote % change only, never a level. */
+function factText(id, anchorId){
+  const m = P[id], from = anchorDate(anchorId, m.data), c = chgSince(id, from);
+  const last = m.data[m.data.length-1];
+  const dl = fmtObs(last.date, m.data, {year:'numeric',month:'long'});
+  const src = m.subtitle ? ' (' + m.subtitle + '.)' : '';
+  if (c == null) return m.label + ': latest reading ' + fmtVal(last.value, m.units) + ' in ' + dl + '.' + src;
+  const db = fmtObs(c.base.date, m.data, {year:'numeric',month:'long'});
+  const dir = c.v >= 0 ? 'up' : 'down';
+  const amt = Math.abs(c.v).toFixed(1) + (c.pp ? ' percentage points' : '%');
+  if (isIndex(id)) return m.label + ' is ' + dir + ' ' + amt + ' since ' + db
+    + ', with the latest reading in ' + dl + '.' + src;
+  return m.label + ' was ' + fmtVal(last.value, m.units) + ' in ' + dl + ', ' + dir + ' ' + amt
+    + ' from ' + fmtVal(c.base.value, m.units) + ' in ' + db + '.' + src;
+}
+
+/* ══ 3 · Chart.js, lazy-loaded once, pinned to the tracker's versions ═════ */
+let chartPromise = null;
+function loadChart(){
+  if (chartPromise) return chartPromise;
+  const one = src => new Promise((res, rej) => {
+    const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = rej;
+    document.head.appendChild(s);
+  });
+  chartPromise = one('https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js')
+    .then(() => one('https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js'))
+    .catch(e => { console.warn('Chart.js failed to load — cards will show values without charts.', e); });
+  return chartPromise;
+}
+function hexToRgba(hex, a){
+  const h = hex.replace('#',''), n = parseInt(h.length === 3 ? h.split('').map(c=>c+c).join('') : h, 16);
+  return 'rgba(' + ((n>>16)&255) + ',' + ((n>>8)&255) + ',' + (n&255) + ',' + a + ')';
+}
+
+/* ══ 4 · The chart card ═══════════════════════════════════════════════════
+   A faithful vanilla port of ChartCard in index.html: same ESP category
+   accent, same "nice" 1/2/5×10ⁿ y-axis step, same navy tooltip, same dual
+   Jan '25 / Dec '19 badges, same rule that an index series can only ever be
+   drawn as cumulative % change. */
+function cardHTML(id, anchorId, mode){
+  const m = P[id], accent = colorFor(id);
+  const since = anchorDate(anchorId, m.data);
+  const asPct = isIndex(id) || mode === 'pct';
+  const vis = sliceFrom(m.data, since);
+  const last = m.data[m.data.length-1];
+  const head = asPct
+    ? (vis.length > 1 && vis[0].value ? (v => (v>=0?'+':'−') + Math.abs(v).toFixed(1) + '%')((vis[vis.length-1].value/vis[0].value - 1)*100) : '—')
+    : fmtVal((vis.length ? vis[vis.length-1].value : m.latest_value), m.units);
+  const c = chgSince(id, since);
+  const b25 = chgSince(id, '2025-01-01'), b19 = chgSince(id, D19);
+  const phrase = c && vis.length && new Date(vis[0].date) > new Date(since)
+    ? 'since ' + fmtObs(vis[0].date, m.data)
+    : anchorById(anchorId).phrase;
+  const badge = (x,l) => x == null ? '' :
+    '<span style="white-space:nowrap"><s>' + l + ' </s><b style="color:' + chgColor(id,x) + ';font-weight:700">' + chgStr(x) + '</b></span>';
+  const stale = b19 == null && b25 == null;
+  return '<div class="cc" data-card="' + id + '">'
+    + '<div class="cc-h"><div style="min-width:0;flex:1">'
+      + '<div class="cc-eyebrow" style="color:' + accent + '">' + (CATEGORY_LABELS[m.category] || 'Big-ticket') + '</div>'
+      + '<div class="cc-l">' + m.label + '</div>'
+      + '<div class="cc-sub">' + (m.subtitle || '') + '</div></div>'
+    + '<div style="text-align:right;flex-shrink:0">'
+      + '<div class="cc-v">' + head + '</div>'
+      + '<div class="cc-ch" style="color:' + chgColor(id,c) + '">'
+      + (c == null ? 'Data through ' + fmtObs(last.date, m.data)
+                   : (c.v >= 0 ? '↑ ' : '↓ ') + (asPct ? phrase : chgStr(c) + ' ' + phrase)) + '</div>'
+    + '</div></div>'
+    + (stale ? '' : '<div class="cc-bdg">' + badge(b25, "Since Jan '25") + badge(b19, "Since Dec '19") + '</div>')
+    + '<div class="cc-canvas"><canvas></canvas></div>'
+    + '<div class="cc-foot">'
+      + '<button class="btn" data-fact="' + id + '">Copy fact</button>'
+      + '<button class="btn" data-off="' + id + '">Remove</button>'
+      + '<span style="margin-left:auto">' + (asPct ? '% change · ' : '') + 'through ' + fmtObs(last.date, m.data) + '</span>'
+    + '</div></div>';
+}
+function drawChart(el, id, anchorId, mode){
+  if (!window.Chart) return null;
+  const m = P[id], accent = colorFor(id);
+  const since = anchorDate(anchorId, m.data);
+  const asPct = isIndex(id) || mode === 'pct';
+  const vis = sliceFrom(m.data, since);
+  if (vis.length < 2) return null;
+  const v0 = vis[0].value;
+  const data = asPct ? vis.map(d => ({x:d.date, y: v0 ? (d.value/v0 - 1)*100 : 0}))
+                     : vis.map(d => ({x:d.date, y:d.value}));
+  const units = asPct ? '% change since ' + fmtDate(vis[0].date) : m.units;
+
+  const ys = data.map(d => d.y).filter(Number.isFinite);
+  const lo = Math.min.apply(null, ys), hi = Math.max.apply(null, ys);
+  const range = (hi - lo) || Math.max(Math.abs(hi), 1);
+  const rough = range / 3, exp = Math.floor(Math.log10(rough)), frac = rough/Math.pow(10, exp);
+  const step = (frac < 1.5 ? 1 : frac < 3 ? 2 : frac < 7 ? 5 : 10) * Math.pow(10, exp);
+
+  const ctx = el.getContext('2d');
+  const grad = ctx.createLinearGradient(0,0,0,168);
+  grad.addColorStop(0, hexToRgba(accent,.22));
+  grad.addColorStop(.7, hexToRgba(accent,.04));
+  grad.addColorStop(1, hexToRgba(accent,0));
+  const ts = data.map(d => +new Date(d.x));
+  const pad = Math.max((Math.max.apply(null,ts) - Math.min.apply(null,ts))*.025, 86400000);
+
+  return new window.Chart(ctx, {
+    type:'line',
+    data:{datasets:[{
+      label:m.label, data:data, borderColor:accent, backgroundColor:grad,
+      borderWidth:1.8, pointRadius:0, pointHoverRadius:5, pointHoverBackgroundColor:accent,
+      pointHoverBorderColor:PAPER, pointHoverBorderWidth:2, tension:.32, fill:'start',
+      clip:{left:0,right:0,top:12,bottom:0},
+    }]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      layout:{padding:{top:8}}, animation:{duration:300},
+      interaction:{intersect:false, mode:'index'},
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          backgroundColor:NAVY, titleColor:'#9BA8C2', bodyColor:PAPER,
+          borderColor:'rgba(244,242,228,.15)', borderWidth:1, padding:10,
+          cornerRadius:4, displayColors:false,
+          titleFont:{size:10, family:'Public Sans, system-ui', weight:'600'},
+          bodyFont:{size:13, family:'Public Sans, system-ui', weight:'600'},
+          callbacks:{
+            title: c => fmtObs(c[0].parsed.x, m.data, {year:'numeric',month:'long'}),
+            label: c => '  ' + fmtVal(c.parsed.y, units),
+          },
+        },
+      },
+      scales:{
+        x:{type:'time', min:Math.min.apply(null,ts)-pad, max:Math.max.apply(null,ts)+pad,
+           time:{unit: anchorId === '1y' ? 'month' : 'year'},
+           grid:{display:false}, border:{display:false},
+           ticks:{color:MUTE, font:{size:10, family:'Public Sans, system-ui'}, maxTicksLimit: anchorId === '1y' ? 6 : 5}},
+        y:{position:'right', min:Math.floor(lo/step)*step, max:Math.ceil(hi/step)*step,
+           grid:{color:'rgba(44,50,84,.08)', drawTicks:false}, border:{display:false},
+           ticks:{color:MUTE, font:{size:10, family:'Public Sans, system-ui'}, stepSize:step,
+                  callback: v => fmtVal(v, units)}},
+      },
+    },
+  });
+}
+
+/* ══ 5 · Chart grid with diffing ══════════════════════════════════════════
+   Cards are added and removed rather than the grid re-rendered, so toggling
+   one metric doesn't tear down and re-animate the other six charts. A full
+   rebuild happens only when the anchor or the $/% mode changes — the two
+   things that genuinely alter every chart. */
+function Grid(host){
+  const live = new Map();
+  let anchorId = '2019', mode = 'level';
+  function empty(on){
+    let e = host.querySelector('.pt-empty');
+    if (on && !e){ e = document.createElement('div'); e.className = 'pt-empty';
+      e.textContent = 'Nothing selected — pick a metric to draw a chart.'; host.appendChild(e); }
+    if (!on && e) e.remove();
+  }
+  function add(id){
+    const d = document.createElement('div');
+    d.innerHTML = cardHTML(id, anchorId, mode);
+    const el = d.firstChild; host.appendChild(el);
+    live.set(id, {el:el, chart:null});
+    loadChart().then(() => {
+      const rec = live.get(id); if (!rec || rec.el !== el || !el.isConnected) return;
+      const cv = el.querySelector('canvas'); if (cv) rec.chart = drawChart(cv, id, anchorId, mode);
+    });
+  }
+  function drop(id){
+    const rec = live.get(id); if (!rec) return;
+    if (rec.chart) rec.chart.destroy();
+    rec.el.remove(); live.delete(id);
+  }
+  return {
+    host: host,
+    set: function(ids){
+      const want = AZ(ids.filter(i => P[i]));
+      live.forEach((_,id) => { if (want.indexOf(id) < 0) drop(id); });
+      want.forEach(id => { if (!live.has(id)) add(id); });
+      want.forEach(id => host.appendChild(live.get(id).el));   /* keep A–Z order */
+      empty(!want.length);
+    },
+    rebuild: function(ids, a, m){
+      anchorId = a; mode = m;
+      Array.from(live.keys()).forEach(drop);
+      this.set(ids);
+    },
+  };
+}
+
+/* ══ 6 · Shared chrome: the tracker's masthead, view tabs, control bar ════ */
+function chrome(o){
+  return ''
+  + '<div class="pt-top"><div class="pt-wide">'
+    + '<p class="eyebrow">Economic Security Project · working prototype</p>'
+    + '<h1 class="banner">' + o.title + '</h1>'
+    + '<p>' + o.blurb + '</p></div></div>'
+  /* A reviewer with thirty seconds should know what to poke at — so this sits
+     above the view tabs, before the prototype's own chrome begins. */
+  + (o.tryThis ? '<div class="pt-wide" style="padding-bottom:18px"><p class="try"><b>Try this</b>' + o.tryThis + '</p></div>' : '')
+  + '<div class="pt-views"><div class="pt-wide" style="display:flex;gap:7px;align-items:center;padding:9px 32px">'
+    + '<button class="vtab on">National</button><button class="vtab">My State</button>'
+    + '<button class="vtab">Compare States</button><button class="vtab">Map</button>'
+    + '<span style="margin-left:auto;font-size:11px;color:var(--mute)">Other views are context only — this prototype is the National picker</span>'
+  + '</div></div>'
+  + '<div class="pt-ctl"><div class="pt-wide" style="display:flex;gap:20px;align-items:center;flex-wrap:wrap;padding:10px 32px">'
+    + '<div class="pt-ctl-grp"><span class="ctl-lab">Measure from</span>'
+      + ANCHORS.map(a => '<button class="btn' + (a.id === '2019' ? ' on' : '') + '" data-anchor="' + a.id + '">' + a.label + '</button>').join('')
+    + '</div>'
+    + '<div class="pt-ctl-grp"><span class="ctl-lab">Show</span>'
+      + '<button class="btn on" data-mode="level">$ levels</button>'
+      + '<button class="btn" data-mode="pct">% change</button>'
+    + '</div>'
+    + '<span style="font-size:11px;color:var(--mute)">Nominal/Real is out of scope for this review</span>'
+  + '</div></div>';
+}
+/* Wires the two control groups to a grid. Index series ignore $ levels — they
+   have no level a reader may quote — which is why the toggle is page-wide but
+   not absolute. */
+function wireControls(root, getIds, grid){
+  let anchorId = '2019', mode = 'level';
+  root.addEventListener('click', function(e){
+    const t = e.target.closest('[data-anchor],[data-mode]'); if (!t) return;
+    if (t.dataset.anchor){ anchorId = t.dataset.anchor;
+      root.querySelectorAll('[data-anchor]').forEach(b => b.classList.toggle('on', b.dataset.anchor === anchorId)); }
+    else { mode = t.dataset.mode;
+      root.querySelectorAll('[data-mode]').forEach(b => b.classList.toggle('on', b.dataset.mode === mode)); }
+    grid.rebuild(getIds(), anchorId, mode);
+  });
+  /* Copy fact / Remove live on the cards themselves. */
+  grid.host.addEventListener('click', function(e){
+    const f = e.target.closest('[data-fact]');
+    if (f){
+      const txt = factText(f.dataset.fact, anchorId);
+      const done = () => { const o = f.textContent; f.textContent = '✓ Copied';
+                           setTimeout(() => { f.textContent = o; }, 1500); };
+      if (navigator.clipboard) navigator.clipboard.writeText(txt).then(done, () => window.prompt('Copy this fact:', txt));
+      else window.prompt('Copy this fact:', txt);
+      return;
+    }
+    const x = e.target.closest('[data-off]');
+    if (x) root.dispatchEvent(new CustomEvent('proto:off', {detail:x.dataset.off}));
+  });
+}
+
+/* The sortable "See all the numbers" table — option eleven in full. Opens
+   A–Z on purpose: defaulting it to sort-by-change would be option twelve
+   wearing a table's clothes, and the team ruled twelve out. */
+function numbersTable(getSet, onChange){
+  const scrim = document.createElement('div');
+  scrim.className = 'modal-scrim';
+  scrim.setAttribute('role','dialog'); scrim.setAttribute('aria-modal','true');
+  scrim.innerHTML = '<div class="modal"><div class="modal-h">'
+    + '<h4>All ' + N + ' metrics</h4>'
+    + '<span style="font-size:12px;color:var(--mute)">Sorted A–Z · click a column head to re-sort · click a row to add or remove</span>'
+    + '<button class="btn" data-shut>Done</button></div>'
+    + '<div class="modal-b"><table class="pick"></table></div></div>';
+  document.body.appendChild(scrim);
+  const tbl = scrim.querySelector('table');
+  let sort = 'l', dir = 1;
+  const KEY = {
+    l:  id => lab(id),
+    v:  id => isIndex(id) ? -Infinity : P[id].latest_value,
+    ch: id => { const c = chgSince(id, D19); return c ? c.v : -Infinity; },
+    dt: id => +new Date(P[id].latest_date),
+  };
+  function paint(){
+    const S = getSet();
+    const rows = ALL.slice().sort(function(a,b){
+      const A = KEY[sort](a), B = KEY[sort](b);
+      const c = typeof A === 'number' ? (A-B)*dir : String(A).localeCompare(String(B))*dir;
+      return c || lab(a).localeCompare(lab(b));   /* stable alphabetical tiebreak */
+    });
+    const COLS = [['l','Metric',''],['v','Latest','num'],['ch','Since Dec 2019','num'],['dt','As of','num']];
+    tbl.innerHTML = '<thead><tr>' + COLS.map(c =>
+        '<th data-s="' + c[0] + '" class="' + c[2] + '">' + c[1] + (sort === c[0] ? (dir < 0 ? ' ↓' : ' ↑') : '') + '</th>').join('')
+      + '</tr></thead><tbody>' + rows.map(function(id){
+        const cg = chgSince(id, D19);
+        return '<tr data-row data-id="' + id + '" class="' + (S.has(id) ? 'sel' : '') + '">'
+          + '<td><span style="display:inline-flex;gap:7px;align-items:center">'
+            + (S.has(id) ? '<b style="color:' + GRN + '">✓</b>' : '<span style="color:' + RULE + '">＋</span>')
+            + '<b style="font-weight:600;color:' + HEAD + '">' + lab(id) + '</b></span></td>'
+          /* An index series has no level worth quoting — say so rather than
+             printing 858.7, which no press release can use. */
+          + '<td class="num">' + (isIndex(id) ? '<span style="color:' + MUTE + '">index</span>' : fmtVal(P[id].latest_value, P[id].units)) + '</td>'
+          + '<td class="num" style="font-weight:700;color:' + chgColor(id,cg) + '">' + chgStr(cg) + '</td>'
+          + '<td class="num" style="color:' + MUTE + '">' + fmtObs(P[id].latest_date, P[id].data) + '</td></tr>';
+      }).join('') + '</tbody>';
+  }
+  scrim.addEventListener('click', function(e){
+    if (e.target === scrim || e.target.closest('[data-shut]')){ scrim.classList.remove('open'); return; }
+    const th = e.target.closest('th');
+    if (th){ if (sort === th.dataset.s) dir = -dir; else { sort = th.dataset.s; dir = sort === 'l' ? 1 : -1; } return paint(); }
+    const tr = e.target.closest('[data-row]');
+    if (tr){ const S = getSet();
+      S.has(tr.dataset.id) ? S.delete(tr.dataset.id) : S.add(tr.dataset.id);
+      paint(); onChange(); }
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') scrim.classList.remove('open'); });
+  return {open: function(){ sort = 'l'; dir = 1; paint(); scrim.classList.add('open'); }};
+}
+
+/* ══ 7 · PROTOTYPE A · The merge — one row, two containers ════════════════ */
+function buildMerge(root){
+  const S = new Set(DEFAULTS);
+  root.innerHTML = chrome({
+    title:'The merge · one list of rows, in two containers',
+    blurb:'Options <b>6</b>, <b>2</b> and <b>11</b> as a single component. The same rows appear in a left rail above 900px and behind one button below it — <b>drag the window narrower and watch the switch happen</b>. The rail has no inner scroll, no border and no background of its own, so the page scrolls as one thing; once it has scrolled past, the bar at the bottom of the window picks up the job.',
+    tryThis:'Drag the window narrower than 900px — the rail becomes the option-2 menu, with the same rows and the same selection. Scroll to the bottom of the charts and the sticky bar appears. Type <em>egg</em> in the filter. Then open <em>See all the numbers</em>: it opens A–Z, and sorting by change is something you have to ask for.',
+  })
+  + '<div class="pt-wide pt-sec">'
+    + '<div class="mg-bar" id="px-bar"></div>'
+    + '<div class="mg-layout">'
+      + '<div class="mg-rail"><div class="mg-side" id="px-rail"></div></div>'
+      + '<div><div class="pt-h"><h2 class="banner" id="px-h">Charts</h2>'
+        + '<span>Cards are hairline-separated, alphabetical, and identical to what the tracker draws today</span></div>'
+        + '<div class="pt-charts" id="px-grid"></div></div>'
+    + '</div>'
+  + '</div>'
+  + '<div class="mg-sticky" id="px-sticky"><button class="btn" data-sheet>Metrics</button>'
+    + '<span>You have scrolled past the rail — the option-2 menu takes over from here.</span></div>'
+  + '<div class="mg-sheet" id="px-sheet"></div>';
+
+  const grid = Grid(root.querySelector('#px-grid'));
+  const rail = root.querySelector('#px-rail'), bar = root.querySelector('#px-bar'),
+        sheet = root.querySelector('#px-sheet'), sticky = root.querySelector('#px-sticky');
+  let q = '', open = false, sheetOpen = false;
+  const table = numbersTable(() => S, () => paint());
+
+  /* THE shared row: name, change since Dec 2019, plus-to-add. The number does
+     the messaging quietly, in the navigation, before a chart is drawn. */
+  function row(id){
+    const on = S.has(id);
+    return '<button class="prow' + (on ? ' on' : '') + '" data-id="' + id + '" aria-pressed="' + on + '">'
+      + '<span class="prow-mark">' + (on ? '✓' : '＋') + '</span>'
+      + '<span>' + lab(id) + '</span>'
+      + '<span class="prow-ch" title="Change since December 2019">' + rowChg(id) + '</span></button>';
+  }
+  function list(){
+    return RECUT.map(function(g){
+      const items = g[1].filter(id => !q || lab(id).toLowerCase().indexOf(q) > -1);
+      if (!items.length) return '';
+      return '<p class="mg-grp">' + g[0] + '</p>' + items.map(row).join('');
+    }).join('') || '<div class="stub">No matches.</div>';
+  }
+  function head(withNumbers){
+    return '<input class="srch" data-q value="' + q.replace(/"/g,'&quot;') + '" placeholder="Filter ' + N + ' metrics…" aria-label="Filter metrics" style="font-size:12.5px;padding:6px 9px" autocomplete="off" />'
+      + '<div class="mg-head"><span class="mg-count">' + S.size + ' of ' + N + ' on</span>'
+      + '<button class="lnk" data-clear>Clear</button>'
+      + (withNumbers ? '<button class="lnk" data-numbers style="margin-left:auto">See all the numbers</button>' : '') + '</div>';
+  }
+  function paint(){
+    rail.innerHTML = head(true) + list();
+    bar.innerHTML = '<div class="mg-barin">'
+      + '<button class="btn' + (open ? '' : ' on') + '" data-open>' + (open ? 'Hide the list' : 'Add a metric ▾') + '</button>'
+      + '<span class="mg-count">' + S.size + ' of ' + N + ' on</span>'
+      + '<button class="lnk" data-numbers style="margin-left:auto">See all the numbers</button></div>'
+      + (open ? '<div class="mg-pop">' + head(false) + list() + '</div>' : '');
+    sheet.innerHTML = sheetOpen
+      ? '<div style="display:flex;align-items:center;gap:12px;margin-bottom:6px">'
+        + '<b style="font-size:13px;color:' + HEAD + '">Metrics</b>'
+        + '<button class="btn" data-sheet style="margin-left:auto">Done</button></div>'
+        + head(false) + '<div style="max-width:380px">' + list() + '</div>'
+      : '';
+    sheet.classList.toggle('show', sheetOpen);
+    root.querySelector('#px-h').textContent = S.size + (S.size === 1 ? ' chart' : ' charts');
+    grid.set(Array.from(S));
+  }
+  root.addEventListener('click', function(e){
+    const t = e.target.closest('button'); if (!t) return;
+    if (t.dataset.id != null){ S.has(t.dataset.id) ? S.delete(t.dataset.id) : S.add(t.dataset.id); paint(); }
+    else if (t.hasAttribute('data-clear')){ S.clear(); paint(); }
+    else if (t.hasAttribute('data-open')){ open = !open; paint(); }
+    else if (t.hasAttribute('data-sheet')){ sheetOpen = !sheetOpen; paint(); }
+    else if (t.hasAttribute('data-numbers')) table.open();
+  });
+  root.addEventListener('input', function(e){
+    if (!e.target.matches('[data-q]')) return;
+    const host = e.target.closest('#px-rail, .mg-pop, #px-sheet');
+    q = e.target.value.trim().toLowerCase(); paint();
+    /* Re-focus after the re-render so typing isn't interrupted. */
+    const again = (host && host.id === 'px-rail' ? rail : host && host.id === 'px-sheet' ? sheet : bar).querySelector('[data-q]');
+    if (again){ again.focus(); again.setSelectionRange(again.value.length, again.value.length); }
+  });
+  root.addEventListener('proto:off', e => { S.delete(e.detail); paint(); });
+  wireControls(root, () => Array.from(S), grid);
+
+  /* The sticky bar is the honest cost of a rail with no inner scroll: once the
+     rail's last row is above the viewport there is nothing to click. Only in
+     rail mode — below the breakpoint the menu bar is already at the top. */
+  if (window.IntersectionObserver){
+    const sentinel = document.createElement('div');
+    rail.parentNode.appendChild(sentinel);
+    new window.IntersectionObserver(function(en){
+      const past = en[0].boundingClientRect.bottom < 0;
+      sticky.classList.toggle('show', past && window.innerWidth >= 900 && !root.hidden);
+    }, {threshold:0}).observe(sentinel);
+  }
+  window.addEventListener('resize', function(){
+    if (window.innerWidth < 900){ sticky.classList.remove('show'); sheetOpen = false; sheet.classList.remove('show'); }
+  });
+  paint();
+}
+
+/* ══ 8 · PROTOTYPE B · Option six alone, exactly as specced ═══════════════
+   Plain rows: dot and name, no numbers. Recut six groups. And the three
+   things the merge later removes are kept in — max-height with overflow,
+   a border-right hairline, its own paper background — because that is what
+   option six actually proposed, and the A/B is only worth anything if this
+   one isn't quietly upgraded. */
+function buildRail(root){
+  const S = new Set(DEFAULTS);
+  root.innerHTML = chrome({
+    title:'Option six alone · move it to a left rail',
+    blurb:'The selector leaves the vertical stack entirely, so charts start at the top of the page. All ' + N + ' metrics stay permanently visible and checkable, grouped, with no expand step. This is option six <b>as originally specced</b> — including the inner scrollbar, the border and the panel background that the merge later strips out. Compare it against the merge tab.',
+    tryThis:'Scroll the rail’s own scrollbar, then scroll the page — two scroll contexts, which is the thing the merge removes. Note there are no numbers on the rows here, and no menu, so below about 760px the rail has to fall back to stacking above the charts.',
+  })
+  + '<div class="pt-wide pt-sec"><div class="r6-layout">'
+    + '<div class="r6-side">'
+      + '<input class="srch" data-q placeholder="Filter…" aria-label="Filter metrics" style="font-size:12.5px;padding:6px 9px;margin-bottom:10px" autocomplete="off" />'
+      + '<div id="px6-list"></div></div>'
+    + '<div style="padding-left:20px">'
+      + '<div class="pt-h"><h2 class="banner" id="px6-h">Charts</h2>'
+      + '<span>The rail costs about 216px of chart width — the thing to judge here</span></div>'
+      + '<div class="pt-charts" id="px6-grid"></div></div>'
+  + '</div></div>';
+
+  const grid = Grid(root.querySelector('#px6-grid'));
+  const list = root.querySelector('#px6-list');
+  let q = '';
+  const dot = id => '<i class="dot" style="background:' + colorFor(id) + '"></i>';
+  function paint(){
+    list.innerHTML = RECUT.map(function(g){
+      const items = g[1].filter(id => !q || lab(id).toLowerCase().indexOf(q) > -1);
+      if (!items.length) return '';
+      return '<p class="r6-grp">' + g[0] + '</p>' + items.map(id =>
+        '<button class="pitem' + (S.has(id) ? ' on' : '') + '" data-id="' + id + '" aria-pressed="' + S.has(id) + '">'
+        + dot(id) + '<span>' + lab(id) + '</span></button>').join('');
+    }).join('') || '<div class="stub">No matches.</div>';
+    root.querySelector('#px6-h').textContent = S.size + (S.size === 1 ? ' chart' : ' charts');
+    grid.set(Array.from(S));
+  }
+  root.addEventListener('click', function(e){
+    const t = e.target.closest('[data-id]'); if (!t) return;
+    S.has(t.dataset.id) ? S.delete(t.dataset.id) : S.add(t.dataset.id); paint();
+  });
+  root.addEventListener('input', function(e){
+    if (!e.target.matches('[data-q]')) return;
+    q = e.target.value.trim().toLowerCase(); paint();
+  });
+  root.addEventListener('proto:off', e => { S.delete(e.detail); paint(); });
+  wireControls(root, () => Array.from(S), grid);
+  paint();
+}
+
+/* ══ 9 · PROTOTYPE C · Option two alone, exactly as specced ═══════════════
+   One button. Today's SIX EXISTING categories as sections in one scrolling
+   panel with a filter at the top — the grouping survives, but it costs one
+   click total instead of one per category. The bar only ever shows what's on.
+   Deliberately not recut: option two's whole claim is that it ships fast
+   because it is the current picker folded behind a button. */
+function buildMenu(root){
+  const S = new Set(DEFAULTS);
+  root.innerHTML = chrome({
+    title:'Option two alone · one “Add a metric” menu',
+    blurb:'The whole picker folds to a single button, and the bar shows only what is on, as removable tokens. Inside, <b>today’s six categories</b> — Big-ticket included, unrecut — because option two’s claim is that it is the current picker moved into a popover and nothing more. The open state uses the transparent token and says what it does.',
+    tryThis:'The menu starts <em>open</em> here so you can see what is inside it. Look for health insurance: it is filed under <em>Big-ticket</em>, alongside childcare, used cars and the mortgage rate — the naming problem that folding the picker away does nothing to fix. Then hit <em>Hide the list</em> for the resting state this option is really arguing for: one line of chrome, full chart width, charts above the fold.',
+  })
+  + '<div class="pt-wide pt-sec">'
+    + '<div style="background:var(--paper);border:1px solid var(--hair);padding:12px 14px" id="px2-bar"></div>'
+    + '<div class="pt-h"><h2 class="banner" id="px2-h">Charts</h2>'
+      + '<span>Full chart width — the selector costs one line when closed</span></div>'
+    + '<div class="pt-charts" id="px2-grid"></div>'
+  + '</div>';
+
+  const grid = Grid(root.querySelector('#px2-grid'));
+  const bar = root.querySelector('#px2-bar');
+  /* Opens expanded. On its own tab there is nothing to compare against, so a
+     collapsed button would just be a button — a reviewer needs to see what is
+     inside before judging whether folding it away is a good trade. Closing it
+     once shows the one-line resting state this option is actually arguing for. */
+  let open = true, q = '';
+  const dot = c => '<i class="dot" style="background:' + (ESP_CATEGORY_COLOR[c] || NAVY) + '"></i>';
+  function paint(){
+    const on = AZ(Array.from(S));
+    bar.innerHTML = '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">'
+      + '<button class="btn' + (open ? '' : ' on') + '" data-open style="flex-shrink:0">' + (open ? 'Hide the list' : 'Add a metric ▾') + '</button>'
+      + '<div class="flow" style="flex:1">' + (on.length
+          ? on.map(id => '<button class="tok" data-id="' + id + '">' + lab(id) + ' <span>×</span></button>').join('')
+          : '<span style="font-size:12.5px;color:' + MUTE + ';font-style:italic">No metrics selected</span>') + '</div>'
+      + '<button class="lnk" data-clear>Clear all</button></div>'
+      + (open ? '<div class="panel" style="margin-top:12px">'
+          + '<input class="srch" data-q value="' + q.replace(/"/g,'&quot;') + '" placeholder="Filter ' + N + ' metrics…" aria-label="Filter metrics" style="padding:7px 10px;font-size:13px;margin-bottom:12px" autocomplete="off" />'
+          + '<div class="cols">' + CATS6.map(function(c){
+              const items = inCat(c[0]).filter(id => !q || lab(id).toLowerCase().indexOf(q) > -1);
+              if (!items.length) return '';
+              return '<div><p class="panel-h">' + dot(c[0]) + ' ' + c[1] + '</p>'
+                + items.map(id => '<label style="display:flex;gap:8px;align-items:center;font-size:12.5px;padding:2.5px 0;cursor:pointer">'
+                  + '<input type="checkbox" data-check="' + id + '"' + (S.has(id) ? ' checked' : '') + ' /> ' + lab(id) + '</label>').join('')
+                + '</div>';
+            }).join('') + '</div></div>' : '');
+    root.querySelector('#px2-h').textContent = S.size + (S.size === 1 ? ' chart' : ' charts');
+    grid.set(Array.from(S));
+  }
+  bar.addEventListener('click', function(e){
+    const t = e.target.closest('button'); if (!t) return;
+    if (t.hasAttribute('data-open')){ open = !open; paint(); }
+    else if (t.hasAttribute('data-clear')){ S.clear(); paint(); }
+    else if (t.dataset.id){ S.delete(t.dataset.id); paint(); }
+  });
+  bar.addEventListener('change', function(e){
+    const id = e.target.dataset && e.target.dataset.check; if (!id) return;
+    e.target.checked ? S.add(id) : S.delete(id);
+    /* Don't repaint the panel on a checkbox — that would collapse the reader's
+       scroll position mid-selection. Only the bar and the charts move. */
+    root.querySelector('#px2-h').textContent = S.size + (S.size === 1 ? ' chart' : ' charts');
+    grid.set(Array.from(S));
+  });
+  bar.addEventListener('input', function(e){
+    if (!e.target.matches('[data-q]')) return;
+    q = e.target.value.trim().toLowerCase(); paint();
+    const again = bar.querySelector('[data-q]');
+    if (again){ again.focus(); again.setSelectionRange(again.value.length, again.value.length); }
+  });
+  root.addEventListener('proto:off', e => { S.delete(e.detail); paint(); });
+  wireControls(root, () => Array.from(S), grid);
+  paint();
+}
+
+/* ══ 10 · Tabs ════════════════════════════════════════════════════════════ */
+const PAGES = {
+  review: document.getElementById('page-review'),
+  merge:  document.getElementById('page-merge'),
+  rail:   document.getElementById('page-rail'),
+  menu:   document.getElementById('page-menu'),
+};
+const BUILD = {merge:buildMerge, rail:buildRail, menu:buildMenu};
+const built = {};
+
+/* The height gauge on the review page measures live DOM. A hidden element
+   measures 0, which would silently zero out every bar, so skip it while the
+   review page is off screen and re-measure on the way back. */
+const rawMeasure = window.measure;
+window.measure = function(){ if (PAGES.review.hidden) return; rawMeasure(); };
+
+function show(name){
+  Object.keys(PAGES).forEach(k => { PAGES[k].hidden = (k !== name); });
+  document.querySelectorAll('.ptab').forEach(b => b.classList.toggle('on', b.dataset.page === name));
+  if (BUILD[name] && !built[name]){ built[name] = true; BUILD[name](PAGES[name]); }
+  if (name === 'review') window.measure();
+  /* Charts sized while hidden come out wrong; nudge Chart.js once visible. */
+  else if (window.Chart) Object.keys(window.Chart.instances || {}).forEach(k => {
+    try { window.Chart.instances[k].resize(); } catch(e){}
+  });
+  /* Deep link, but only when the browser allows it. Opened straight off the
+     disk as a file:// URL — which is how this actually gets reviewed —
+     replaceState throws a SecurityError, and an unhandled throw here would
+     take the rest of the tab switch down with it. */
+  if (location.hash.slice(1) !== 'tab=' + name){
+    try { history.replaceState(null, '', '#tab=' + name); }
+    catch (e){ /* file:// — the tab still switches, it just isn't linkable */ }
+  }
+  window.scrollTo(0, 0);
+}
+document.getElementById('ptabs').addEventListener('click', function(e){
+  const t = e.target.closest('.ptab'); if (!t) return;
+  show(t.dataset.page);
+});
+/* Deep-linkable, so a reviewer can be sent straight to one prototype. */
+const fromHash = (location.hash.match(/tab=(\w+)/) || [])[1];
+show(PAGES[fromHash] ? fromHash : 'review');
+})();
 </script>
 </body>
 </html>
