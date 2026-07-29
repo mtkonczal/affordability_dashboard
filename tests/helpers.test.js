@@ -17,7 +17,7 @@ const { loadHelpers, repoPath } = require('./lib/load.js');
 
 const H = loadHelpers();
 const {
-  fmtVal, fmtDate, ordinal, pctChange, valueAt, sliceFrom, hoursToAfford,
+  fmtVal, fmtDate, inferCadence, fmtObsDate, ordinal, pctChange, valueAt, sliceFrom, hoursToAfford,
   scaleByCPI, categoryLabel, ANCHORS, anchorById, anchorDate, buildFactText,
   isDeflatable, toReal, seriesForType, ALREADY_REAL_IDS,
 } = H;
@@ -260,6 +260,45 @@ test('fmtDate: accepts an ISO string or a Chart.js millisecond timestamp', () =>
   assert.equal(fmtDate(Date.UTC(2026, 5, 15) + 12 * 3600 * 1000), 'Jun 2026');
 });
 
+// ── inferCadence / fmtObsDate ────────────────────────────────────────────────
+
+test('inferCadence: buckets by the dominant day-gap, not a hand-set tag', () => {
+  const weekly = series([['2026-06-01', 1], ['2026-06-08', 1], ['2026-06-15', 1], ['2026-06-22', 1]]);
+  assert.equal(inferCadence(weekly), 'weekly');
+  const monthly = series([['2026-01-01', 1], ['2026-02-01', 1], ['2026-03-01', 1], ['2026-04-01', 1]]);
+  assert.equal(inferCadence(monthly), 'monthly');
+  const quarterly = series([['2025-01-01', 1], ['2025-04-01', 1], ['2025-07-01', 1], ['2025-10-01', 1]]);
+  assert.equal(inferCadence(quarterly), 'quarterly');
+  const annual = series([['2019-12-01', 1], ['2020-12-01', 1], ['2021-12-01', 1], ['2022-12-01', 1]]);
+  assert.equal(inferCadence(annual), 'annual');
+});
+
+test('inferCadence: a couple of skipped months does not flip a monthly series to annual', () => {
+  // Coffee-style gaps: mostly ~30 days, with one BLS-unpublished stretch.
+  const withGaps = series([
+    ['2018-01-01', 1], ['2018-02-01', 1], ['2018-03-01', 1],
+    ['2018-06-01', 1], ['2018-07-01', 1], ['2018-08-01', 1],
+  ]);
+  assert.equal(inferCadence(withGaps), 'monthly');
+});
+
+test('inferCadence: fewer than two gaps defaults to monthly rather than guessing', () => {
+  // One big gap alone can't distinguish "annual series" from "anchor
+  // clamped back to a sparse series' first reading" — see the MONTHLY
+  // fixture below, whose real gaps span from 30 days to several years.
+  assert.equal(inferCadence([{ date: '2019-12-01', value: 1 }, { date: '2026-06-01', value: 1 }]), 'monthly');
+  assert.equal(inferCadence([]), 'monthly');
+  assert.equal(inferCadence(null), 'monthly');
+});
+
+test('fmtObsDate: year-only for annual, full date for weekly, month+year otherwise', () => {
+  const annual = series([['2019-12-01', 1], ['2020-12-01', 1], ['2021-12-01', 1]]);
+  assert.equal(fmtObsDate('2021-12-01', annual), '2021');
+  const weekly = series([['2026-07-06', 1], ['2026-07-13', 1], ['2026-07-20', 1]]);
+  assert.equal(fmtObsDate('2026-07-20', weekly), 'Jul 20, 2026');
+  assert.equal(fmtObsDate('2026-06-01', MONTHLY), 'Jun 2026');
+});
+
 // ── buildFactText — the Copy-fact sentence comms actually pastes ─────────────
 
 const factItem = (over) => Object.assign({
@@ -331,6 +370,17 @@ test('fact: a series with one point still produces a usable sentence', () => {
   const s = buildFactText(factItem({ data: series([['2026-06-01', 4.12]]) }), { anchorId: '2019' });
   assert.match(s, /^Eggs: \$4\.12 per dozen in Jun 2026/);
   assert.match(s, /Source: FRED series/);
+});
+
+test('fact: a weekly series reads "on" a specific date rather than "in" it', () => {
+  const weekly = series([
+    ['2019-11-25', 2.47], ['2019-12-02', 2.50], ['2019-12-09', 2.52],
+    ['2026-07-13', 3.90], ['2026-07-20', 3.93], ['2026-07-27', 3.95],
+  ]);
+  const s = buildFactText(factItem({ id: 'gas', label: 'Gasoline', units: '$ per Gallon', fred_id: 'GASREGCOVW', data: weekly }), { anchorId: '2019' });
+  assert.match(s, /\$3\.95 per gallon on Jul 27, 2026/);
+  assert.match(s, /\$2\.47 per gallon on Nov 25, 2019/);
+  assert.doesNotMatch(s, / in Jul| in Nov/);
 });
 
 test('fact: a non-FRED series names its own source instead of saying FRED', () => {

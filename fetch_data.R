@@ -331,9 +331,12 @@ SERIES <- list(
   ),
   # Bananas (APU0000711211) and white potatoes (APU0000712112) were cut in the
   # July 2026 trim: both are famously flat — bananas moved less than 2% over the
-  # year — so they diluted the basket rather than adding to it. Coffee, bacon
-  # and butter replace them; coffee in particular is the sharpest single grocery
-  # line on the page.
+  # year — so they diluted the basket rather than adding to it. Coffee and
+  # bacon replace them; coffee in particular is the sharpest single grocery
+  # line on the page. Butter (APU0000FS1101) was added in the same trim and
+  # then cut again — its history only goes back to April 2018 (the prior
+  # salted-grade-AA series was discontinued in 2012, no bridge), so it showed
+  # a blank line under "Since 2000" and "Max".
   list(
     id          = "coffee",
     source      = "bls",
@@ -359,24 +362,6 @@ SERIES <- list(
     units       = "$ per Pound",
     description = "Average retail price of sliced bacon in U.S. city averages, from the BLS Average Price data.",
     color       = "#B45309",
-    is_new      = TRUE,
-    from        = "2000-01-01"
-  ),
-  # Butter has no long history: the old salted-grade-AA-stick series (710111)
-  # was discontinued in 2012 and its replacement (FS1101) starts in April 2018,
-  # with no bridge between them. So the "Since 2000" and "Max" anchors show no
-  # butter line — same trade-off the ZORI rent series carries.
-  list(
-    id          = "butter",
-    source      = "bls",
-    bls_id      = "APU0000FS1101",
-    fred_id     = "APU0000FS1101",
-    label       = "Butter",
-    subtitle    = "Sticks, per Pound",
-    category    = "groceries",
-    units       = "$ per Pound",
-    description = "Average retail price of butter sold in sticks in U.S. city averages, from the BLS Average Price data. This series begins in April 2018 — the earlier salted grade AA series was discontinued in 2012 and the two are not spliced.",
-    color       = "#EAB308",
     is_new      = TRUE,
     from        = "2000-01-01"
   ),

@@ -228,25 +228,6 @@
       "yoy_change": -7.57,
       "n_obs": 317
     },
-    "butter": {
-      "id": "butter",
-      "label": "Butter",
-      "subtitle": "Sticks, per Pound",
-      "category": "groceries",
-      "units": "$ per Pound",
-      "description": "Average retail price of butter sold in sticks in U.S. city averages, from the BLS Average Price data. This series begins in April 2018 — the earlier salted grade AA series was discontinued in 2012 and the two are not spliced.",
-      "color": "#EAB308",
-      "fred_id": "APU0000FS1101",
-      "is_new": true,
-      "invert_color": false,
-      "overlay_only": false,
-      "rebase": false,
-      "last_updated": "2026-07-28",
-      "latest_value": 3.816,
-      "latest_date": "2026-06-01",
-      "yoy_change": -21.67,
-      "n_obs": 98
-    },
     "car_insurance": {
       "id": "car_insurance",
       "label": "Car Insurance",

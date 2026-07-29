@@ -29,10 +29,10 @@ window.ABOUT_CONTENT = `
           <td>Seasonally adjusted where the BLS publishes it that way. These are price indexes, so they display as cumulative percent change rather than index points. There is no CPI card for health insurance: the CPI health insurance index prices only the share of a premium that insurers retain for administration and profit, not what a household pays, so it can fall in a year when premiums rise sharply. The ACA benchmark premium below is the premium series.</td>
         </tr>
         <tr>
-          <td><b>Eggs, ground beef, chicken, milk, bread, coffee, bacon, butter</b></td>
+          <td><b>Eggs, ground beef, chicken, milk, bread, coffee, bacon</b></td>
           <td>BLS Average Price data (US city average)</td>
           <td><span class="freq m">Monthly</span></td>
-          <td>Actual retail dollar prices, not indexes. Not seasonally adjusted, so egg and meat prices swing with the season. BLS publishes these nationally and by region but not by state, so they appear only on the national view. Two gaps worth knowing before you quote them: BLS skipped the coffee series in a number of months, including most of 2008&ndash;09 and 2018&ndash;19, and the butter series begins in April 2018 &mdash; the earlier butter series ended in 2012 and the two are not spliced. Missing months are left open rather than filled in.</td>
+          <td>Actual retail dollar prices, not indexes. Not seasonally adjusted, so egg and meat prices swing with the season. BLS publishes these nationally and by region but not by state, so they appear only on the national view. One gap worth knowing before you quote it: BLS skipped the coffee series in a number of months, including most of 2008&ndash;09 and 2018&ndash;19. Missing months are left open rather than filled in.</td>
         </tr>
         <tr>
           <td><b>Electricity, natural gas</b></td>

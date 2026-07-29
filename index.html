@@ -184,7 +184,7 @@ function ordinal(n) {
 const ANCHORS = [
   { id: '1y',   label: '1 Year',         phrase: 'over the past year' },
   { id: '2025', label: 'Since Jan 2025', phrase: 'since Jan 2025' },
-  { id: '2019', label: '2019',           phrase: 'since Dec 2019' },
+  { id: '2019', label: 'Pre-COVID',      phrase: 'since Dec 2019', title: 'December 2019' },
   { id: '2000', label: 'Since 2000',     phrase: 'since 2000' },
   { id: 'max',  label: 'Max',            phrase: 'all-time' },
 ];
@@ -471,13 +471,54 @@ function downloadCompareCSV(metric, seriesList) {
   URL.revokeObjectURL(url);
 }
 
+// Accept either an ISO date string ("2024-01-15") or a numeric timestamp (ms),
+// since Chart.js tooltip callbacks pass parsed.x as a number.
+function toJsDate(dateInput) {
+  return typeof dateInput === 'number' ? new Date(dateInput) : new Date(dateInput + 'T12:00:00');
+}
 function fmtDate(dateInput, opts) {
-  // Accept either an ISO date string ("2024-01-15") or a numeric timestamp (ms),
-  // since Chart.js tooltip callbacks pass parsed.x as a number.
-  const d = typeof dateInput === 'number'
-    ? new Date(dateInput)
-    : new Date(dateInput + 'T12:00:00');
-  return d.toLocaleDateString('en-US', opts || { year: 'numeric', month: 'short' });
+  return toJsDate(dateInput).toLocaleDateString('en-US', opts || { year: 'numeric', month: 'short' });
+}
+
+// Bucket a series' typical spacing into a cadence, so a label for one
+// observation doesn't imply more precision than the series has — "2019" for
+// an annual reading, a full date for a weekly one, month+year otherwise.
+// Uses the most common day-gap (ties broken toward the smaller gap) rather
+// than e.g. the mean, so a handful of missing months (coffee, some BLS
+// average-price series) or one long test fixture doesn't get misread as a
+// different cadence — most gaps still land on the real one. Derived from
+// the data itself, not a hand-maintained tag, so it can't drift if a
+// series' actual publishing cadence changes.
+function inferCadence(data) {
+  // Fewer than two gaps can't reveal a repeating cadence — a single big gap
+  // is as likely to be an anchor clamped back to a sparse series' first
+  // reading as it is a genuinely annual series. Default to the common case.
+  if (!data || data.length < 3) return 'monthly';
+  const gaps = data.slice(1).map((d, i) => Math.round((new Date(d.date) - new Date(data[i].date)) / 86400000));
+  const counts = new Map();
+  gaps.forEach(g => counts.set(g, (counts.get(g) || 0) + 1));
+  let best = gaps[0], bestCount = counts.get(best);
+  for (const [g, c] of counts) {
+    if (c > bestCount || (c === bestCount && g < best)) { best = g; bestCount = c; }
+  }
+  if (best <= 10) return 'weekly';
+  if (best <= 45) return 'monthly';
+  if (best <= 120) return 'quarterly';
+  return 'annual';
+}
+
+// Format one observation's date at the precision its cadence supports — for
+// chart tooltips and the "in .../as of ..." clauses in buildFactText. Anchor
+// badges ("since Dec 2019") are a fixed reference point, not an observation,
+// and keep using fmtDate directly.
+// `opts` only applies to the monthly/quarterly fallback (passed through to
+// fmtDate, same default as fmtDate itself) — weekly and annual always
+// override it, since their whole point is a different level of precision.
+function fmtObsDate(dateInput, data, opts) {
+  const cadence = inferCadence(data);
+  if (cadence === 'annual') return String(toJsDate(dateInput).getFullYear());
+  if (cadence === 'weekly') return fmtDate(dateInput, { year: 'numeric', month: 'short', day: 'numeric' });
+  return fmtDate(dateInput, opts);
 }
 
 function pctChange(data, fromDate) {
@@ -577,6 +618,9 @@ function buildFactText(item, opts = {}) {
   const isIndex = item.rebase || /^Index/.test(units);
   const anchorId = opts.anchorId || '2019';
   const since = opts.since || anchorDate(anchorId, data);
+  // "on Jul 27, 2026" reads right for a specific day; "in July 2026" or
+  // "in 2019" reads right at every coarser cadence.
+  const datePrep = inferCadence(data) === 'weekly' ? 'on' : 'in';
 
   // fmtVal drops denominators ("$ per Gallon" → "$3.12"); spell them back out
   // so the sentence stands alone. Payrolls arrive in thousands — say millions.
@@ -626,17 +670,17 @@ function buildFactText(item, opts = {}) {
   if (startPt && latestPt) {
     const chg = changeWords(startPt.value, latestPt.value, 'percentage points');
     if (isIndex) {
-      main = chg ? `${name}: ${chg} since ${fmtDate(startPt.date)}, as of ${fmtDate(latestPt.date)}`
-                 : `${name} (${fmtDate(latestPt.date)})`;
+      main = chg ? `${name}: ${chg} since ${fmtObsDate(startPt.date, data)}, as of ${fmtObsDate(latestPt.date, data)}`
+                 : `${name} (${fmtObsDate(latestPt.date, data)})`;
     } else {
-      main = `${name}: ${fmtQty(latestPt.value)} in ${fmtDate(latestPt.date)}, `
+      main = `${name}: ${fmtQty(latestPt.value)} ${datePrep} ${fmtObsDate(latestPt.date, data)}, `
         + (chg ? `${chg} from` : 'compared with')
-        + ` ${fmtQty(startPt.value)} in ${fmtDate(startPt.date)}`;
+        + ` ${fmtQty(startPt.value)} ${datePrep} ${fmtObsDate(startPt.date, data)}`;
     }
   } else if (latestPt || item.latest_value != null) {
     const v = latestPt ? latestPt.value : item.latest_value;
     const dt = latestPt ? latestPt.date : item.latest_date;
-    main = (isIndex || v == null) ? `${name} (${fmtDate(dt)})` : `${name}: ${fmtQty(v)} in ${fmtDate(dt)}`;
+    main = (isIndex || v == null) ? `${name} (${fmtObsDate(dt, data)})` : `${name}: ${fmtQty(v)} ${datePrep} ${fmtObsDate(dt, data)}`;
   } else {
     main = name;
   }
@@ -722,7 +766,7 @@ function seriesForType(item, cpi, real) {
 }
 
 Object.assign(window, {
-  ESP, fmtVal, fmtDate, ordinal, pctChange, valueAt, sliceFrom, downloadCSV, downloadCardAsPNG,
+  ESP, fmtVal, fmtDate, inferCadence, fmtObsDate, ordinal, pctChange, valueAt, sliceFrom, downloadCSV, downloadCardAsPNG,
   downloadCompareCSV,
   linePath, toPoints, hoursToAfford, REFERENCE_PRICES, scaleByCPI, categoryLabel,
   ANCHORS, anchorById, anchorDate, buildFactText, loadDataFile,
@@ -743,7 +787,7 @@ Object.assign(window, {
 //                     measure at a time, levels for a selected year; change
 //                     lives on its pinned-states chart
 
-const { ESP, fmtVal, fmtDate, ordinal, pctChange, valueAt, sliceFrom, downloadCSV, downloadCardAsPNG,
+const { ESP, fmtVal, fmtDate, fmtObsDate, ordinal, pctChange, valueAt, sliceFrom, downloadCSV, downloadCardAsPNG,
         downloadCompareCSV,
         linePath, toPoints, categoryLabel, hoursToAfford, REFERENCE_PRICES, scaleByCPI,
         ANCHORS, anchorById, anchorDate, buildFactText, loadDataFile,
@@ -1211,7 +1255,7 @@ function ChartCard({ item, anchorId, displayMode, priceType, cpiData, overlayIte
             titleFont: { size: 10, family: 'Public Sans, system-ui', weight: '600' },
             bodyFont:  { size: 13, family: 'Public Sans, system-ui', weight: '600' },
             callbacks: {
-              title: (c) => fmtDate(c[0].parsed.x, { year: 'numeric', month: 'long' }),
+              title: (c) => fmtObsDate(c[0].parsed.x, item.data, { year: 'numeric', month: 'long' }),
               label: (c) => `  ${datasets.length > 1 ? c.dataset.label + ': ' : ''}` + fmtVal(c.parsed.y, displayUnits),
             },
           },
@@ -1356,6 +1400,7 @@ function ChartCard({ item, anchorId, displayMode, priceType, cpiData, overlayIte
             <button
               key={r.id}
               onClick={() => setOvr(r.id)}
+              title={r.title}
               style={{
                 fontFamily: '"Neue Haas Grotesk Display Pro", sans-serif',
                 fontSize: 10, fontWeight: 600, letterSpacing: '.05em',
@@ -2081,7 +2126,7 @@ function CompareChart({ metric, seriesList, anchorId, displayMode, height = 340 
             titleFont: { size: 10, family: 'Public Sans, system-ui', weight: '600' },
             bodyFont:  { size: 12, family: 'Public Sans, system-ui', weight: '600' },
             callbacks: {
-              title: (c) => fmtDate(c[0].parsed.x, { year: 'numeric', month: 'long' }),
+              title: (c) => fmtObsDate(c[0].parsed.x, seriesList[0]?.data, { year: 'numeric', month: 'long' }),
               label: (c) => ` ${c.dataset.label}: ${fmtVal(c.parsed.y, displayUnits)}`,
             },
           },
@@ -3023,7 +3068,7 @@ function MapView({ data, metricId, setMetricId, anchorId, setAnchorId, priceType
                   <span style={styles.controlLabel}>Measure from</span>
                   <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
                     {ANCHORS.map(a => (
-                      <button key={a.id} onClick={() => setAnchorId(a.id)} style={styles.anchorBtn(a.id === anchorId)}>
+                      <button key={a.id} onClick={() => setAnchorId(a.id)} style={styles.anchorBtn(a.id === anchorId)} title={a.title}>
                         {a.label}
                       </button>
                     ))}
