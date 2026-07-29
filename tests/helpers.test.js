@@ -17,7 +17,7 @@ const { loadHelpers, repoPath } = require('./lib/load.js');
 
 const H = loadHelpers();
 const {
-  fmtVal, fmtDate, inferCadence, fmtObsDate, ordinal, pctChange, valueAt, sliceFrom, hoursToAfford,
+  fmtVal, fmtDate, inferCadence, fmtObsDate, ordinal, pctChange, pctChangeBetween, valueAt, sliceFrom, hoursToAfford,
   scaleByCPI, categoryLabel, ANCHORS, anchorById, anchorDate, buildFactText,
   isDeflatable, toReal, seriesForType, ALREADY_REAL_IDS,
 } = H;
@@ -159,6 +159,24 @@ test('pctChange: returns null when there is no baseline rather than a bogus numb
   assert.equal(pctChange(null, '2019-12-01'), null);
   assert.equal(pctChange(series([['2019-12-01', 0], ['2026-06-01', 150]]), '2019-12-01'), null,
     'a zero baseline would divide by zero');
+});
+
+test('pctChange: an anchor on/after the last reading is "no new data," not 0.0% unchanged', () => {
+  // An annual series (e.g. Census ACS) whose latest reading is 2024 has
+  // nothing to say about "since Jan 2025" or "the past year" — that's a
+  // missing comparison, not a real "unchanged" measurement.
+  const ANNUAL = series([['2022-01-01', 100], ['2023-01-01', 105], ['2024-01-01', 110]]);
+  assert.equal(pctChange(ANNUAL, '2025-01-01'), null, 'anchor is after the last reading');
+  assert.equal(pctChange(ANNUAL, '2024-01-01'), null, 'anchor lands exactly on the last reading');
+  assert.equal(pctChange(ANNUAL, '2023-01-01'), (110 - 105) / 105 * 100, 'a real prior reading still works');
+});
+
+test('pctChangeBetween: same guard as pctChange, but for two arbitrary cutoffs (used by the heatmap)', () => {
+  const ANNUAL = series([['2022-01-01', 100], ['2023-01-01', 105], ['2024-01-01', 110]]);
+  assert.equal(pctChangeBetween(ANNUAL, '2022-01-01', '2023-01-01'), 5);
+  assert.equal(pctChangeBetween(ANNUAL, '2024-01-01', '2025-01-01'), null,
+    'both cutoffs resolve to the same 2024 reading — no new data in between');
+  assert.equal(pctChangeBetween(ANNUAL, '2010-01-01', '2023-01-01'), null, 'no reading before the from-date');
 });
 
 test('valueAt: on-or-before lookup, null before the series starts', () => {

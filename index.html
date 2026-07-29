@@ -521,18 +521,34 @@ function fmtObsDate(dateInput, data, opts) {
   return fmtDate(dateInput, opts);
 }
 
+// Change between the last reading at-or-before `fromDate` and the last
+// reading at-or-before `toDate`. Null if either cutoff has no reading, or if
+// both resolve to the very same observation — an annual series that hasn't
+// published anything since `fromDate` isn't "unchanged," it's "no new data
+// since," and a 0.0% badge would claim the former.
+function pctChangeBetween(data, fromDate, toDate) {
+  if (!data || data.length < 2) return null;
+  const idxAt = (dateStr) => {
+    const cutoff = new Date(dateStr);
+    let idx = null;
+    for (let i = 0; i < data.length; i++) {
+      if (new Date(data[i].date) <= cutoff) idx = i;
+      else break;
+    }
+    return idx;
+  };
+  const priorIdx = idxAt(fromDate);
+  const curIdx = idxAt(toDate);
+  if (priorIdx == null || curIdx == null || priorIdx === curIdx) return null;
+  const prior = data[priorIdx].value;
+  if (prior === 0) return null;
+  return ((data[curIdx].value - prior) / prior) * 100;
+}
+
 function pctChange(data, fromDate) {
   // Find value at-or-before fromDate; latest is last
   if (!data || data.length < 2) return null;
-  const latest = data[data.length - 1].value;
-  const cutoff = new Date(fromDate);
-  let prior = null;
-  for (let i = 0; i < data.length; i++) {
-    if (new Date(data[i].date) <= cutoff) prior = data[i].value;
-    else break;
-  }
-  if (prior == null || prior === 0) return null;
-  return ((latest - prior) / prior) * 100;
+  return pctChangeBetween(data, fromDate, data[data.length - 1].date);
 }
 
 function valueAt(data, dateStr) {
@@ -766,7 +782,7 @@ function seriesForType(item, cpi, real) {
 }
 
 Object.assign(window, {
-  ESP, fmtVal, fmtDate, inferCadence, fmtObsDate, ordinal, pctChange, valueAt, sliceFrom, downloadCSV, downloadCardAsPNG,
+  ESP, fmtVal, fmtDate, inferCadence, fmtObsDate, ordinal, pctChange, pctChangeBetween, valueAt, sliceFrom, downloadCSV, downloadCardAsPNG,
   downloadCompareCSV,
   linePath, toPoints, hoursToAfford, REFERENCE_PRICES, scaleByCPI, categoryLabel,
   ANCHORS, anchorById, anchorDate, buildFactText, loadDataFile,
@@ -787,7 +803,7 @@ Object.assign(window, {
 //                     measure at a time, levels for a selected year; change
 //                     lives on its pinned-states chart
 
-const { ESP, fmtVal, fmtDate, fmtObsDate, ordinal, pctChange, valueAt, sliceFrom, downloadCSV, downloadCardAsPNG,
+const { ESP, fmtVal, fmtDate, fmtObsDate, ordinal, pctChange, pctChangeBetween, valueAt, sliceFrom, downloadCSV, downloadCardAsPNG,
         downloadCompareCSV,
         linePath, toPoints, categoryLabel, hoursToAfford, REFERENCE_PRICES, scaleByCPI,
         ANCHORS, anchorById, anchorDate, buildFactText, loadDataFile,
@@ -1310,9 +1326,15 @@ function ChartCard({ item, anchorId, displayMode, priceType, cpiData, overlayIte
     clampedStart = visibleData[0].date;
   }
   const activePhrase = clampedStart ? 'since ' + fmtDate(clampedStart) : active.phrase;
+  // change is still null here only when the active anchor is on/after the
+  // series' actual last reading (e.g. an annual series with nothing
+  // published since the anchor) — the clamp above only recovers the
+  // opposite case (anchor predates the series).
+  const isStale = change == null;
   const up = change != null && change >= 0;
   const bad = item.invert_color ? !up : up;
   const changeColorFor = (v) => (item.invert_color ? v < 0 : v >= 0) ? WARM_RED : '#2E7D5B';
+  const latestDate = srcData.length ? srcData[srcData.length - 1].date : null;
 
   // The two message anchors, always visible regardless of the active range
   const b25 = pctChange(srcData, '2025-01-01');
@@ -1325,13 +1347,19 @@ function ChartCard({ item, anchorId, displayMode, priceType, cpiData, overlayIte
       </span>
     </span>
   );
+  // b25 nulls out for the same reason a card can go isStale: this series
+  // (typically an annual Census/KFF one) hasn't published a reading past
+  // Jan 2025 yet. Say so instead of just dropping the badge silently.
+  const staleNote25 = (b25 == null && latestDate) ? `Data through ${fmtObsDate(latestDate, srcData)}` : null;
 
   const headlineText = asPct
     ? (headlineVal >= 0 ? '+' : '') + headlineVal.toFixed(1) + '%'
     : fmtVal(headlineVal, displayUnits);
-  const changeText = asPct
-    ? (up ? '↑ ' : '↓ ') + activePhrase
-    : (up ? '↑ +' : '↓ ') + Math.abs(change || 0).toFixed(1) + '% ' + activePhrase;
+  const changeText = isStale
+    ? (latestDate ? `Data through ${fmtObsDate(latestDate, srcData)}` : 'No data')
+    : asPct
+      ? (up ? '↑ ' : '↓ ') + activePhrase
+      : (up ? '↑ +' : '↓ ') + Math.abs(change || 0).toFixed(1) + '% ' + activePhrase;
 
   return (
     <div ref={cardRef} style={{
@@ -1364,14 +1392,14 @@ function ChartCard({ item, anchorId, displayMode, priceType, cpiData, overlayIte
           <div style={{
             fontFamily: '"Neue Haas Grotesk Display Pro", sans-serif',
             fontSize: 11, fontWeight: 700, marginTop: 6,
-            color: bad ? WARM_RED : '#2E7D5B',
+            color: isStale ? MUTE : (bad ? WARM_RED : '#2E7D5B'),
           }}>{changeText}</div>
         </div>
       </div>
 
       {/* Dual anchor badges — the two numbers a press release needs — plus
           the state's national rank when this is a state metric */}
-      {(b25 != null || b19 != null || rankNote) && (
+      {(b25 != null || b19 != null || staleNote25 || rankNote) && (
         <div style={{
           fontFamily: '"Neue Haas Grotesk Display Pro", sans-serif',
           fontSize: 11, display: 'flex', gap: 14, flexWrap: 'wrap',
@@ -1379,6 +1407,9 @@ function ChartCard({ item, anchorId, displayMode, priceType, cpiData, overlayIte
           border: `1px solid rgba(44,50,84,.08)`, borderRadius: 4,
         }}>
           {badge(b25, "Since Jan '25")}
+          {staleNote25 && (
+            <span style={{ whiteSpace: 'nowrap', color: MUTE, fontStyle: 'italic' }}>{staleNote25}</span>
+          )}
           {badge(b19, "Since Dec '19")}
           {rankNote && (
             <span style={{ whiteSpace: 'nowrap' }}>
@@ -1502,12 +1533,7 @@ function Heatmap({ items, priceType, cpiData }) {
     const d = seriesForType(item, cpiData, real);
     return {
       item,
-      cells: years.map(yr => {
-        const cur = valueAt(d, `${yr}-01-15`);
-        const prior = valueAt(d, `${yr - 1}-01-15`);
-        if (!cur || !prior) return null;
-        return ((cur - prior) / prior) * 100;
-      }),
+      cells: years.map(yr => pctChangeBetween(d, `${yr - 1}-01-15`, `${yr}-01-15`)),
       cum19: pctChange(d, '2019-12-01'),
       cum25: pctChange(d, '2025-01-01'),
     };
