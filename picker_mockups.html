@@ -351,18 +351,23 @@
             border-top:2px solid var(--navy);max-height:72vh;overflow:auto;padding:16px;display:none}
   .mg-sheet.show{display:block}
 
-  /* ── Pure option six: the rail exactly as originally specced, including
-        the three things the merge later removes — inner scroll, a border,
-        its own background. Left in on purpose so the A/B is honest. ── */
-  .r6-layout{display:grid;grid-template-columns:216px minmax(0,1fr);align-items:start}
-  .r6-side{background:var(--paper);border-right:1px solid var(--hair);padding:14px 12px;
-           max-height:360px;overflow:auto;position:sticky;top:47px}
+  /* ── Option six, with the clean-rail treatment borrowed from the merge:
+        no inner scroll, no border-right, no background of its own. The rail
+        runs long in normal document flow and the page scrolls as one thing,
+        which is how the shop filters this is modelled on actually behave.
+        What still separates it from the merge is the rows (no numbers) and
+        the fact that below the breakpoint it has nowhere to go but on top
+        of the charts — there is no menu container to fall back to. ── */
+  .r6-layout{display:block}
+  @media(min-width:900px){
+    .r6-layout{display:grid;grid-template-columns:254px minmax(0,1fr);align-items:start}
+  }
+  .r6-side{padding:18px 22px 30px 0}
   .r6-grp{font-size:9.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
-          color:var(--mute);margin:13px 0 5px}
+          color:var(--mute);margin:20px 0 5px;padding-left:6px}
   .r6-grp:first-child{margin-top:0}
-  @media(max-width:760px){
-    .r6-layout{grid-template-columns:1fr}
-    .r6-side{border-right:0;border-bottom:1px solid var(--hair);position:static;max-height:none}
+  @media(max-width:899px){
+    .r6-side{padding:16px 0 22px;border-bottom:1px solid var(--hair);margin-bottom:18px}
   }
 
   /* ── Shared list primitives for all three prototypes ── */
@@ -404,9 +409,9 @@
 <!-- ═══ Page tabs: the review document, then three running prototypes ═══ -->
 <nav class="ptabs" id="ptabs" aria-label="Page sections">
   <button class="ptab on" data-page="review"><i>Document</i>Design review · twelve options</button>
-  <button class="ptab" data-page="merge"><i>Working prototype</i>The merge · 6 + 2 + 11</button>
   <button class="ptab" data-page="rail"><i>Working prototype</i>Option 6 alone · left rail</button>
   <button class="ptab" data-page="menu"><i>Working prototype</i>Option 2 alone · one menu</button>
+  <button class="ptab" data-page="merge"><i>Working prototype</i>The merge · 6 + 2 + 11</button>
   <span class="ptabs-note">Prototypes run on the committed payload — real values, real charts</span>
 </nav>
 
@@ -910,12 +915,14 @@
 </div><!-- /#page-review -->
 
 <!-- ═══════════════════════════════════════════════════════════════════════
-     Three working prototypes. Built entirely by the second script block from
-     window.AFFORDABILITY_DATA — real values, real dates, real Chart.js.
+     Three working prototypes, in the order the argument runs: option six on
+     its own, option two on its own, then the merge that holds both. Built
+     entirely by the second script block from window.AFFORDABILITY_DATA —
+     real values, real dates, real Chart.js.
      ═══════════════════════════════════════════════════════════════════ -->
-<div class="proto" id="page-merge" hidden></div>
 <div class="proto" id="page-rail" hidden></div>
 <div class="proto" id="page-menu" hidden></div>
+<div class="proto" id="page-merge" hidden></div>
 
 <script>
 /* ────────────────────────────────────────────────────────────
@@ -2026,7 +2033,7 @@ function buildMerge(root){
   const S = new Set(DEFAULTS);
   root.innerHTML = chrome({
     title:'The merge · one list of rows, in two containers',
-    blurb:'Options <b>6</b>, <b>2</b> and <b>11</b> as a single component. The same rows appear in a left rail above 900px and behind one button below it — <b>drag the window narrower and watch the switch happen</b>. The rail has no inner scroll, no border and no background of its own, so the page scrolls as one thing; once it has scrolled past, the bar at the bottom of the window picks up the job.',
+    blurb:'Options <b>6</b>, <b>2</b> and <b>11</b> as a single component. Everything the previous two tabs do, plus the two things neither could: the rows <b>carry their numbers</b>, and the same list is <b>also a menu</b>, so it has somewhere to go when the window is narrow or you have scrolled past the rail. <b>Drag the window narrower and watch the switch happen</b> — same rows, same selection, two containers.',
     tryThis:'Drag the window narrower than 900px — the rail becomes the option-2 menu, with the same rows and the same selection. Scroll to the bottom of the charts and the sticky bar appears. Type <em>egg</em> in the filter. Then open <em>See all the numbers</em>: it opens A–Z, and sorting by change is something you have to ask for.',
   })
   + '<div class="pt-wide pt-sec">'
@@ -2123,26 +2130,29 @@ function buildMerge(root){
   paint();
 }
 
-/* ══ 8 · PROTOTYPE B · Option six alone, exactly as specced ═══════════════
-   Plain rows: dot and name, no numbers. Recut six groups. And the three
-   things the merge later removes are kept in — max-height with overflow,
-   a border-right hairline, its own paper background — because that is what
-   option six actually proposed, and the A/B is only worth anything if this
-   one isn't quietly upgraded. */
+/* ══ 8 · PROTOTYPE B · Option six alone ═══════════════════════════════════
+   The rail as a rail — clean-rail styling shared with the merge, since the
+   inner scrollbar and border in the original spec were what made it read as
+   bolted on. What is deliberately NOT borrowed from the merge is the row:
+   plain here, a dot and a name, no numbers. Recut six groups. And there is
+   no menu container, so narrow screens get the rail stacked on top of the
+   charts and a reader who has scrolled past it has nothing to click. */
 function buildRail(root){
   const S = new Set(DEFAULTS);
   root.innerHTML = chrome({
     title:'Option six alone · move it to a left rail',
-    blurb:'The selector leaves the vertical stack entirely, so charts start at the top of the page. All ' + N + ' metrics stay permanently visible and checkable, grouped, with no expand step. This is option six <b>as originally specced</b> — including the inner scrollbar, the border and the panel background that the merge later strips out. Compare it against the merge tab.',
-    tryThis:'Scroll the rail’s own scrollbar, then scroll the page — two scroll contexts, which is the thing the merge removes. Note there are no numbers on the rows here, and no menu, so below about 760px the rail has to fall back to stacking above the charts.',
+    blurb:'The selector leaves the vertical stack entirely, so charts start at the top of the page. All ' + N + ' metrics stay permanently visible and checkable, grouped, with no expand step. Styled the way the merge styles its rail — <b>no inner scrollbar, no border, no background of its own</b> — because those three things, not the concept, were what made the original option six read as bolted on.',
+    tryThis:'Scroll the page: the rail and the charts move together as one document, with no nested scrollbar to fight. Note the rows carry <em>no numbers</em> — that is option eleven’s contribution, not option six’s. Then drag the window under 900px: with no menu to fall back to, the rail can only stack on top of the charts, and once you have scrolled past it there is nothing left to click. That gap is the whole reason the merge exists.',
   })
   + '<div class="pt-wide pt-sec"><div class="r6-layout">'
     + '<div class="r6-side">'
-      + '<input class="srch" data-q placeholder="Filter…" aria-label="Filter metrics" style="font-size:12.5px;padding:6px 9px;margin-bottom:10px" autocomplete="off" />'
+      + '<input class="srch" data-q placeholder="Filter ' + N + ' metrics…" aria-label="Filter metrics" style="font-size:12.5px;padding:6px 9px" autocomplete="off" />'
+      + '<div class="mg-head"><span class="mg-count" id="px6-n"></span>'
+      + '<button class="lnk" data-clear>Clear</button></div>'
       + '<div id="px6-list"></div></div>'
-    + '<div style="padding-left:20px">'
+    + '<div>'
       + '<div class="pt-h"><h2 class="banner" id="px6-h">Charts</h2>'
-      + '<span>The rail costs about 216px of chart width — the thing to judge here</span></div>'
+      + '<span>The rail costs 254px of chart width — the thing to judge here</span></div>'
       + '<div class="pt-charts" id="px6-grid"></div></div>'
   + '</div></div>';
 
@@ -2158,10 +2168,13 @@ function buildRail(root){
         '<button class="pitem' + (S.has(id) ? ' on' : '') + '" data-id="' + id + '" aria-pressed="' + S.has(id) + '">'
         + dot(id) + '<span>' + lab(id) + '</span></button>').join('');
     }).join('') || '<div class="stub">No matches.</div>';
+    root.querySelector('#px6-n').textContent = S.size + ' of ' + N + ' on';
     root.querySelector('#px6-h').textContent = S.size + (S.size === 1 ? ' chart' : ' charts');
     grid.set(Array.from(S));
   }
   root.addEventListener('click', function(e){
+    const c = e.target.closest('[data-clear]');
+    if (c){ S.clear(); paint(); return; }
     const t = e.target.closest('[data-id]'); if (!t) return;
     S.has(t.dataset.id) ? S.delete(t.dataset.id) : S.add(t.dataset.id); paint();
   });
@@ -2251,11 +2264,11 @@ function buildMenu(root){
 /* ══ 10 · Tabs ════════════════════════════════════════════════════════════ */
 const PAGES = {
   review: document.getElementById('page-review'),
-  merge:  document.getElementById('page-merge'),
   rail:   document.getElementById('page-rail'),
   menu:   document.getElementById('page-menu'),
+  merge:  document.getElementById('page-merge'),
 };
-const BUILD = {merge:buildMerge, rail:buildRail, menu:buildMenu};
+const BUILD = {rail:buildRail, menu:buildMenu, merge:buildMerge};
 const built = {};
 
 /* The height gauge on the review page measures live DOM. A hidden element
