@@ -1106,13 +1106,16 @@ const { useState, useMemo, useEffect, useRef } = React;
 
 const NAVY = '#2c3254';
 const WARM_RED = '#E04E39';
-// Map hover card. The brand red deepened until cream text clears WCAG AA
-// (5.03:1 against #FFFDF2; the brand red itself is 3.87:1, and every line in
-// that card is 10–12px). MAP_TIP_DIM/MAP_TIP_WARM are its secondary text
-// colors — the old ones were cool blue-grays tuned for a navy fill.
-const MAP_TIP = '#C43F2C';
-const MAP_TIP_DIM = '#F5CFC7';
-const MAP_TIP_WARM = '#FFE0C2';
+// Map hover card. A light coral fill with dark navy text — navy on
+// #ff8361 is 5.13:1, and every line in that card is 10–12px, so it needs to
+// clear WCAG AA on its own rather than lean on a "large text" exemption.
+// MAP_TIP_WARM (the obsLabel accent) reuses the full-contrast navy;
+// MAP_TIP_DIM (rank / "click to pin", meant to read as quieter) is a dark
+// rust that still clears 4.5:1 — a lighter tint would look calmer but drop
+// below AA on a background this light.
+const MAP_TIP = '#ff8361';
+const MAP_TIP_DIM = '#5C2A20';
+const MAP_TIP_WARM = '#2c3254';
 const BEIGE = '#f4f2e4';
 const PAPER = '#FFFDF2';
 // The one white in the design: chart panels, the heatmap, the map, the stat
@@ -1213,6 +1216,12 @@ function stateCatalogOrder() {
     .sort((a, b) => a.label.localeCompare(b.label))
     .map(m => m.id));
 }
+
+// The state tab's first-paint selection (August 2026): electricity bill,
+// market rent, the ACA benchmark premium, and real median household income —
+// four cards a reader can take in at once, rather than every metric the state
+// publishes. Select all still reaches the full catalog via stateCatalogOrder.
+const STATE_DEFAULT_METRICS = ['electricity_bill', 'rent', 'aca_benchmark_premium', 'income'];
 
 // State FIPS → postal, for joining us-atlas topojson features to our data.
 const FIPS_TO_POSTAL = {
@@ -1346,7 +1355,7 @@ const styles = {
   },
   dek: {
     fontFamily: 'Publico, Georgia, serif',
-    fontSize: 20, lineHeight: 1.55, color: '#E8C9A8', maxWidth: 720,
+    fontSize: 20, lineHeight: 1.55, color: '#E8C9A8',
     fontStyle: 'italic',
   },
   // Embed variants: same words on the cream bar the ESP page sits behind, at
@@ -1358,7 +1367,7 @@ const styles = {
   },
   dekEmbed: {
     fontFamily: 'Publico, Georgia, serif',
-    fontSize: 16, lineHeight: 1.5, color: MUTE, maxWidth: 660,
+    fontSize: 16, lineHeight: 1.5, color: MUTE,
     fontStyle: 'italic',
   },
   controls: {
@@ -2332,10 +2341,10 @@ function NationalView({ data, anchorId, displayMode, priceType }) {
 // selection shared between them. Three things differ from National, all
 // deliberate:
 //
-//   · It defaults to every metric on. Before the rail, the state view rendered
-//     all of them unconditionally, so a reader who never touches the rail sees
-//     exactly what shipped before — the rail only adds the ability to cut down.
-//     (National defaults to 7 of 31, because 31 cards is not a page.)
+//   · It defaults to four metrics on — electricity bill, market rent, the ACA
+//     benchmark premium, and real median household income (`STATE_DEFAULT_METRICS`,
+//     below) — rather than every metric, so a reader who never touches the rail
+//     sees a page, not all ~14 cards at once.
 //   · Selection is keyed on the bare metric id, not the per-state card id, so
 //     stepping through states with ← → keeps it. A metric the next state lacks
 //     (rent, in the states under 50% ZORI renter coverage) is simply not listed.
@@ -2357,10 +2366,10 @@ function StateView({ data, code, setCode, anchorId, displayMode, priceType }) {
   const isUS = code === 'US';
   const [status, setStatus] = useState('loading');
 
-  // Every metric on to start (see the note above). Keyed on the catalog id, so
+  // Four metrics on to start (see the note above). Keyed on the catalog id, so
   // the order is meaningful for every state, not just the one on screen — and
   // it is an ORDER, newest added first, the same rule the National grid uses.
-  const [selOrder, setSelOrder] = useState(stateCatalogOrder);
+  const [selOrder, setSelOrder] = useState(STATE_DEFAULT_METRICS);
   const selectedIds = useMemo(() => new Set(selOrder), [selOrder]);
   // One filter string across both containers, so typing in the rail survives a
   // resize into the menu.
@@ -2893,11 +2902,11 @@ function USMap({ metric, rows, pinned = [], onPick, periodLabel }) {
         <div style={{
           position: 'absolute',
           left: Math.min(tip.x + 14, (tip.w || 300) - 190), top: tip.y + 14,
-          // Warm red, now that the states themselves are navy — the hover card
-          // has to read as an overlay, not as the darkest step of the ramp.
-          // MAP_TIP is a deepened brand red: cream on the brand #E04E39 is
-          // 3.87:1, under AA for body text, and this tooltip is all small type.
-          background: MAP_TIP, color: PAPER, padding: '9px 12px', borderRadius: 4,
+          // Light coral, now that the states themselves are navy — the hover
+          // card has to read as an overlay, not as the darkest step of the
+          // ramp. Text is navy, not cream: this fill is too light for cream
+          // to clear AA (see the MAP_TIP comment above).
+          background: MAP_TIP, color: NAVY, padding: '9px 12px', borderRadius: 4,
           pointerEvents: 'none', zIndex: 5, width: 180,
           fontFamily: '"Neue Haas Grotesk Display Pro", sans-serif', fontSize: 12,
           boxShadow: '0 6px 18px rgba(0,0,0,.25)',
@@ -3257,7 +3266,8 @@ function CompareMetricPanel({ metric, data, pinned, names, anchorId, displayMode
 function CompareView({ data, metricIds, setMetricIds, homeState, anchorId, displayMode, priceType }) {
   const idx = window.AFFORDABILITY_STATES;
   const cpiData = data.cpi_all_items ? data.cpi_all_items.data : null;
-  const [pinned, setPinned] = useState(() => [homeState].filter(Boolean));
+  // Defaults to California + Illinois pinned, not just the home state.
+  const [pinned, setPinned] = useState(() => [...new Set([homeState, 'IL'].filter(Boolean))]);
   // Bumped as each state_metrics/{id}.js lands; failures tracked per id.
   const [, setLoadTick] = useState(0);
   const [failedIds, setFailedIds] = useState(() => new Set());
@@ -3925,10 +3935,13 @@ function AppMain({ data }) {
   const defaultMetric = validMetric('aca_benchmark_premium') ? 'aca_benchmark_premium'
     : (idx && idx.metrics[0] ? idx.metrics[0].id : 'unemployment');
   // Compare view supports any number of metrics (comma-separated in the hash).
+  // Defaults to the same four metrics as My State (electricity, rent, ACA
+  // premium, real median income) rather than the ACA premium alone.
   const [metricIds, setMetricIds] = useState(() => {
     const fromHash = (hash.metric || '').split(',').filter(validMetric);
     if (fromHash.length) return fromHash;
-    return [defaultMetric];
+    const defaults = STATE_DEFAULT_METRICS.filter(validMetric);
+    return defaults.length ? defaults : [defaultMetric];
   });
   // The Map view shows exactly one metric at a time.
   const [mapMetricId, setMapMetricId] = useState(() => {
