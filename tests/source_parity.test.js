@@ -31,13 +31,15 @@
 const test = require('node:test');
 const assert = require('node:assert');
 
-const { loadNational, loadManifest } = require('./lib/load');
-const { parseSeries } = require('./lib/rseries');
+const { loadNational, loadManifest, loadStatesIndex } = require('./lib/load');
+const { parseSeries, parseStateMetrics } = require('./lib/rseries');
 
 const NAT = loadNational();
 const MANIFEST = loadManifest().national;
 const SERIES = parseSeries();
 const BY_ID = new Map(SERIES.map(s => [s.id, s]));
+const IDX = loadStatesIndex();
+const STATE_METRICS = parseStateMetrics();
 
 // Series built inside fetch_data.R after the SERIES loop rather than declared in
 // it. Listed explicitly so adding a derived series is a conscious edit here
@@ -209,6 +211,64 @@ test('parity: every category in SERIES is one the front end can render', () => {
     'ESP_CATEGORY_COLOR in index.html, and to the known set in ' +
     'data_contract.test.js and here)');
   assert.deepEqual(bad, []);
+});
+
+// ── State metrics ────────────────────────────────────────────────────────────
+// Same drift risk as SERIES, and it went unwatched until August 2026: nothing
+// compared STATE_METRICS in fetch_data.R against the committed states_index.js,
+// so an edit there could sit unshipped until a routine refresh applied it.
+// `category` is the field that makes this urgent — the state view groups on it
+// AND colors on it, so a pending edit doesn't just move a label, it moves cards
+// between rail groups and repaints them.
+
+test('parity: states_index metrics match STATE_METRICS, same ids in the same order', () => {
+  const declared = STATE_METRICS.map(m => m.id);
+  const shipped = IDX.metrics.map(m => m.id);
+  // A declared metric legitimately drops out when no state has data for it
+  // (fetch_data.R filters n_states > 0), so the shipped list is a subsequence of
+  // the declared one, not necessarily equal to it.
+  assert.deepEqual(shipped, declared.filter(id => shipped.includes(id)),
+    'states_index.js metric order does not follow STATE_METRICS — re-run ' +
+    '`Rscript fetch_data.R` rather than reordering either list.');
+  const unknown = shipped.filter(id => !declared.includes(id));
+  assert.deepEqual(unknown, [], 'shipped metrics that STATE_METRICS does not declare');
+});
+
+test('parity: state metric metadata is verbatim from STATE_METRICS', () => {
+  const byId = new Map(STATE_METRICS.map(m => [m.id, m]));
+  const bad = [];
+  for (const m of IDX.metrics) {
+    const cfg = byId.get(m.id);
+    if (!cfg) continue; // covered by the test above
+    for (const key of ['label', 'category', 'units', 'color', 'description', 'source_label', 'source_url']) {
+      if (cfg[key] !== m[key]) {
+        bad.push(`${m.id}.${key}: fetch_data.R ${JSON.stringify(cfg[key])} != payload ${JSON.stringify(m[key])}`);
+      }
+    }
+    // Derived the same way the national payload derives it.
+    const rebase = /^Index/.test(cfg.units || '');
+    if (rebase !== !!m.rebase) bad.push(`${m.id}.rebase: units "${cfg.units}" implies ${rebase}, payload says ${!!m.rebase}`);
+    if (!!cfg.invert_color !== !!m.invert_color) bad.push(`${m.id}.invert_color: fetch_data.R ${!!cfg.invert_color} != payload ${!!m.invert_color}`);
+  }
+  assert.deepEqual(bad, [],
+    'STATE_METRICS and states_index.js disagree. Fix with `Rscript fetch_data.R`, ' +
+    'not by editing this test.');
+});
+
+test('parity: every state metric category is one the state rail can render', () => {
+  // Three of the six, and that is structural. "groceries" has no state data;
+  // "overall" is impossible because there is no state CPI (never add or imply
+  // one); "bills" is folded into housing on purpose, because a rail heading over
+  // one lone electricity bill reads like a bug. If a state metric ever lands in
+  // groceries or bills, that is a decision to make in fetch_data.R and in
+  // sidebar_format.md — not a test to loosen quietly.
+  const known = new Set(['housing', 'health', 'income']);
+  const bad = STATE_METRICS.filter(m => !known.has(m.category)).map(m =>
+    `${m.id} → ${m.category === undefined ? '(no category)' : m.category}`);
+  assert.deepEqual(bad, [],
+    'A state metric with no category vanishes from the state view picker, and a ' +
+    'metric in an unexpected group changes what the rail claims. See the ' +
+    'STATE_METRICS comment in fetch_data.R.');
 });
 
 test('parity: no KNOWN_STALE exemption has outlived its usefulness', () => {

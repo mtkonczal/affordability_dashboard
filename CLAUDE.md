@@ -72,20 +72,22 @@ install, ~2 seconds. Two suites, described in `tests/README.md`:
   Every change the front end prints — card headline, dual badges, %-change view
   (rate series plot a pp difference and label the axis "pp"), heatmap cells and
   cumulative columns — now routes through the shared rule.
-- `tests/source_parity.test.js` — **run this after every `SERIES` edit.** Parses
-  `SERIES` out of `fetch_data.R` (via `tests/lib/rseries.js`) and checks the
-  committed payloads actually came from it: same ids in the same order, identical
-  verbatim metadata, `rebase` derived from the units string, `manifest.json` in
-  step with `app_data.js`, and no `source = "bls"` entry advertising a `fred_id`
-  it wasn't fetched from. The other suites only compare artifacts to each other,
-  so **editing fetch_data.R without re-running it used to be invisible** — and a
-  later routine refresh would then silently move a published number. Fix a
-  failure with `Rscript fetch_data.R`, not by editing the test. If a refresh has
-  to wait, add the field to `KNOWN_STALE` with a reason; a companion test fails
-  once an exemption is no longer needed, so they get removed rather than
-  accumulating. `rseries.js` depends on `SERIES` keeping its current formatting
-  and throws loudly if that changes, since a silent parse of zero entries would
-  make the whole suite vacuous.
+- `tests/source_parity.test.js` — **run this after every `SERIES` or
+  `STATE_METRICS` edit.** Parses both lists out of `fetch_data.R` (via
+  `tests/lib/rseries.js`: `parseSeries`, `parseStateMetrics`) and checks the
+  committed payloads actually came from them: same ids in the same order,
+  identical verbatim metadata, `rebase` derived from the units string,
+  `manifest.json` in step with `app_data.js`, and no `source = "bls"` entry
+  advertising a `fred_id` it wasn't fetched from. For state metrics it also pins
+  the `category` set the state rail can render. The other suites only compare
+  artifacts to each other, so **editing fetch_data.R without re-running it used
+  to be invisible** — and a later routine refresh would then silently move a
+  published number. Fix a failure with `Rscript fetch_data.R`, not by editing the
+  test. If a refresh has to wait, add the field to `KNOWN_STALE` with a reason; a
+  companion test fails once an exemption is no longer needed, so they get removed
+  rather than accumulating. `rseries.js` depends on both lists keeping their
+  current formatting and throws loudly if that changes, since a silent parse of
+  zero entries would make the whole suite vacuous.
 
 `tests/lib/load.js` runs each artifact with `new Function('window', src)` plus
 a stub `window`/`document` — which works only because every script in this
@@ -162,9 +164,9 @@ and PNG export are still covered only by the manual pass in `What to Check.md`.
 ### Front-end (`index.html`, single file, React via Babel-standalone)
 
 - Four views in `AppMain`: `NationalView` (the metric rail/menu, chart cards,
-  YoY heatmap), `StateView` (all metrics for one state with a
-  national-rank badge, plus annual stat tiles; "United States" is a picker
-  option built from the national payload — no default US overlay),
+  YoY heatmap), `StateView` (the same rail/menu over one state's metrics, each
+  card with a national-rank badge, plus annual stat tiles; "United States" is a
+  picker option built from the national payload — no default US overlay),
   `CompareView` (1–4 metrics as side-by-side panels of pinned states; the US
   average is pinnable like any state, not shown by default; defaults to the
   ACA benchmark premium), and `MapView` (its own tab: single-select measure
@@ -183,14 +185,16 @@ and PNG export are still covered only by the manual pass in `What to Check.md`.
   nominal series via `downloadCompareCSV`, like the Compare panels. Rebase/index metrics (home prices) are excluded from the map
   picker because index levels aren't comparable across states. Defaults to
   the ACA benchmark premium).
-- **The National picker is "the merge"** (August 2026) — options 6 + 2 + 11 from
+- **The metric picker is "the merge"** (August 2026) — options 6 + 2 + 11 from
   `picker_mockups.html`, which the team picked at the July review. One row
   component (`MetricPicker`) in two containers: a **220px left rail** above
   1060px, and the same rows as a **menu** below it. Both are always rendered;
   CSS decides which is visible, and they share one selection and one filter
   string, so crossing the breakpoint loses nothing. It replaced the collapsible
   category-chip bar, which is gone along with `styles.catPill` / `checkChip` /
-  `checkBox`.
+  `checkBox`. **`NationalView` and `StateView` both use it** — same component,
+  same CSS, same breakpoint (the state port landed 2 Aug 2026; `MetricPicker`
+  itself needed no changes). `sidebar_format.md` is the full handoff doc.
   - The rail has **no inner scroll, no border and no background of its own** —
     those three things, not the concept, were what made the earlier left-rail
     proposal read as bolted on. It runs long in normal document flow.
@@ -212,28 +216,54 @@ and PNG export are still covered only by the manual pass in `What to Check.md`.
   - 1060px is the breakpoint: a 220px rail leaves room for two 380px chart
     columns once the page is ~1092px. Between 1060 and 1092 the cards briefly
     fall to one column, where the `i % 2` border logic in the grid leaves a
-    stray right-hand hairline. National cards are `minmax(380px, 1fr)`; the
-    state view is still 420 and should move when the rail goes there.
+    stray right-hand hairline. Both views' cards are `minmax(380px, 1fr)` (the
+    state view moved off 420 with the rail), so the wart applies equally.
+  - On the state tab: **defaults to every metric on** (that's what the view did
+    before it had a picker), selection is keyed on the bare metric id so
+    stepping through states with ← → keeps it, and only three groups can appear
+    — `groceries` has no state data, `overall` is impossible with no state CPI,
+    and `bills` is folded into `housing` in `fetch_data.R` because a heading
+    over one lone electricity bill reads like a bug. The state selector bar and
+    the annual stat tiles stay full width, outside the rail layout.
+  - **One anchor, one observation** (`anchorObsDate`, block one). `anchorDate`
+    returns a calendar date; `valueAt` used to land it on the last reading on or
+    before, while `sliceFrom` took the first at or after, so a series with
+    nothing published in the anchor month got two answers. Quarterly FHFA home
+    prices printed a "+55.6% since Dec 2019" headline above a "+56.3% since Dec
+    '19" badge on the same card. Everything — rail row, card headline, badges,
+    chart window, Compare panels — now resolves through `anchorObsDate` (last
+    reading on or before; clamps forward only if the anchor predates the
+    series). Every number that moved moved onto the badge's value. Don't call
+    `anchorDate` + `sliceFrom` directly for this.
 - **Six categories, recut August 2026** — `housing` (Rent & homes), `groceries`
   (Food), `bills` (Bills & getting around), `health` (Health & care), `income`
   (Paychecks & debt), `overall` (Overall inflation). The old `big` / `daily` /
   `labor` / `debt` ids are retired. **Under the recut the category IS the picker
   group**, so `category` now decides rail placement, card order and color family
-  all at once.
+  all at once — on both tabs: `STATE_METRICS` entries carry the same field, with
+  the same six values, of which three are reachable on a state tab.
   - `CATEGORY_META` order is **editorial, not alphabetical** — biggest household
     line first, headline CPI **last** (readers come for specific items; ending
     on the overall index lets the individual prices add up to it). The
     alphabetical comms rule still holds strictly *within* each group.
   - Color families: housing = navy, groceries = gold, bills = purple,
     health = brick, income = green, overall = olive. Merging `labor` and `debt`
-    freed brick, which went to health. `ESP_METRIC_COLOR` (state view, keyed by
-    metric id) is kept in step by hand — if it drifts, the same series changes
-    color when a reader switches tabs.
+    freed brick, which went to health. `ESP_CATEGORY_COLOR` is now the **only**
+    color table: `ESP_METRIC_COLOR`, the by-id map that stood in for the missing
+    state `category`, is deleted. It had never actually run — state cards build
+    their item id as `il_rent` and set `category: 'state'`, so both lookups
+    missed and every state card fell through to the pre-ESP hex in the payload,
+    leaving the state tab off-palette. Giving state metrics a real category
+    fixed that; don't reintroduce a by-id map (a test fails if you do). The one
+    cross-tab difference is state electricity, navy rather than purple, by the
+    `bills`→`housing` fold.
   - Adding or renaming a category means four places: `CATEGORY_META`,
     `CATEGORY_LABELS`, `ESP_CATEGORY_COLOR` in index.html, plus the `known` sets
     in **both** `tests/data_contract.test.js` and `tests/source_parity.test.js`.
     A series in an unknown category silently vanishes from the National view;
-    those two tests are the guard. `categoryLabel` falls back to the raw id
+    those two tests are the guard. Each file has a **second, narrower** `known`
+    set for state metrics (`housing`, `health`, `income`) — widening that one is
+    a design decision, not a formality. `categoryLabel` falls back to the raw id
     rather than to a plausible-looking group name, so a stranded series looks
     wrong on the card instead of quietly wearing someone else's label.
 - The choropleth lazy-loads topojson-client + the full d3 bundle (the
@@ -308,7 +338,12 @@ and PNG export are still covered only by the manual pass in `What to Check.md`.
   average prices** — national and 4-region only, so these can never feed the
   state or map views.
 - **State metric:** append to `STATE_METRICS` (a FRED ID pattern or a custom
-  source), run the script. The front end picks it up from `states_index.js`.
+  source) **with a `category`**, run the script. The front end picks it up from
+  `states_index.js`; the category decides its rail group, card order and color,
+  and a metric without one vanishes from the state view. Use `housing`, `health`
+  or `income` — the only three reachable on a state tab, and the two `known` sets
+  in the test suite say so. Don't reorder existing entries: `source_parity`
+  checks `STATE_METRICS` order against payload order.
 - **Annual indicator (stat tile):** drop a `state,value` CSV in `data/annual/`,
   describe it in `annual_meta.json`, run the script.
 - **KFF (or other annual time series):** if a KFF State Health Facts indicator,

@@ -356,6 +356,68 @@ test('rail row: Real deflates a dollar series and leaves a rate alone', () => {
   assert.equal(railChangeText(rate, '2019', 'real', cpi), '+2.8 pp');
 });
 
+// ── One anchor, one observation ──────────────────────────────────────────────
+// anchorDate returns a calendar date; a series publishes on its own schedule.
+// Two helpers used to land that date on a reading in opposite directions —
+// valueAt (badges, Copy fact) took the last reading on or before it, sliceFrom
+// (the chart window, and so every cumulative %-change baseline) the first one at
+// or after. anchorObsDate is now the single resolution every surface uses.
+
+const QUARTERLY_INDEX = {
+  id: 'home_prices', units: 'Index (1980 Q1 = 100)', rebase: true,
+  data: [
+    { date: '2019-07-01', value: 350.85 },  // Q3 2019
+    { date: '2019-10-01', value: 352.50 },  // Q4 2019 — the pre-COVID quarter
+    { date: '2020-01-01', value: 354.07 },  // Q1 2020 — where the chart used to start
+    { date: '2026-01-01', value: 550.96 },
+  ],
+};
+
+test('anchorObsDate: the Pre-COVID anchor lands on the last pre-COVID reading', () => {
+  // The bug this fixes, found in the browser in August 2026: the Illinois home
+  // prices card printed a "+55.6%" headline captioned "since Dec 2019" directly
+  // above a badge reading "+56.3% since Dec '19". One card, one question, two
+  // published answers — and the headline's was measured from Q1 2020, which is
+  // both mislabelled and, on the Pre-COVID anchor specifically, not pre-COVID.
+  assert.equal(H.anchorObsDate(QUARTERLY_INDEX.data, '2019'), '2019-10-01');
+  // A monthly series publishes in the anchor month, so it resolves to itself —
+  // which is why nothing exercised the split until a quarterly card rendered.
+  assert.equal(H.anchorObsDate(railItem().data, '2019'), '2019-12-01');
+  // Annual January-dated series (ACS income, rent burden) split 2019 from 2020.
+  const annual = [
+    { date: '2019-01-01', value: 100 },
+    { date: '2020-01-01', value: 110 },
+    { date: '2025-01-01', value: 132 },
+  ];
+  assert.equal(H.anchorObsDate(annual, '2019'), '2019-01-01');
+  // NY Fed Q4 points are dated December precisely so this lands on Q4 2019.
+  assert.equal(H.anchorObsDate([{ date: '2019-12-01', value: 1 }, { date: '2025-12-01', value: 2 }], '2019'),
+               '2019-12-01');
+});
+
+test('anchorObsDate: an anchor predating the series clamps forward to its first reading', () => {
+  const late = [{ date: '2015-01-01', value: 50 }, { date: '2026-06-01', value: 75 }];
+  assert.equal(H.anchorObsDate(late, '2000'), '2015-01-01');
+  // Degenerate input returns the raw anchor rather than throwing.
+  assert.equal(H.anchorObsDate([], '2019'), '2019-12-01');
+  assert.equal(H.anchorObsDate(null, '2019'), '2019-12-01');
+});
+
+test('rail row: an index series measures from the same reading its card does', () => {
+  // 550.96 / 352.50 − 1 = +56.3%, from Q4 2019 — the number the card's badge
+  // was already printing, and now the number its headline prints too.
+  assert.equal(railChangeText(QUARTERLY_INDEX, '2019', 'nominal', null), '+56.3%');
+});
+
+test('rail row: an anchor past the last reading is "—", not a false 0.0%', () => {
+  const it = {
+    id: 'x', units: 'Index (2019 = 100)', rebase: true,
+    data: [{ date: '2019-12-01', value: 100 }, { date: '2020-01-01', value: 110 }],
+  };
+  assert.equal(railChangeText(it, 'y:2024', 'nominal', null), '—');
+  assert.equal(railChangeText(it, 'y:2020', 'nominal', null), '—');
+});
+
 test('rail row: an already-real series is never deflated twice', () => {
   const cpi = [{ date: '2019-12-01', value: 100 }, { date: '2026-06-01', value: 125 }];
   const income = railItem({

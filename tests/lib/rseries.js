@@ -50,23 +50,11 @@ function parseValue(raw) {
   return t; // NULL, a function call, something we don't model — kept as text
 }
 
-/**
- * Every entry of `SERIES <- list(...)` in fetch_data.R, in declaration order,
- * as plain objects of the fields actually written in the file. Fields the entry
- * omits are absent (not null) — the caller needs that distinction, because
- * fetch_data.R drops NULL fields before serializing.
- */
-function parseSeries() {
-  const src = fs.readFileSync(repoPath('fetch_data.R'), 'utf8');
-
-  const start = src.indexOf('SERIES <- list(');
-  if (start < 0) throw new Error('rseries: could not find `SERIES <- list(` in fetch_data.R');
-  const end = src.indexOf('STATE_METRICS', start);
-  if (end < 0) throw new Error('rseries: could not find STATE_METRICS after SERIES');
-
+/** Scan one `NAME <- list(...)` block into plain objects, in declaration order. */
+function parseEntries(text) {
   const entries = [];
   let cur = null;
-  for (const raw of src.slice(start, end).split('\n')) {
+  for (const raw of text.split('\n')) {
     const line = stripComment(raw).replace(/\s+$/, '');
     if (/^ {2}list\($/.test(line)) {
       cur = {};
@@ -81,6 +69,24 @@ function parseSeries() {
     const m = line.match(/^ {4}(\w+)\s*=\s*(.+)$/);
     if (m) cur[m[1]] = parseValue(m[2]);
   }
+  return entries;
+}
+
+/**
+ * Every entry of `SERIES <- list(...)` in fetch_data.R, in declaration order,
+ * as plain objects of the fields actually written in the file. Fields the entry
+ * omits are absent (not null) — the caller needs that distinction, because
+ * fetch_data.R drops NULL fields before serializing.
+ */
+function parseSeries() {
+  const src = fs.readFileSync(repoPath('fetch_data.R'), 'utf8');
+
+  const start = src.indexOf('SERIES <- list(');
+  if (start < 0) throw new Error('rseries: could not find `SERIES <- list(` in fetch_data.R');
+  const end = src.indexOf('STATE_METRICS', start);
+  if (end < 0) throw new Error('rseries: could not find STATE_METRICS after SERIES');
+
+  const entries = parseEntries(src.slice(start, end));
 
   // Guard against a formatting change silently emptying the parse.
   if (entries.length < 20) {
@@ -96,4 +102,38 @@ function parseSeries() {
   return entries;
 }
 
-module.exports = { parseSeries, stripComment, parseValue };
+/**
+ * Every entry of `STATE_METRICS <- list(...)`, same contract as parseSeries.
+ * Added August 2026 with the state rail: the state metrics gained a `category`
+ * field, which the state view groups AND colors on, so an edit to it in
+ * fetch_data.R that never reaches states_index.js is exactly the silent drift
+ * source_parity exists to catch. Values that aren't strings/booleans/numbers
+ * (`fred_pattern = function(s) …`, `national_id = NULL`) come back as raw text;
+ * no caller needs to model them.
+ */
+function parseStateMetrics() {
+  const src = fs.readFileSync(repoPath('fetch_data.R'), 'utf8');
+
+  const start = src.indexOf('STATE_METRICS <- list(');
+  if (start < 0) throw new Error('rseries: could not find `STATE_METRICS <- list(` in fetch_data.R');
+  // The list closes with a `)` alone at column 0 — the same convention SERIES
+  // uses, and the only one that can't be confused with an entry's `  ),`.
+  const end = src.indexOf('\n)\n', start);
+  if (end < 0) throw new Error('rseries: could not find the end of STATE_METRICS');
+
+  const entries = parseEntries(src.slice(start, end));
+
+  if (entries.length < 10) {
+    throw new Error(
+      `rseries: parsed only ${entries.length} STATE_METRICS entries — the ` +
+      'formatting in fetch_data.R has probably changed. Fix this parser rather ' +
+      'than letting source_parity.test.js pass on nothing.'
+    );
+  }
+  const nameless = entries.filter(e => !e.id).length;
+  if (nameless) throw new Error(`rseries: ${nameless} parsed state metrics have no id`);
+
+  return entries;
+}
+
+module.exports = { parseSeries, parseStateMetrics, stripComment, parseValue };

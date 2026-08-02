@@ -1,9 +1,12 @@
 # The sidebar format ("the merge")
 
 How the National metric picker was rebuilt in August 2026, why each decision
-went the way it did, and what it would take to put the same thing on the state
-tabs. Written as a handoff: read this before touching `MetricPicker`,
-`NationalView`, or any category id.
+went the way it did, and how it was then put on the state tabs. Written as a
+handoff: read this before touching `MetricPicker`, `NationalView`, `StateView`,
+or any category id.
+
+**Status:** the extension proposed in §5 shipped on 2 August 2026. That section
+now records what was built and which of its open questions were settled how.
 
 Origin: `picker_mockups.html`, options **6 + 2 + 11**, which the team chose at
 the July 2026 review. Open the "The merge · 6 + 2 + 11" tab in that file to see
@@ -35,17 +38,20 @@ data question rather than a UI question.
 
 | Where | What |
 |---|---|
-| `index.html` ~64–150 (`<style>`) | `.at-nat-layout`, `.at-rail`, `.at-natmenu`, `.at-prow*`, `.at-grp`, `.at-pfilter`, `.at-phead`, `.at-plnk`, `.at-pstub`, `.at-menubar`, `.at-menupop` |
-| `index.html` ~707 | `CATEGORY_LABELS` + `categoryLabel()` (block one, pure) |
-| `index.html` ~899 | `railChangeText()` (block one, pure, unit-tested) |
-| `index.html` ~986 | `CATEGORY_META` — the six groups **in render order** |
-| `index.html` ~1020 | `ESP_CATEGORY_COLOR` |
-| `index.html` ~1034 | `ESP_METRIC_COLOR` — the state view's by-id fallback |
-| `index.html` ~1780 | `MetricPicker` |
-| `index.html` ~1861 | `NationalView` |
+| `index.html` ~64–150 (`<style>`) | `.at-nat-layout`, `.at-rail`, `.at-natmenu`, `.at-prow*`, `.at-grp`, `.at-pfilter`, `.at-phead`, `.at-plnk`, `.at-pstub`, `.at-menubar`, `.at-menupop` — shared by both tabs |
+| `index.html` ~692 | `anchorObsDate()` — one anchor, one observation (block one, unit-tested) |
+| `index.html` ~750 | `CATEGORY_LABELS` + `categoryLabel()` (block one, pure) |
+| `index.html` ~987 | `railChangeText()` (block one, pure, unit-tested) |
+| `index.html` ~1068 | `CATEGORY_META` — the six groups **in render order** |
+| `index.html` ~1102 | `ESP_CATEGORY_COLOR` — the only color table; `ESP_METRIC_COLOR` is gone |
+| `index.html` ~1873 | `MetricPicker` — one component, both tabs, unchanged by the state port |
+| `index.html` ~1954 | `NationalView` |
+| `index.html` ~2118 | `StateView` |
 | `fetch_data.R` ~177 | the `category` field docs; `SERIES` entries carry the value |
-| `tests/helpers.test.js` | `categoryLabel` + seven `railChangeText` tests |
-| `tests/data_contract.test.js`, `tests/source_parity.test.js` | the two `known` category sets |
+| `fetch_data.R` ~791 | the `STATE_METRICS` header: `category` on state metrics, and why `bills` is folded |
+| `tests/helpers.test.js` | `categoryLabel`, the `railChangeText` tests, `anchorObsDate` |
+| `tests/lib/rseries.js` | `parseSeries` + `parseStateMetrics` |
+| `tests/data_contract.test.js`, `tests/source_parity.test.js` | the `known` category sets — **four of them now**, national and state in each file |
 
 ### The six categories
 
@@ -151,102 +157,144 @@ Things that will break quietly if violated.
 - **A name destructured from `window` in block two must be exported in block
   one.** A test enforces this; a miss renders "Loading…" forever.
 - **A new or renamed category needs five edits:** `CATEGORY_META`,
-  `CATEGORY_LABELS`, `ESP_CATEGORY_COLOR`, and the `known` set in *both*
-  `data_contract.test.js` and `source_parity.test.js`. A series in an unknown
-  category vanishes from the National view with no error.
+  `CATEGORY_LABELS`, `ESP_CATEGORY_COLOR`, and the *national* `known` set in
+  both `data_contract.test.js` and `source_parity.test.js`. A series in an
+  unknown category vanishes from the National view with no error. A category
+  reaching a **state** metric needs the two state `known` sets as well — those
+  are deliberately narrower (`housing`, `health`, `income`), so widening one is
+  a decision, not a formality.
 - **Never reorder `SERIES` entries in `fetch_data.R`.** `source_parity.test.js`
   checks SERIES order against payload order; a reshuffle churns every committed
-  artifact. Move the section comment instead.
-- **`category` is in `VERBATIM`** in `source_parity.test.js`. Editing it in
-  `fetch_data.R` without re-running the script fails that suite by design. Fix
-  with `Rscript fetch_data.R`, not by editing the test.
-- **`ESP_METRIC_COLOR` must stay in step with `ESP_CATEGORY_COLOR`,** or the
-  same series changes color when a reader switches tabs.
+  artifact. Move the section comment instead. The same now holds for
+  `STATE_METRICS`.
+- **`category` is in `VERBATIM`** in `source_parity.test.js`, for both `SERIES`
+  and `STATE_METRICS`. Editing it in `fetch_data.R` without re-running the
+  script fails that suite by design. Fix with `Rscript fetch_data.R`, not by
+  editing the test.
+- **Color comes from `category` alone.** `ESP_CATEGORY_COLOR` is the only table;
+  don't add a by-id map beside it (a test fails if `ESP_METRIC_COLOR` returns).
+  The one place the two tabs differ is state electricity, navy by the fold.
+- **One anchor, one observation.** Anything that needs the reading an anchor
+  refers to calls `anchorObsDate`, never `anchorDate` + `sliceFrom` directly.
+  Bypassing it is how the same card came to publish +55.6% and +56.3% for the
+  same question (§5).
 - **No state price index exists.** Never add or imply one. There is no state
   CPI, which is why `overall` cannot appear on a state tab.
 
 ---
 
-## 5. Extending to the state tabs
+## 5. The state tabs (shipped 2 August 2026)
 
-### What transfers unchanged
+`StateView` now renders the same `MetricPicker` in the same two containers, and
+crosses the 1060px breakpoint identically. `MetricPicker` needed **no changes**:
+it was already generic over `[{ id, label, items }]`, and the CSS was already
+view-agnostic.
 
-`MetricPicker` is already generic over its `groups` prop — it takes
-`[{ id, label, items }]` and knows nothing about national data. The CSS is
-view-agnostic. `railChangeText` takes any item with `units` and `data`, which
-state items already have.
+### What was decided
 
-### The blocker: state metrics have no `category`
+| Question | Decision |
+|---|---|
+| Grouping only, or selection too? | **Full rail + selection.** The state view is now selectable. |
+| Group balance | **`bills` folded into `housing`,** in the data. Three groups: housing 5, income 7, health 2. |
+| `category` on state metrics | **Explicit field on each `STATE_METRICS` entry,** not derived at render time. |
+| `ESP_METRIC_COLOR` | **Deleted.** |
+| Default selection | **All metrics on** — what the view did before it had a picker. |
+| `CompareView` | Untouched, as planned. |
 
-`states_index.js` metrics carry `id, label, units, color, national_id,
-frequency, source_label, source_url, description, invert_color, rebase,
-n_states`. No `category`. That is precisely why `ESP_METRIC_COLOR` exists — it's
-a by-id fallback standing in for the missing field.
+### Three differences from National, all deliberate
 
-Thirteen of the fourteen have a `national_id`, so the mapping is derivable, but
-**it should be an explicit `category` on each `STATE_METRICS` entry in
-`fetch_data.R`**, not derived at render time. Deriving it would recreate exactly
-the id→group indirection the national recut deleted. Adding the field lets you
-**delete `ESP_METRIC_COLOR` entirely**, since `espColorFor` would then resolve
-through `ESP_CATEGORY_COLOR` like everything else.
+- **Defaults to every metric on.** Before the rail, the state view rendered all
+  14 unconditionally, so a reader who never touches the rail sees exactly what
+  shipped before; the rail only adds the ability to cut down. National defaults
+  to 7 of 31 because 31 cards is not a page.
+- **Selection is keyed on the bare metric id** (`rent`), not the per-state card
+  id (`il_rent`), so stepping through states with ← → keeps it. A metric the next
+  state lacks is simply absent from the list. "Select all" covers the whole
+  catalog rather than the current state's subset, so it can't quietly drop a
+  metric the next state does publish; the *count* ("14 of 14 on") is over what
+  the state on screen actually has.
+- **Three groups, not six.** `groceries` has no state data and `overall` is
+  impossible (no state CPI). `bills` was folded into `housing` **in
+  `fetch_data.R`**, not at render time — see below.
 
-Proposed mapping (14 metrics):
+### The fold is in the data, on purpose
 
-| category | state metrics | n |
-|---|---|---|
-| `housing` | `rent`, `home_prices`, `rent_hours`, `rent_burden` | 4 |
-| `income` | `wages`, `income`, `income_20th`, `unemployment`, `debt_per_capita`, `studentloan_per_capita`, `cc_delinquency_90` | 7 |
-| `health` | `aca_benchmark_premium`, `uninsured_rate` | 2 |
-| `bills` | `electricity_bill` | 1 |
+A rail heading reading "Bills & getting around" over one lone electricity bill
+reads like a bug, so state `electricity_bill` carries `category = "housing"`.
+The alternative — leave it in `bills` and merge the groups only in the rail —
+was rejected for the same reason the national recut went into the data: the card
+would then sit in the housing run wearing a "Bills & getting around" eyebrow and
+painting purple. Under the recut the category *is* the group, so a display-time
+merge cannot be consistent.
 
-### The design problem this exposes
+**Consequence to know about:** the state electricity card draws navy while the
+national electricity card draws purple. Accepted. They are different series
+anyway (EIA's average monthly bill vs the national CPI/APU price), and it is a
+home bill.
 
-**Only four of the six groups exist on a state tab, and the balance is bad.**
-`groceries` is empty (no state grocery data) and `overall` is structurally
-impossible (no state CPI). `income` holds half the metrics; `bills` holds one.
-A rail with a one-item group and a seven-item group is a worse rail than the
-national one, and "Bills & getting around" as a heading over a lone electricity
-bill reads like a mistake.
+### `ESP_METRIC_COLOR` was deleted, and it had never run
 
-This is the real decision to make before writing any code, and it's a judgment
-call for Mike, not for whoever picks this up:
+Worth knowing, because the old §5 described it as "the state view's by-id
+fallback" and it wasn't: state cards build their item id as `il_rent`, not
+`rent`, and set `category: 'state'`, so **both** lookups in `espColorFor` missed
+and every state card fell through to the pre-ESP hex still sitting in the
+payload. The state tab was off-palette for its whole life — indigo home prices,
+teal electricity, rose debt. Giving state metrics a real `category` is what put
+it on the ESP palette; 13 of the 14 landed on exactly the hex
+`ESP_METRIC_COLOR` had been trying to give them, and electricity is navy rather
+than purple because of the fold.
 
-1. **Same six groups, empty ones omitted.** Consistent vocabulary across tabs;
-   accepts the lopsided rail.
-2. **Fold `bills` into another group on state tabs only.** Better-looking rail;
-   the same metric now sits under different headings on different tabs.
-3. **No grouping on the state tab** — one flat alphabetical list of 14 in the
-   rail. Fourteen items don't need six headings, and the flat list is honest
-   about how little state data exists.
-4. **Don't put a rail on the state tab at all** (see below).
+Two tests guard the seam now: `states: every metric carries a category the state
+rail can render` and `states: no metric relies on a by-id color map that no
+longer exists` (which also fails if anyone reintroduces the map).
 
-### The prior question: does the state view even need a picker?
+### The anchor bug this surfaced
 
-**The state view has no metric selection today.** It renders all 14 metrics
-unconditionally, alphabetically, plus the annual stat tiles. So a rail there is
-not the same job it does on National — on National it selects 7 of 31 from a
-list too long to show as cards; on State there are 14 and they all render.
+Putting a rail next to the state cards exposed a real defect, fixed in the same
+change. `anchorDate` returns a calendar date, but a series only publishes on its
+own schedule, and the two helpers that landed that date on a reading went in
+opposite directions:
 
-Adding a rail therefore means also deciding whether the state view *becomes*
-selectable. That's a product change, not a port. The cheaper reading of "add it
-to the state tabs" is that the state view should gain **grouping and the recut
-vocabulary** — group headings between runs of cards — without gaining selection
-at all. Settle this first; it determines whether `MetricPicker` is involved.
+- `valueAt` (the badges, Copy fact) → the last reading **on or before** it.
+- `sliceFrom` (the chart window, and so the baseline of every cumulative
+  %-change number) → the first reading **at or after** it.
 
-### Suggested sequence
+Every monthly series publishes in December 2019, so nothing turned on it. FHFA
+home prices are quarterly: the Illinois card printed a **+55.6%** headline
+captioned "since Dec 2019" directly above its own badge reading **+56.3% since
+Dec '19**. One card, one question, two published answers — and the headline's
+was measured from Q1 2020, which is mislabelled and, on the Pre-COVID anchor
+specifically, not pre-COVID.
 
-1. Add `category` to the 14 `STATE_METRICS` entries in `fetch_data.R`; add the
-   field to whatever `states_index.js` emits. Run `Rscript fetch_data.R`.
-   Verify with `node tests/run.js` **before** any UI change, so a data failure
-   and a UI failure can't be confused.
-2. Delete `ESP_METRIC_COLOR` and let `espColorFor` fall through to
-   `ESP_CATEGORY_COLOR`. Confirm no state series changes color.
-3. Settle "grouping only, or selection too?" and the four-group balance.
-4. Only then touch the view. If it does get a rail: change the state cards grid
-   from `minmax(420px, 1fr)` to `minmax(380px, 1fr)` to match National, or the
-   two tabs will size cards differently for no reason a reader can see.
-5. `CompareView` is a different selection model (1–4 metrics, pinned states) and
-   is **out of scope** — don't fold it in opportunistically.
+`anchorObsDate(data, anchorId)` (block one, unit-tested) is now the single
+resolution every surface uses: the last reading on or before the anchor,
+clamping forward only when the anchor predates the series. Call sites:
+`railChangeText`, `ChartCard`, `CompareChart`.
+
+**What moved.** Every number that changed moved onto the value the same card's
+badge was already publishing. In the default view ($ levels, Pre-COVID) the only
+headline that changed is state Home Prices, 55.6% → 56.3%. The rest are in the
+%-change view and under the **1 Year** anchor, which is dated from *today* and
+so never lands on a monthly observation — "1 Year" was quietly measuring 11
+months and now measures 12. Two families of previously-wrong numbers also got
+fixed: annual series under the Pre-COVID anchor in %-change view were measuring
+from 2020 or 2021 rather than 2019 (national `income_20th` read +19.5% where its
+badge said +24.7%), and annual series under the 1 Year anchor were resolving to
+their own last reading and printing "+0.0%".
+
+If this ever needs reverting it is one helper and three call sites.
+
+### Still true, still worth not breaking
+
+- The state cards grid moved from `minmax(420px, 1fr)` to `minmax(380px, 1fr)`
+  to match National. The 1060–1092px hairline wart in §2 now applies to both
+  tabs equally.
+- The annual stat tiles stayed **outside** the rail layout, full width, the way
+  National's heatmap does.
+- `source_parity.test.js` now parses `STATE_METRICS` too
+  (`rseries.parseStateMetrics`) and checks the committed catalog against it —
+  metadata verbatim, order, and the category set. Before this, editing a state
+  metric in `fetch_data.R` without re-running the script was invisible.
 
 ---
 

@@ -790,11 +790,34 @@ STATES <- list(
 
 # State metric catalog. `national_id` names the national series (in SERIES)
 # drawn as the dashed US comparison line on state charts.
+#
+# `category` is the same field, with the same six values, as in SERIES above:
+# under the August 2026 recut the category IS the picker group, so it decides
+# rail placement, card order and color family on the state tabs exactly as it
+# does on National. It was added in August 2026, when the state view gained the
+# rail; before that the state view had no grouping and index.html carried a
+# by-id color map (ESP_METRIC_COLOR) standing in for this field. That map is
+# gone — do not reintroduce a display-time id→group mapping, which is the
+# indirection this field exists to delete.
+#
+# Two of the six categories cannot appear here, and that is structural, not an
+# oversight: "groceries" because no state grocery prices exist, and "overall"
+# because there is no state CPI. Never add or imply one.
+#
+# "bills" is deliberately NOT used on the state tabs either. The only state
+# metric that would sit in it is the EIA electricity bill, and a rail group
+# reading "Bills & getting around" over one lone electricity bill reads like a
+# bug. It is filed under "housing" instead — it is a home bill, and the state
+# series (EIA's average monthly bill) is a different series from the national
+# electricity price. Consequence to know about: the state electricity card
+# draws navy while the national electricity card draws purple. That is the
+# accepted cost of the fold, decided August 2026.
 STATE_METRICS <- list(
   list(
     id           = "unemployment",
     label        = "Unemployment Rate",
     units        = "Rate (%)",
+    category     = "income",
     color        = "#065F46",
     national_id  = "unemployment",
     frequency    = "Monthly",
@@ -809,6 +832,7 @@ STATE_METRICS <- list(
     id           = "wages",
     label        = "Hourly Wages",
     units        = "$ per Hour",
+    category     = "income",
     color        = "#10B981",
     national_id  = "hourly_earnings",
     frequency    = "Monthly",
@@ -824,6 +848,7 @@ STATE_METRICS <- list(
     id           = "home_prices",
     label        = "Home Prices",
     units        = "Index (1980 Q1 = 100)",
+    category     = "housing",
     color        = "#4338CA",
     national_id  = "us_home_price_index",
     frequency    = "Quarterly",
@@ -838,6 +863,7 @@ STATE_METRICS <- list(
     id           = "income",
     label        = "Real Median Household Income",
     units        = "$",
+    category     = "income",
     color        = "#7C3AED",
     national_id  = "us_median_income",
     frequency    = "Annual",
@@ -853,6 +879,7 @@ STATE_METRICS <- list(
     id           = "rent",
     label        = "Rent (Market)",
     units        = "$ per Month",
+    category     = "housing",
     color        = "#7E22CE",
     national_id  = "zori_rent",
     frequency    = "Monthly",
@@ -870,6 +897,7 @@ STATE_METRICS <- list(
     id           = "rent_hours",
     label        = "Rent in Hours of Work",
     units        = "Hours of Work",
+    category     = "housing",
     color        = "#15803D",
     national_id  = "rent_hours",
     frequency    = "Monthly",
@@ -884,6 +912,7 @@ STATE_METRICS <- list(
     id           = "electricity_bill",
     label        = "Electricity Bill",
     units        = "$ per Month",
+    category     = "housing",
     color        = "#14B8A6",
     national_id  = NULL,
     frequency    = "Monthly",
@@ -898,6 +927,7 @@ STATE_METRICS <- list(
     id           = "aca_benchmark_premium",
     label        = "ACA Benchmark Premium",
     units        = "$ per Month",
+    category     = "health",
     color        = "#9333EA",
     national_id  = "aca_benchmark_premium",
     frequency    = "Annual",
@@ -913,6 +943,7 @@ STATE_METRICS <- list(
     id           = "uninsured_rate",
     label        = "Uninsured Rate",
     units        = "Rate (%)",
+    category     = "health",
     color        = "#A21CAF",
     national_id  = "uninsured_rate",
     frequency    = "Annual",
@@ -929,6 +960,7 @@ STATE_METRICS <- list(
     id           = "debt_per_capita",
     label        = "Household Debt per Capita",
     units        = "$ per Person",
+    category     = "income",
     color        = "#9F1239",
     national_id  = "debt_per_capita",
     frequency    = "Annual (Q4)",
@@ -944,6 +976,7 @@ STATE_METRICS <- list(
     id           = "studentloan_per_capita",
     label        = "Student Loan Debt per Capita",
     units        = "$ per Person",
+    category     = "income",
     color        = "#991B1B",
     national_id  = "studentloan_per_capita",
     frequency    = "Annual (Q4)",
@@ -959,6 +992,7 @@ STATE_METRICS <- list(
     id           = "cc_delinquency_90",
     label        = "Credit Card Delinquency (90+)",
     units        = "% of Balance",
+    category     = "income",
     color        = "#B91C1C",
     national_id  = "cc_delinquency_90",
     frequency    = "Annual (Q4)",
@@ -975,6 +1009,7 @@ STATE_METRICS <- list(
     id           = "income_20th",
     label        = "Income: 20th Percentile (Nominal)",
     units        = "$",
+    category     = "income",
     color        = "#4D7C0F",
     national_id  = "income_20th",
     frequency    = "Annual",
@@ -992,6 +1027,7 @@ STATE_METRICS <- list(
     id           = "rent_burden",
     label        = "Rent Burden",
     units        = "% of Renters",
+    category     = "housing",
     color        = "#8B5CF6",
     national_id  = "rent_burden",
     frequency    = "Annual",
@@ -1649,6 +1685,10 @@ metric_index <- lapply(STATE_METRICS, function(m) {
     id           = m$id,
     label        = m$label,
     units        = m$units,
+    # The state rail groups on this, and espColorFor colors on it. A metric
+    # reaching the front end without a category vanishes from the state view's
+    # picker exactly as a national series would from the National rail.
+    category     = m$category,
     color        = m$color,
     national_id  = m$national_id,
     frequency    = m$frequency,

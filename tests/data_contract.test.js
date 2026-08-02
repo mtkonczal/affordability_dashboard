@@ -11,7 +11,7 @@ const assert = require('node:assert/strict');
 
 const {
   loadHelpers, loadNational, loadStatesIndex, loadState, loadStateMetric,
-  loadManifest, exists,
+  loadManifest, exists, repoPath,
 } = require('./lib/load.js');
 const { seriesProblems, latestProblems, monthsBetween, maxDate } = require('./lib/series.js');
 
@@ -195,6 +195,50 @@ test('states: every metric a state claims in `has` actually loads from its file'
     }
   }
   assert.deepEqual(bad, []);
+});
+
+test('states: every metric carries a category the state rail can render', () => {
+  // The state view gained the same picker as National in August 2026, so state
+  // metrics now carry `category` and the state rail groups on it. A metric with
+  // no category, or one in a group CATEGORY_META has no entry for, silently
+  // vanishes from the state view — the same failure the national test above
+  // guards, with the same absence of any error to notice.
+  //
+  // Only three of the six are reachable here and that is structural: no state
+  // grocery prices exist, there is no state CPI so `overall` is impossible, and
+  // `bills` is folded into housing on purpose (one lone electricity bill under
+  // its own heading reads like a bug). source_parity.test.js checks the same set
+  // against fetch_data.R, which catches it before a refresh ships.
+  const known = new Set(['housing', 'health', 'income']);
+  const bad = METRICS.filter(m => !known.has(m.category))
+    .map(m => `${m.id} → ${m.category === undefined ? '(no category)' : m.category}`);
+  assert.deepEqual(bad, [],
+    'Add the category in STATE_METRICS (fetch_data.R) and re-run the script; if a ' +
+    'state metric genuinely belongs in a new group, add it to CATEGORY_META, ' +
+    'CATEGORY_LABELS and ESP_CATEGORY_COLOR in index.html and to the known sets ' +
+    'in this file and source_parity.test.js.');
+});
+
+test('states: no metric relies on a by-id color map that no longer exists', () => {
+  // ESP_METRIC_COLOR was deleted in August 2026. It had never actually run —
+  // state cards build their item id as `il_rent` and used to set category
+  // 'state', so both lookups missed and every state card fell through to the
+  // pre-ESP hex in the payload. espColorFor now resolves state cards through
+  // ESP_CATEGORY_COLOR like everything else, which only works while every
+  // metric's category has an entry there.
+  const src = require('node:fs').readFileSync(repoPath('index.html'), 'utf8');
+  // A declaration or a lookup, not any mention: the comment where espColorFor
+  // used to consult it explains why it is gone, and that comment is the reason
+  // the next person doesn't re-add it.
+  assert.ok(!/(const|let|var)\s+ESP_METRIC_COLOR|ESP_METRIC_COLOR\s*\[/.test(src),
+    'ESP_METRIC_COLOR is back. Put the category in the data instead — a ' +
+    'display-time id→group map is the indirection the recut deleted.');
+  const table = /const ESP_CATEGORY_COLOR = \{([\s\S]*?)\};/.exec(src);
+  assert.ok(table, 'could not find ESP_CATEGORY_COLOR in index.html');
+  const uncolored = METRICS
+    .filter(m => !new RegExp(`\\b${m.category}\\s*:`).test(table[1]))
+    .map(m => `${m.id} (${m.category})`);
+  assert.deepEqual(uncolored, [], 'state metric categories with no color family');
 });
 
 test('states: every metric in the catalog has a compare-view payload file', () => {

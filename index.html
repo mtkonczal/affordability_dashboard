@@ -668,6 +668,38 @@ function sliceFrom(data, fromDateStr) {
   return data.filter(d => new Date(d.date) >= cutoff);
 }
 
+// One anchor, one observation. `anchorDate` returns a calendar date, but a
+// series only publishes on its own schedule, and the two ways of landing that
+// date on a reading disagreed:
+//
+//   · valueAt (the badges, Copy fact) takes the last reading ON OR BEFORE it.
+//   · sliceFrom (the chart window, and so the baseline of every cumulative
+//     %-change number) takes the first reading AT OR AFTER it.
+//
+// For a monthly series both land on Dec 2019 and nothing turns on it. For FHFA
+// home prices, quarterly, "Pre-COVID" resolved to Q4 2019 in the badge and Q1
+// 2020 in the headline, so one card published two answers to one question:
+// Illinois read "+55.6%" in the headline above a badge reading "+56.3% since
+// Dec '19". Annual January-dated series (ACS income, rent burden) do the same
+// thing in the %-change view, splitting 2019 from 2020.
+//
+// The badge's reading is the defensible one and the label is why: a number
+// captioned "since Dec 2019" must not measure from Jan 2020, and on the
+// Pre-COVID anchor specifically, Q1 2020 is not pre-COVID. So every surface
+// resolves the anchor here, to the last reading on or before it — clamping
+// forward only when the anchor predates the series, which is what the chart and
+// the fact sentence already did in that case.
+function anchorObsDate(data, anchorId) {
+  const raw = anchorDate(anchorId, data);
+  if (!data || !data.length) return raw;
+  const cutoff = new Date(raw);
+  let hit = null;
+  for (let i = 0; i < data.length; i++) {
+    if (new Date(data[i].date) <= cutoff) hit = data[i].date; else break;
+  }
+  return hit || data[0].date;
+}
+
 // Build an SVG line path (used by the compare-view sparklines)
 function linePath(points) {
   if (!points.length) return '';
@@ -947,18 +979,17 @@ function changeSince(data, fromDate, item) {
 //   · An anchor landing on the last reading returns '—', not "0.0%". An annual
 //     series with nothing published since isn't "unchanged", it's "no new data
 //     since", and a 0.0% badge would claim the former.
+//
+// The base comes from anchorObsDate, the same resolution the card's chart,
+// headline and badges use, so a row and the card it opens cannot print two
+// different answers even for a series that publishes nothing in the anchor
+// month. An anchor predating the series clamps forward to its first reading.
 function railChangeText(item, anchorId, priceType, cpi) {
   const data = seriesForType(item, cpi, priceType === 'real');
   if (!data || data.length < 2) return '—';
-  const cutoff = new Date(anchorDate(anchorId, data));
-  let k = -1;
-  for (let i = 0; i < data.length; i++) {
-    if (new Date(data[i].date) <= cutoff) k = i; else break;
-  }
-  // An anchor predating the series clamps forward to its first reading — the
-  // same clamp the chart and the Copy-fact sentence use.
-  if (k < 0) k = 0;
-  if (k === data.length - 1) return '—';
+  const base = anchorObsDate(data, anchorId);
+  const k = data.findIndex(d => d.date === base);
+  if (k < 0 || k === data.length - 1) return '—';
   const rate = isRateSeries(item);
   const v = changeIn(data[k].value, data[data.length - 1].value, rate);
   return v == null ? '—' : fmtChange(v, rate);
@@ -968,7 +999,7 @@ Object.assign(window, {
   ESP, fmtVal, fmtDate, inferCadence, fmtObsDate, ordinal, pctChange, pctChangeBetween, valueAt, sliceFrom, downloadCSV, downloadCardAsPNG,
   downloadCompareCSV,
   linePath, toPoints, hoursToAfford, REFERENCE_PRICES, scaleByCPI, categoryLabel,
-  ANCHORS, anchorById, anchorDate, buildFactText, loadDataFile,
+  ANCHORS, anchorById, anchorDate, anchorObsDate, buildFactText, loadDataFile,
   ALREADY_REAL_IDS, isDeflatable, toReal, seriesForType, railChangeText,
   isRateSeries, changeIn, fmtChange, changeSince, changeBetween,
 });
@@ -994,7 +1025,7 @@ Object.assign(window, {
 const { ESP, fmtVal, fmtDate, fmtObsDate, ordinal, valueAt, sliceFrom, downloadCSV, downloadCardAsPNG,
         downloadCompareCSV,
         linePath, toPoints, categoryLabel, hoursToAfford, REFERENCE_PRICES, scaleByCPI,
-        ANCHORS, anchorById, anchorDate, buildFactText, loadDataFile,
+        ANCHORS, anchorById, anchorDate, anchorObsDate, buildFactText, loadDataFile,
         ALREADY_REAL_IDS, isDeflatable, toReal, seriesForType, railChangeText,
         isRateSeries, changeIn, fmtChange, changeSince, changeBetween } = window;
 const { useState, useMemo, useEffect, useRef } = React;
@@ -1076,23 +1107,17 @@ const ESP_CATEGORY_COLOR = {
   income:    '#70ad8f', // Soft Green — what you earn and what you owe
   overall:   '#7f8c53', // Olive — headline CPI, its own family of one
 };
-// State-view metrics carry no `category` (states_index.js), so map them by id
-// into the same six families the National view uses. Kept in step with
-// ESP_CATEGORY_COLOR by hand: if a metric is green on National and brick here,
-// the same series changes color when a reader switches tabs. The recut moved
-// two blocks — health coverage gold → brick, and the debt trio brick → green,
-// following their series into "Paychecks & debt".
-const ESP_METRIC_COLOR = {
-  wages: '#70ad8f', hourly_earnings: '#70ad8f',
-  income: '#70ad8f', unemployment: '#70ad8f', income_20th: '#70ad8f',
-  debt_per_capita: '#70ad8f', studentloan_per_capita: '#70ad8f', cc_delinquency_90: '#70ad8f',
-  home_prices: '#2c3254', rent: '#2c3254', zori_rent: '#2c3254', rent_hours: '#2c3254', rent_burden: '#2c3254',
-  electricity_bill: '#472b51',
-  aca_benchmark_premium: '#b0645f', uninsured_rate: '#b0645f',
-};
+// State metrics resolve through the same table, because they now carry the same
+// `category` field (added to STATE_METRICS in August 2026, when the state view
+// gained the rail). This replaced ESP_METRIC_COLOR, a by-id map that stood in
+// for the missing field — and that never actually ran: state cards build their
+// item id as `il_rent`, not `rent`, and set category 'state', so both lookups
+// missed and every state card fell through to the pre-ESP hex still in the
+// payload. The state tab was off-palette the whole time. Don't reintroduce a
+// by-id map; put the category in the data.
 function espColorFor(item) {
   if (!item) return ESP_SERIES[0];
-  return ESP_CATEGORY_COLOR[item.category] || ESP_METRIC_COLOR[item.id] || item.color || ESP_SERIES[0];
+  return ESP_CATEGORY_COLOR[item.category] || item.color || ESP_SERIES[0];
 }
 
 // Distinct colors assigned to pinned states in the compare view; beyond the
@@ -1319,7 +1344,9 @@ function ChartCard({ item, anchorId, displayMode, priceType, cpiData, overlayIte
   useEffect(() => { setOvr(null); }, [anchorId]);
   const activeId = ovr || anchorId;
   const active = anchorById(activeId);
-  const cardSince = anchorDate(activeId, item.data);
+  // Resolved to a reading the series actually publishes, so the chart window,
+  // the headline and the two badges all measure from the same point.
+  const cardSince = anchorObsDate(item.data, activeId);
 
   // Index series always display as % change; everything else follows the
   // global $/% toggle.
@@ -2063,7 +2090,25 @@ function NationalView({ data, anchorId, displayMode, priceType }) {
   );
 }
 
-// ── State view: all metrics for one state, each vs. the US ──────────────────
+// ── State view: metrics for one state, each vs. the US ──────────────────────
+// Carries the same picker as the National view (August 2026): one MetricPicker
+// in two containers, a 220px rail above 1060px and a menu below it, one
+// selection shared between them. Three things differ from National, all
+// deliberate:
+//
+//   · It defaults to every metric on. Before the rail, the state view rendered
+//     all of them unconditionally, so a reader who never touches the rail sees
+//     exactly what shipped before — the rail only adds the ability to cut down.
+//     (National defaults to 7 of 31, because 31 cards is not a page.)
+//   · Selection is keyed on the bare metric id, not the per-state card id, so
+//     stepping through states with ← → keeps it. A metric the next state lacks
+//     (rent, in the states under 50% ZORI renter coverage) is simply not listed.
+//   · Only three of the six groups can appear. "groceries" has no state data
+//     and "overall" is impossible — there is no state CPI — while "bills" is
+//     folded into housing in the data, since a group heading over one lone
+//     electricity bill reads like a bug. See the STATE_METRICS comment in
+//     fetch_data.R; the fold lives there, not here, so the rail heading, the
+//     card order and the color family cannot disagree.
 function fmtAnnual(value, units) {
   if ((units || '').includes('%')) return Number(value).toFixed(1) + '%';
   if ((units || '').includes('$')) return '$' + Math.round(Number(value)).toLocaleString();
@@ -2075,6 +2120,15 @@ function StateView({ data, code, setCode, anchorId, displayMode, priceType }) {
   const idx = window.AFFORDABILITY_STATES;
   const isUS = code === 'US';
   const [status, setStatus] = useState('loading');
+
+  // Every metric on to start (see the note above). Keyed on the catalog id, so
+  // the set is meaningful for every state, not just the one on screen.
+  const [selectedIds, setSelectedIds] = useState(() =>
+    new Set(((window.AFFORDABILITY_STATES || {}).metrics || []).map(m => m.id))
+  );
+  // One filter string across both containers, so typing in the rail survives a
+  // resize into the menu.
+  const [q, setQ] = useState('');
 
   useEffect(() => {
     let live = true;
@@ -2109,7 +2163,9 @@ function StateView({ data, code, setCode, anchorId, displayMode, priceType }) {
       })()
     : ((status === 'ready' && window.STATE_DATA) ? window.STATE_DATA[code] : null);
 
-  const picker = (
+  // The which-state bar. Distinct from the metric picker below it, which is why
+  // it isn't called `picker` any more.
+  const stateBar = (
     <div className="at-pad" style={{
       background: MENU_BG, borderBottom: `1px solid rgba(44,50,84,.18)`,
       padding: '16px 56px',
@@ -2131,7 +2187,7 @@ function StateView({ data, code, setCode, anchorId, displayMode, priceType }) {
   if (status !== 'ready' || !sd) {
     return (
       <React.Fragment>
-        {picker}
+        {stateBar}
         <div className="at-pad" style={{ padding: '48px 56px', fontFamily: 'Publico, Georgia, serif', fontStyle: 'italic', color: MUTE }}>
           {status === 'error' ? `Could not load data for ${code}.` : 'Loading state data…'}
         </div>
@@ -2139,10 +2195,13 @@ function StateView({ data, code, setCode, anchorId, displayMode, priceType }) {
     );
   }
 
+  // Every metric this state actually has. No sort here: the groups below order
+  // them, group order first and alphabetical inside each group — the same rule
+  // the National view follows, and the reason the flat alphabetical sort that
+  // used to live on this line is gone. Metrics stay strictly alphabetical
+  // within a group, which is where the comms alphabetical rule applies.
   const cards = idx.metrics
     .filter(m => sd.metrics && sd.metrics[m.id])
-    .slice()
-    .sort((a, b) => a.label.localeCompare(b.label)) // alphabetical (comms request)
     .map(m => {
       const sm = sd.metrics[m.id];
       const coverageNote = sm.coverage && sm.coverage < 1
@@ -2153,7 +2212,11 @@ function StateView({ data, code, setCode, anchorId, displayMode, priceType }) {
         label: m.label,
         eyebrow: sd.name,
         subtitle: `${m.source_label}${coverageNote}`,
-        category: 'state',
+        // The real category, not the old 'state' placeholder: espColorFor reads
+        // it, so this is what puts the state cards on the ESP palette. The card
+        // eyebrow is unaffected — it prints `eyebrow` (the state name) and only
+        // falls back to the category label when there is none.
+        category: m.category,
         units: m.units,
         description: m.description,
         color: m.color,
@@ -2174,42 +2237,135 @@ function StateView({ data, code, setCode, anchorId, displayMode, priceType }) {
         ? `${ordinal(sm.rank)} highest of ${sm.rank_n}` : null;
       const rankText = sm.rank != null && sm.rank_n != null
         ? `the ${ordinal(sm.rank)} highest among ${sm.rank_n} states` : null;
-      return { item, factLabel: `${sd.name} — ${m.label}`, rankNote, rankText };
+      return { metric: m, item, factLabel: `${sd.name} — ${m.label}`, rankNote, rankText };
     });
+
+  // Groups in CATEGORY_META order, alphabetical within each. Empty groups drop
+  // out, which is what leaves the state tabs with three of the six rather than
+  // printing "Food" over nothing.
+  const groups = CATEGORY_META
+    .map(c => ({
+      id: c.id,
+      label: c.label,
+      cards: cards
+        .filter(x => x.metric.category === c.id)
+        .sort((a, b) => a.metric.label.localeCompare(b.metric.label)),
+    }))
+    .filter(g => g.cards.length);
+
+  // What MetricPicker wants: {id, label, items}. The rows key on the catalog id
+  // (`rent`), not the card id (`il_rent`), so a selection survives a change of
+  // state; everything else on the item is what railChangeText reads.
+  const pickerGroups = groups.map(g => ({
+    id: g.id,
+    label: g.label,
+    items: g.cards.map(c => ({ ...c.item, id: c.metric.id })),
+  }));
+
+  const toggleId = (id) => {
+    setSelectedIds(prev => {
+      const n = new Set(prev);
+      if (n.has(id)) n.delete(id); else n.add(id);
+      return n;
+    });
+  };
+  const idsIn = (catId) => {
+    const g = groups.find(x => x.id === catId);
+    return g ? g.cards.map(c => c.metric.id) : [];
+  };
+  // Additive bulk toggles, same as National: adding a group never touches what
+  // is selected elsewhere. The count is over what this state actually has, so a
+  // group reads "all on" when every metric present is on, not when a metric the
+  // state doesn't publish is missing from the set.
+  const catState = (catId) => {
+    const ids = idsIn(catId);
+    const on = ids.filter(id => selectedIds.has(id)).length;
+    return on === 0 ? 'none' : on === ids.length ? 'all' : 'some';
+  };
+  const toggleCategory = (catId) => {
+    const ids = idsIn(catId);
+    const removing = catState(catId) === 'all';
+    setSelectedIds(prev => {
+      const n = new Set(prev);
+      ids.forEach(id => { if (removing) n.delete(id); else n.add(id); });
+      return n;
+    });
+  };
+
+  const selectedCards = groups.flatMap(g => g.cards.filter(c => selectedIds.has(c.metric.id)));
+
+  const metricPicker = (variant) => (
+    <MetricPicker
+      variant={variant} groups={pickerGroups} total={cards.length}
+      // The picker counts and marks against what this state has, so "12 of 12
+      // on" can't be contradicted by a card that isn't there.
+      selectedIds={new Set(selectedCards.map(c => c.metric.id))}
+      q={q} setQ={setQ}
+      toggleId={toggleId} toggleCategory={toggleCategory} catState={catState}
+      // Select all covers the whole catalog, not just this state's metrics, so
+      // it doesn't quietly drop a metric the next state does publish.
+      onSelectAll={() => setSelectedIds(new Set(idx.metrics.map(m => m.id)))}
+      onClearAll={() => setSelectedIds(new Set())}
+      anchorId={anchorId} priceType={priceType} cpiData={cpiData}
+    />
+  );
 
   const annualTiles = (idx.annual || []).filter(a => sd.annual && sd.annual[a.id] != null);
 
   return (
     <React.Fragment>
-      {picker}
+      {stateBar}
       <div className="at-pad" style={{ padding: '36px 56px 56px' }}>
-        <div className="at-section-head" style={styles.sectionHead}>
-          <span style={styles.sectionTitle}>{sd.name}</span>
-          <span className="at-section-dek" style={styles.sectionDek}>
-            {isUS
-              ? 'The national versions of every state metric.'
-              : 'No state-level CPI exists — these are the price and income series that do.'}
-          </span>
-        </div>
+        {/* Both picker containers always render; CSS picks one at the current
+            width. Same markup as NationalView, so the two tabs cross the
+            1060px breakpoint identically. */}
+        <div className="at-nat-layout">
+          <div className="at-rail">{metricPicker('rail')}</div>
 
-        <div className="at-cards-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: 0,
-          border: `1px solid rgba(44,50,84,.14)` }}>
-          {cards.map(({ item, factLabel, rankNote, rankText }, i) => {
-            const col = i % 2;
-            const row = Math.floor(i / 2);
-            const lastRow = Math.floor((cards.length - 1) / 2);
-            return (
-              <div key={item.id} className="at-card" style={{
-                borderRight: col < 1 ? `1px solid rgba(44,50,84,.14)` : 'none',
-                borderBottom: row < lastRow ? `1px solid rgba(44,50,84,.14)` : 'none',
+          <div style={{ minWidth: 0 }}>
+            <div className="at-natmenu">{metricPicker('menu')}</div>
+
+            <div className="at-section-head" style={styles.sectionHead}>
+              <span style={styles.sectionTitle}>{sd.name}</span>
+              <span className="at-section-dek" style={styles.sectionDek}>
+                {isUS
+                  ? 'The national versions of every state metric.'
+                  : 'No state-level CPI exists — these are the price and income series that do.'}
+              </span>
+            </div>
+
+            {selectedCards.length === 0 ? (
+              <div style={{
+                background: PAPER, border: `1px solid rgba(44,50,84,.18)`,
+                padding: '48px 32px', textAlign: 'center',
+                fontFamily: 'Publico, Georgia, serif', fontStyle: 'italic', color: MUTE,
               }}>
-                <ChartCard item={item} anchorId={anchorId} displayMode={displayMode}
-                           priceType={priceType} cpiData={cpiData}
-                           factLabel={factLabel}
-                           rankNote={rankNote} rankText={rankText} />
+                Pick a metric from the list to chart it.
               </div>
-            );
-          })}
+            ) : (
+              /* 380px to match National. At 420 the two tabs sized their cards
+                 differently for no reason a reader could see. */
+              <div className="at-cards-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: 0,
+                border: `1px solid rgba(44,50,84,.14)` }}>
+                {selectedCards.map(({ item, factLabel, rankNote, rankText }, i) => {
+                  const col = i % 2;
+                  const row = Math.floor(i / 2);
+                  const lastRow = Math.floor((selectedCards.length - 1) / 2);
+                  return (
+                    <div key={item.id} className="at-card" style={{
+                      borderRight: col < 1 ? `1px solid rgba(44,50,84,.14)` : 'none',
+                      borderBottom: row < lastRow ? `1px solid rgba(44,50,84,.14)` : 'none',
+                    }}>
+                      <ChartCard item={item} anchorId={anchorId} displayMode={displayMode}
+                                 priceType={priceType} cpiData={cpiData}
+                                 factLabel={factLabel}
+                                 rankNote={rankNote} rankText={rankText} />
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
 
         {annualTiles.length > 0 && (
@@ -2267,7 +2423,9 @@ function CompareChart({ metric, seriesList, anchorId, displayMode, height = 340 
     const ctx = canvasRef.current.getContext('2d');
 
     const datasets = seriesList.map(s => {
-      const since = anchorDate(anchorId, s.data);
+      // Resolved per state, like the cards: the Compare view's default metric is
+      // the annual ACA premium, so an unresolved anchor split 2019 from 2020.
+      const since = anchorObsDate(s.data, anchorId);
       let vis = sliceFrom(s.data, since);
       if (asPct && vis.length) {
         const v0 = vis[0].value;
