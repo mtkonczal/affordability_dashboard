@@ -40,7 +40,7 @@ Confirm when: every selected button is navy with white text; every unselected on
 
 ## The new metric picker (August 2026)
 
-The National tab's row of expanding category buttons was replaced by a list of all 31 metrics down the left-hand side. Items 9–15 are about that change, on the **National** tab; items 16–20 cover the same list on **My State**, which got it a few weeks later.
+The National tab's row of expanding category buttons was replaced by a list of all 31 metrics down the left-hand side. Items 9–15 are about that change, on the **National** tab; items 16–20 cover the same list on **My State**; items 21–25 cover **Compare States** and **Map**, which followed. All four tabs now use one list, so the control is in the same place wherever you are.
 
 **9. The list is on the left, and it scrolls with the page**
 Why: the old picker was a bar across the top that had to be expanded a category at a time.
@@ -97,4 +97,30 @@ Confirm when: rent and home charts are navy, paycheck and debt charts green, hea
 
 ---
 
-*Note: most of these can be confirmed by eye on the live page above. Four can hide a fault: #2, if the big numbers silently fall back to a generic serif, it still "works" but isn't the ESP font. #11 and #18, if the list's numbers stop following the date and Nominal/Real controls, or stop matching the card, the page is publishing two different answers to the same question. And #14 — the left-hand list is the part that has to survive inside the frame on the ESP page, so check it there rather than only on a standalone copy.*
+## The same list on Compare States and Map (August 2026)
+
+Both tabs had their own row of buttons across the top; both now use the left-hand list, so the control is in one place on all four tabs.
+
+**21. Compare States: nothing lost, one thing gained**
+Why: the row of metric buttons is gone.
+Confirm when: landing on Compare shows **ACA Benchmark Premium** and nothing else, exactly as before. The left-hand list has all 14 under the three headings, and clicking one adds a panel. Clicking a group heading adds the whole group. **There is no "Clear" and no "Select all"** on this tab, on purpose: Compare with no panels shows nothing, and one click that opened all 14 would be slow enough to look broken. Try to untick your last remaining metric — nothing should happen.
+
+**22. Map: one at a time, and it looks like it**
+Why: the map paints one measure; a "+" beside each row would suggest you could add a second.
+Confirm when: the marks are **round** — a filled dot on the selected measure, hollow rings on the rest — and clicking one *switches* rather than adding. Clicking the already-selected row does nothing. The headings (Rent & homes, and so on) are plain labels here: they don't highlight on hover and clicking them does nothing, because there is no "add the whole group" on this tab.
+
+**23. Map lists 13, not 14**
+Why: home prices are an index number, and each state's index is built on its own base year, so painting them on one map would compare things that aren't comparable.
+Confirm when: **Home Prices is absent** from the Map list and present on the other three tabs.
+
+**24. The map is narrower now, and still readable**
+Why: the list takes about 220px from the map's width.
+Confirm when: the map is noticeably smaller than before but every state is still legible, the color key still fits under it, and clicking a state still pins it to the chart below. On a wide screen the row of Map / Bar chart / year controls may wrap to two lines — that's expected, not a fault.
+
+**25. Row numbers on these two tabs are national**
+Why: neither tab has a single state selected, so there's no state figure to show.
+Confirm when: a row's number matches the same metric's number on the **National** tab. **Electricity Bill reads "—"** on both tabs: there is no US average electricity bill published (EIA gives us state bills only), and an invented one would be worse than a dash.
+
+---
+
+*Note: most of these can be confirmed by eye on the live page above. Five can hide a fault: #2, if the big numbers silently fall back to a generic serif, it still "works" but isn't the ESP font. #11 and #18, if the list's numbers stop following the date and Nominal/Real controls, or stop matching the card, the page is publishing two different answers to the same question. #25 for the same reason across tabs. And #14 — the left-hand list is the part that has to survive inside the frame on the ESP page, so check it there rather than only on a standalone copy.*

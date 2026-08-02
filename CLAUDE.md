@@ -167,10 +167,11 @@ and PNG export are still covered only by the manual pass in `What to Check.md`.
   YoY heatmap), `StateView` (the same rail/menu over one state's metrics, each
   card with a national-rank badge, plus annual stat tiles; "United States" is a
   picker option built from the national payload — no default US overlay),
-  `CompareView` (1–4 metrics as side-by-side panels of pinned states; the US
-  average is pinnable like any state, not shown by default; defaults to the
-  ACA benchmark premium), and `MapView` (its own tab: single-select measure
-  pills, **levels only** — a Map/Bar-chart toggle where Change/Level used to
+  `CompareView` (the same rail/menu, any number of metrics as side-by-side
+  panels of pinned states, minimum one; the US average is pinnable like any
+  state, not shown by default; defaults to the ACA benchmark premium), and
+  `MapView` (its own tab: the same rail/menu, single-select,
+  **levels only** — a Map/Bar-chart toggle where Change/Level used to
   be, plus a year dropdown; within a year each state shows its last reading,
   so monthly/quarterly metrics default to the latest month. The sorted bar
   chart shares the map's warm sequential ramp (`LEVEL_RAMP`, sand → burnt
@@ -192,9 +193,33 @@ and PNG export are still covered only by the manual pass in `What to Check.md`.
   CSS decides which is visible, and they share one selection and one filter
   string, so crossing the breakpoint loses nothing. It replaced the collapsible
   category-chip bar, which is gone along with `styles.catPill` / `checkChip` /
-  `checkBox`. **`NationalView` and `StateView` both use it** — same component,
-  same CSS, same breakpoint (the state port landed 2 Aug 2026; `MetricPicker`
-  itself needed no changes). `sidebar_format.md` is the full handoff doc.
+  `checkBox`. **All four views use it** — same component, same CSS, same
+  breakpoint (My State, then Compare and Map, all 2 Aug 2026; the bespoke metric
+  and measure pill bars are gone). `sidebar_format.md` is the full handoff doc.
+  - One `mode` prop is the only difference between tabs, because they don't mean
+    the same thing by "picked". `multi` (National, My State): add and remove
+    freely, group headers bulk-toggle, Select all + Clear. `keep-one` (Compare):
+    the last metric can't be removed, so **no Clear** (nothing valid to clear to)
+    and **no Select all** (one click would open 14 panels, each lazy-loading a
+    51-state payload); group headers stay but a group holding everything selected
+    won't remove. `single` (Map): rows are radio marks `●`/`○` with
+    `role="radio"`, group headings are plain labels, and the head is just the
+    filter — `＋` would say "add another" and "1 of 13 on" says nothing when only
+    one is ever possible. Collapsed into the menu, Map's summary shows the chosen
+    measure's *name*, not a count. A test pins four call sites and the two named
+    modes, so a fifth tab growing its own picker fails loudly.
+  - **Compare and Map have no state selected**, so their row numbers use the
+    **US series** for the metric (`allStatesPickerGroups`), read from the
+    already-loaded national payload — the same figure the National rail prints,
+    no extra fetch, no cross-tab disagreement. The electricity bill has no
+    national counterpart (EIA publishes state bills, not a US average) and reads
+    `—`. On Map those numbers follow that tab's own anchor and Real toggle, down
+    on the §02 controls, while §01 beside them paints state levels for one year.
+  - Map lists 13, not 14: index-level metrics stay out (FHFA levels aren't
+    comparable across states), a filter that predates the rail.
+  - The rail costs the choropleth ~220px (891px wide at a 1280px viewport). Side
+    effect: Map's section head wraps to two lines at 1280 where it used to fit
+    on one. Cosmetic.
   - The rail has **no inner scroll, no border and no background of its own** —
     those three things, not the concept, were what made the earlier left-rail
     proposal read as bolted on. It runs long in normal document flow.

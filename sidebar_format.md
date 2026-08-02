@@ -1,12 +1,15 @@
 # The sidebar format ("the merge")
 
 How the National metric picker was rebuilt in August 2026, why each decision
-went the way it did, and how it was then put on the state tabs. Written as a
-handoff: read this before touching `MetricPicker`, `NationalView`, `StateView`,
-or any category id.
+went the way it did, and how it then became the metric control on every tab.
+Written as a handoff: read this before touching `MetricPicker`, any of the four
+views that render it, or any category id.
 
-**Status:** the extension proposed in §5 shipped on 2 August 2026. That section
-now records what was built and which of its open questions were settled how.
+**Status:** the extension proposed in §5 shipped on 2 August 2026, first to My
+State and then to Compare States and Map. **All four tabs now use one
+`MetricPicker`.** §5 records what was built and which open questions were
+settled how; §6 covers the two all-states tabs, where "picked" means something
+different and the component grew a `mode`.
 
 Origin: `picker_mockups.html`, options **6 + 2 + 11**, which the team chose at
 the July 2026 review. Open the "The merge · 6 + 2 + 11" tab in that file to see
@@ -22,11 +25,12 @@ places, all listed under [Deviations](#deviations-from-the-mockup) — do not
 rows into either a **220px left rail** (≥1060px) or a **menu** behind an
 "Add a metric ▾" button (<1060px). Both are always in the DOM; CSS decides
 which is visible. They share one selection Set and one filter string, held by
-`NationalView`, so crossing the breakpoint loses nothing.
+the view, so crossing the breakpoint loses nothing.
 
 A row is: mark (`✓` / `＋`), metric name, change number. Group headers are
 clickable bulk toggles. Above the list: a filter field, an "N of 31 on" count,
-Select all, Clear.
+Select all, Clear. That is the National configuration; §6 has the table of what
+each tab varies.
 
 **The category is the group.** Under the recut, `item.category` decides rail
 placement, card render order, and color family simultaneously. There is no
@@ -43,10 +47,13 @@ data question rather than a UI question.
 | `index.html` ~750 | `CATEGORY_LABELS` + `categoryLabel()` (block one, pure) |
 | `index.html` ~987 | `railChangeText()` (block one, pure, unit-tested) |
 | `index.html` ~1068 | `CATEGORY_META` — the six groups **in render order** |
-| `index.html` ~1102 | `ESP_CATEGORY_COLOR` — the only color table; `ESP_METRIC_COLOR` is gone |
-| `index.html` ~1873 | `MetricPicker` — one component, both tabs, unchanged by the state port |
-| `index.html` ~1954 | `NationalView` |
-| `index.html` ~2118 | `StateView` |
+| `index.html` ~1094 | `allStatesPickerGroups()` — the rail's rows for Compare and Map, change numbers off the US series |
+| `index.html` ~1139 | `ESP_CATEGORY_COLOR` — the only color table; `ESP_METRIC_COLOR` is gone |
+| `index.html` ~1929 | `MetricPicker` — one component, all four tabs; `mode` is the only difference |
+| `index.html` ~2032 | `NationalView` (`mode` default, `multi`) |
+| `index.html` ~2196 | `StateView` (`multi`) |
+| `index.html` ~3084 | `CompareView` (`keep-one`) |
+| `index.html` ~3260 | `MapView` (`single`) |
 | `fetch_data.R` ~177 | the `category` field docs; `SERIES` entries carry the value |
 | `fetch_data.R` ~791 | the `STATE_METRICS` header: `category` on state metrics, and why `bills` is folded |
 | `tests/helpers.test.js` | `categoryLabel`, the `railChangeText` tests, `anchorObsDate` |
@@ -199,7 +206,7 @@ view-agnostic.
 | `category` on state metrics | **Explicit field on each `STATE_METRICS` entry,** not derived at render time. |
 | `ESP_METRIC_COLOR` | **Deleted.** |
 | Default selection | **All metrics on** — what the view did before it had a picker. |
-| `CompareView` | Untouched, as planned. |
+| `CompareView` | Untouched in this pass. Picked up straight after — see §6. |
 
 ### Three differences from National, all deliberate
 
@@ -298,7 +305,70 @@ If this ever needs reverting it is one helper and three call sites.
 
 ---
 
-## 6. Verifying without a browser
+## 6. Compare States and Map (shipped 2 August 2026)
+
+Both tabs lost their bespoke pill bars and took the rail. The row, the CSS and
+the two containers are byte-identical across all four tabs; what varies is one
+`mode` prop, because the four views don't mean the same thing by "picked".
+
+| mode | tabs | rows | group headers | head |
+|---|---|---|---|---|
+| `multi` | National, My State | `✓` / `＋` | bulk toggle | count · Select all · Clear |
+| `keep-one` | Compare States | `✓` / `＋` | bulk toggle, guarded | count only |
+| `single` | Map | `●` / `○` | plain labels | filter only |
+
+### Why each mode differs
+
+**`keep-one` (Compare).** A Compare tab with no panels has nothing to show, so
+the last metric can't be removed — that was already true of the pill bar. Two
+consequences: **Clear is absent**, since there is no valid empty state to clear
+to, and **Select all is absent**, because one click would open all 14 panels,
+each lazy-loading a 51-state payload and drawing a chart. (Fourteen is still
+reachable, at fourteen deliberate clicks, exactly as it was with pills.) Group
+headers stay — they cap at seven, and bulk-toggling is the documented comms
+request. The group toggle is **guarded**: removing a group that holds everything
+currently selected is a no-op rather than an empty view.
+
+**`single` (Map).** The choropleth paints one measure at a time. Clicking a row
+switches; clicking the selected row does nothing. `＋` would have said "add
+another", which this tab cannot do, so rows use radio marks and carry
+`role="radio"` inside a `role="radiogroup"` list. Group headings are plain
+labels for the same reason: a hover highlight on a heading that can't bulk-toggle
+promises a click that does nothing. The head is just the filter — "1 of 13 on"
+says nothing when only 1 is ever possible. Collapsed into the menu, the summary
+beside the button shows **the chosen measure's name** rather than a count, which
+is the one thing a reader needs when the list is hidden.
+
+Map lists **13**, not 14: index-level metrics (home prices) stay out, because
+FHFA levels aren't comparable across states. That filter already existed and the
+rail inherits it.
+
+### The row number on a tab with no state selected
+
+Neither tab has a state, so there is no state series for the row to describe.
+Both use the **US series** for the metric — the same figure the National rail
+prints, read from the already-loaded national payload, so there is no extra
+fetch and the two tabs can't contradict National. `allStatesPickerGroups` builds
+this. The electricity bill has no national counterpart (EIA publishes state
+bills, not a US average) and its row reads `—` rather than inventing one.
+
+On Map the numbers follow **that tab's own** anchor and Nominal/Real toggle,
+which live on the §02 chart controls rather than the global bar (hidden on Map).
+So a row describes change over time in the US series while §01 beside it paints
+state levels for a single year. Two different questions, correctly labelled, but
+worth knowing before reading a row as if it described the map.
+
+### Layout note
+
+The rail sits beside the map, as on every other tab, which costs the choropleth
+about 220px: 891px wide at a 1280px viewport, down from ~1111. The SVG scales
+cleanly. One visible side effect of the narrower column is that Map's section
+head (title · source · Map/Bar toggle · year) now wraps to two lines at 1280px
+where it used to fit on one. Cosmetic, and it unwraps on wider screens.
+
+---
+
+## 7. Verifying without a browser
 
 There's no test that renders anything, so these two checks are worth keeping.
 They caught real problems during the original build.

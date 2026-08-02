@@ -124,6 +124,11 @@
   .at-grp:hover { background: rgba(44,50,84,.09); color: #2c3254; }
   .at-grp.on { color: #2c3254; }
   .at-grp:focus-visible { outline: 2px solid #2c3254; outline-offset: 1px; }
+  /* Map's headings: same type, no affordance. A hover highlight on a heading
+     that can't bulk-toggle (single-select tab) would promise a click that does
+     nothing, which is worse than a plain label. */
+  .at-grp.as-label { cursor: default; }
+  .at-grp.as-label:hover { background: none; color: #6B6E78; }
 
   .at-pfilter { width: 100%; padding: 6px 9px; border: 1px solid #2c3254;
                 border-radius: 3px; background: #fff; color: #232849;
@@ -1074,6 +1079,38 @@ const CATEGORY_META = [
   { id: 'overall',   label: 'Overall inflation' },
 ];
 
+// Picker groups for the two all-states tabs, Compare and Map. Same shape
+// MetricPicker takes everywhere: CATEGORY_META order, alphabetical inside each
+// group, empty groups dropped.
+//
+// Neither tab has a state selected, so there is no state series for the row's
+// change number to describe. It uses the **US series** for the metric instead —
+// the same figure the National rail prints, from the already-loaded national
+// payload, so no extra fetch and no disagreement with the National tab. The one
+// metric with no national counterpart is the electricity bill (EIA publishes
+// state bills, not a US average), and its row reads "—" rather than inventing
+// one. Callers pass whichever metric list their tab shows: Compare all 14, Map
+// the 13 that aren't index levels.
+function allStatesPickerGroups(metrics, data) {
+  return CATEGORY_META
+    .map(c => ({
+      id: c.id,
+      label: c.label,
+      items: metrics
+        .filter(m => m.category === c.id)
+        .sort((a, b) => a.label.localeCompare(b.label))
+        .map(m => {
+          const nat = m.national_id ? data[m.national_id] : null;
+          return {
+            id: m.id, label: m.label, units: m.units,
+            already_real: ALREADY_REAL_IDS.has(m.id),
+            data: nat ? nat.data : null,
+          };
+        }),
+    }))
+    .filter(g => g.items.length);
+}
+
 // State FIPS → postal, for joining us-atlas topojson features to our data.
 const FIPS_TO_POSTAL = {
   '01':'AL','02':'AK','04':'AZ','05':'AR','06':'CA','08':'CO','09':'CT','10':'DE',
@@ -1868,15 +1905,35 @@ const DEFAULT_NATIONAL_IDS = [
 ];
 // One list of rows, rendered into either container: a rail above the 1060px
 // breakpoint, a menu below it. Selection, filter text and group state all live
-// in NationalView, so these are two views of one picker rather than two
-// pickers that have to be kept in sync.
+// in the view, so these are two views of one picker rather than two pickers
+// that have to be kept in sync.
+//
+// All four tabs use it. `mode` is the only thing that varies, because the four
+// views don't all mean the same thing by "picked":
+//
+//   'multi'    National, My State — add and remove freely, down to nothing.
+//              Group headers bulk-toggle; Select all and Clear both apply.
+//   'keep-one' Compare States — same, except a panel-less Compare has nothing
+//              to show, so the last metric can't be removed. Clear is therefore
+//              absent (there is no valid empty state to clear to) and so is
+//              Select all: one click would open 14 panels, each lazy-loading a
+//              51-state payload and drawing a chart. Group headers stay — that
+//              caps at seven and it's the documented comms request.
+//   'single'   Map — the choropleth paints one measure at a time. Rows are
+//              radio marks (● / ○), not ✓ / ＋: a plus would say "add another",
+//              which this tab cannot do. Group headers are plain labels rather
+//              than bulk toggles, for the same reason, and the head is just the
+//              filter — "1 of 13 on" says nothing when only 1 is ever possible.
+//
+// The row itself, the CSS and the two containers are identical in every mode.
 function MetricPicker({
   variant, groups, selectedIds, total, q, setQ,
   toggleId, toggleCategory, catState, onSelectAll, onClearAll,
-  anchorId, priceType, cpiData,
+  anchorId, priceType, cpiData, mode = 'multi', menuLabel = 'Add a metric',
 }) {
   const [open, setOpen] = useState(false);
   const needle = q.trim().toLowerCase();
+  const single = mode === 'single';
 
   // Filtering hides rows from the list only. Charts already on the page are
   // never touched and the selection is never cleared — typing "egg" while
@@ -1884,22 +1941,33 @@ function MetricPicker({
   const rows = groups.map(g => {
     const items = needle ? g.items.filter(i => i.label.toLowerCase().includes(needle)) : g.items;
     if (!items.length) return null;
-    const state = catState(g.id);
+    const state = single ? 'none' : catState(g.id);
     return (
       <React.Fragment key={g.id}>
-        <button
-          className={`at-grp${state === 'none' ? '' : ' on'}`}
-          onClick={() => toggleCategory(g.id)}
-          title={state === 'all'
-            ? `Remove all ${g.items.length} metrics in ${g.label}`
-            : `Add all ${g.items.length} metrics in ${g.label}`}
-        >{g.label}</button>
+        {single ? (
+          // Same type, no hit area: on a one-at-a-time tab a clickable heading
+          // could only ever promise something the view can't do.
+          <div className="at-grp as-label">{g.label}</div>
+        ) : (
+          <button
+            className={`at-grp${state === 'none' ? '' : ' on'}`}
+            onClick={() => toggleCategory(g.id)}
+            title={state === 'all'
+              ? `Remove all ${g.items.length} metrics in ${g.label}`
+              : `Add all ${g.items.length} metrics in ${g.label}`}
+          >{g.label}</button>
+        )}
         {items.map(item => {
           const on = selectedIds.has(item.id);
           return (
             <button key={item.id} className={`at-prow${on ? ' on' : ''}`}
-                    onClick={() => toggleId(item.id)} aria-pressed={on}>
-              <span className="at-prow-mark" aria-hidden="true">{on ? '✓' : '＋'}</span>
+                    onClick={() => toggleId(item.id)}
+                    role={single ? 'radio' : undefined}
+                    aria-checked={single ? on : undefined}
+                    aria-pressed={single ? undefined : on}>
+              <span className="at-prow-mark" aria-hidden="true">
+                {single ? (on ? '●' : '○') : (on ? '✓' : '＋')}
+              </span>
               <span className="at-prow-name">{item.label}</span>
               <span className="at-prow-ch">{railChangeText(item, anchorId, priceType, cpiData)}</span>
             </button>
@@ -1910,7 +1978,8 @@ function MetricPicker({
   }).filter(Boolean);
 
   const list = (
-    <div className="at-plist">
+    <div className="at-plist" role={single ? 'radiogroup' : undefined}
+         aria-label={single ? 'Measure' : undefined}>
       {rows.length ? rows : (
         <div className="at-pstub">
           No metrics match “{q.trim()}”.{' '}
@@ -1923,13 +1992,15 @@ function MetricPicker({
   const head = (
     <React.Fragment>
       <input className="at-pfilter" value={q} onChange={e => setQ(e.target.value)}
-             placeholder={`Filter ${total} metrics…`} aria-label="Filter metrics"
-             autoComplete="off" />
-      <div className="at-phead">
-        <span className="at-pcount">{selectedIds.size} of {total} on</span>
-        <button className="at-plnk" onClick={onSelectAll}>Select all</button>
-        <button className="at-plnk" onClick={onClearAll}>Clear</button>
-      </div>
+             placeholder={`Filter ${total} ${single ? 'measures' : 'metrics'}…`}
+             aria-label="Filter metrics" autoComplete="off" />
+      {!single && (
+        <div className="at-phead">
+          <span className="at-pcount">{selectedIds.size} of {total} on</span>
+          {onSelectAll && <button className="at-plnk" onClick={onSelectAll}>Select all</button>}
+          {onClearAll && <button className="at-plnk" onClick={onClearAll}>Clear</button>}
+        </div>
+      )}
     </React.Fragment>
   );
 
@@ -1937,14 +2008,21 @@ function MetricPicker({
 
   // The menu keeps the transparent button in both states and changes its label
   // rather than filling navy when open — an open menu is not a selected state.
+  // Collapsed, the summary beside it has to carry what the list would have said:
+  // a count where several can be on, the chosen one's name where only one can.
+  const selectedLabel = single
+    ? (groups.flatMap(g => g.items).find(i => selectedIds.has(i.id)) || {}).label
+    : null;
   return (
     <div>
       <div className="at-menubar">
         <button onClick={() => setOpen(!open)} aria-expanded={open}
                 style={{ ...styles.smallBtn, fontSize: 11, padding: '6px 12px' }}>
-          {open ? 'Hide the list' : 'Add a metric ▾'}
+          {open ? 'Hide the list' : `${menuLabel} ▾`}
         </button>
-        <span className="at-pcount">{selectedIds.size} of {total} on</span>
+        <span className="at-pcount">
+          {single ? (selectedLabel || '') : `${selectedIds.size} of ${total} on`}
+        </span>
       </div>
       {open && <div className="at-menupop">{head}{list}</div>}
     </div>
@@ -3010,6 +3088,9 @@ function CompareView({ data, metricIds, setMetricIds, homeState, anchorId, displ
   // Bumped as each state_metrics/{id}.js lands; failures tracked per id.
   const [, setLoadTick] = useState(0);
   const [failedIds, setFailedIds] = useState(() => new Set());
+  // The picker's filter string, same as the other tabs. Selection itself is
+  // `metricIds`, held by AppMain because the deep link carries it.
+  const [q, setQ] = useState('');
 
   useEffect(() => {
     let live = true;
@@ -3022,9 +3103,9 @@ function CompareView({ data, metricIds, setMetricIds, homeState, anchorId, displ
   }, [metricIds.join(',')]);
 
   if (!idx) return null;
-  // Metric pills are multi-select with no cap: clicking adds a panel,
-  // clicking again removes it (the last one can't be removed).
-  const metricsSorted = idx.metrics.slice().sort((a, b) => a.label.localeCompare(b.label));
+  // Multi-select with no cap: clicking adds a panel, clicking again removes it.
+  // The last one can't be removed — a Compare tab with no panels has nothing to
+  // show, which is why the picker runs in 'keep-one' mode (no Clear).
   const metrics = metricIds.map(id => idx.metrics.find(m => m.id === id)).filter(Boolean);
   const metric = metrics[0] || idx.metrics[0];
   const toggleMetric = (id) => {
@@ -3034,6 +3115,38 @@ function CompareView({ data, metricIds, setMetricIds, homeState, anchorId, displ
       setMetricIds([...metricIds, id]);
     }
   };
+
+  // ── The picker ────────────────────────────────────────────────────────────
+  const groups = allStatesPickerGroups(idx.metrics, data);
+  const idsIn = (catId) => {
+    const g = groups.find(x => x.id === catId);
+    return g ? g.items.map(i => i.id) : [];
+  };
+  const catState = (catId) => {
+    const ids = idsIn(catId);
+    const on = ids.filter(id => metricIds.includes(id)).length;
+    return on === 0 ? 'none' : on === ids.length ? 'all' : 'some';
+  };
+  // Additive, like everywhere else — but removing a whole group must not empty
+  // the view. If a group holds everything currently selected, removing it is a
+  // no-op rather than a Compare tab with nothing on it.
+  const toggleCategory = (catId) => {
+    const ids = idsIn(catId);
+    if (catState(catId) === 'all') {
+      const left = metricIds.filter(id => !ids.includes(id));
+      if (left.length) setMetricIds(left);
+    } else {
+      setMetricIds([...metricIds, ...ids.filter(id => !metricIds.includes(id))]);
+    }
+  };
+  const picker = (variant) => (
+    <MetricPicker
+      variant={variant} mode="keep-one" groups={groups} total={idx.metrics.length}
+      selectedIds={new Set(metricIds)} q={q} setQ={setQ}
+      toggleId={toggleMetric} toggleCategory={toggleCategory} catState={catState}
+      anchorId={anchorId} priceType={priceType} cpiData={cpiData}
+    />
+  );
   const md = window.STATE_METRIC ? window.STATE_METRIC[metric.id] : null;
   const primaryFailed = failedIds.has(metric.id);
 
@@ -3061,35 +3174,14 @@ function CompareView({ data, metricIds, setMetricIds, homeState, anchorId, displ
 
   return (
     <React.Fragment>
-      {/* Metric picker */}
-      <div className="at-pad" style={{
-        background: MENU_BG, borderBottom: `1px solid rgba(44,50,84,.18)`,
-        padding: '16px 56px',
-        display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
-      }}>
-        <span style={styles.controlLabel}>Metrics</span>
-        {metricsSorted.map(m => {
-          const on = metricIds.includes(m.id);
-          return (
-            <button key={m.id} onClick={() => toggleMetric(m.id)}
-              title={on ? 'Remove this chart' : 'Add this chart'}
-              style={{
-                fontFamily: '"Neue Haas Grotesk Display Pro", sans-serif',
-                fontSize: 13, fontWeight: on ? 700 : 600,
-                padding: '8px 15px',
-                border: `1px solid ${NAVY}`,
-                background: on ? NAVY : 'transparent',
-                color: on ? PAPER : NAVY,
-                cursor: 'pointer', borderRadius: 3,
-              }}>{on && metricIds.length > 1 ? '✓ ' : ''}{m.label}</button>
-          );
-        })}
-        <span style={{
-          fontFamily: 'Publico, Georgia, serif', fontSize: 12.5, fontStyle: 'italic', color: MUTE,
-        }}>Pick as many as you want to compare side by side.</span>
-      </div>
+      <div className="at-pad" style={{ padding: '20px 56px 56px' }}>
+        {/* Same two picker containers as every other tab; CSS picks one. The
+            full-width bar of metric pills this replaced is gone. */}
+        <div className="at-nat-layout">
+        <div className="at-rail">{picker('rail')}</div>
 
-      <div className="at-pad" style={{ padding: '36px 56px 56px' }}>
+        <div style={{ minWidth: 0 }}>
+        <div className="at-natmenu">{picker('menu')}</div>
         {status !== 'ready' || !md ? (
           <div style={{ padding: '48px 0', fontFamily: 'Publico, Georgia, serif', fontStyle: 'italic', color: MUTE }}>
             {status === 'error' ? 'Could not load this metric.' : 'Loading state data…'}
@@ -3154,6 +3246,8 @@ function CompareView({ data, metricIds, setMetricIds, homeState, anchorId, displ
 
           </React.Fragment>
         )}
+        </div>
+        </div>
       </div>
     </React.Fragment>
   );
@@ -3180,6 +3274,7 @@ function MapView({ data, metricId, setMetricId, anchorId, setAnchorId, priceType
   };
   const [, setLoadTick] = useState(0);
   const [failedIds, setFailedIds] = useState(() => new Set());
+  const [q, setQ] = useState('');   // the picker's filter string
 
   // Index-unit metrics (rebase: true — home prices) are excluded here: the map
   // shows levels only, and FHFA index levels aren't comparable across states
@@ -3205,6 +3300,26 @@ function MapView({ data, metricId, setMetricId, anchorId, setAnchorId, priceType
 
   const names = {};
   idx.states.forEach(s => { names[s.code] = s.name; });
+
+  // ── The picker ────────────────────────────────────────────────────────────
+  // Single-select: clicking a row switches the measure, it never deselects, so
+  // there is always exactly one on. `metricsSorted` is already the 13 the map
+  // can paint (index levels excluded above), so the rail lists 13, not 14.
+  //
+  // The row numbers follow this tab's OWN anchor and Nominal/Real toggle, which
+  // live down on the §02 chart controls rather than on the global bar (hidden
+  // here). Worth knowing when reading a row: the number describes change over
+  // time in the US series, while §01 above paints state levels for one year.
+  const groups = allStatesPickerGroups(metricsSorted, data);
+  const picker = (variant) => (
+    <MetricPicker
+      variant={variant} mode="single" menuLabel="Pick a measure"
+      groups={groups} total={metricsSorted.length}
+      selectedIds={new Set([metric.id])} q={q} setQ={setQ}
+      toggleId={setMetricId}
+      anchorId={anchorId} priceType={priceType} cpiData={cpiData}
+    />
+  );
 
   // Deflate dollar metrics when the Real toggle (on the §02 chart controls)
   // is on. No state CPI exists, so state values use the national CPI-U — the
@@ -3314,31 +3429,16 @@ function MapView({ data, metricId, setMetricId, anchorId, setAnchorId, priceType
 
   return (
     <React.Fragment>
-      {/* Measure picker — single-select: the map shows one metric at a time */}
-      <div className="at-pad" style={{
-        background: MENU_BG, borderBottom: `1px solid rgba(44,50,84,.18)`,
-        padding: '16px 56px',
-        display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
-      }}>
-        <span style={styles.controlLabel}>Measure</span>
-        {metricsSorted.map(m => {
-          const on = m.id === metric.id;
-          return (
-            <button key={m.id} onClick={() => setMetricId(m.id)}
-              style={{
-                fontFamily: '"Neue Haas Grotesk Display Pro", sans-serif',
-                fontSize: 13, fontWeight: on ? 700 : 600,
-                padding: '8px 15px',
-                border: `1px solid ${NAVY}`,
-                background: on ? NAVY : 'transparent',
-                color: on ? PAPER : NAVY,
-                cursor: 'pointer', borderRadius: 3,
-              }}>{m.label}</button>
-          );
-        })}
-      </div>
+      <div className="at-pad" style={{ padding: '20px 56px 56px' }}>
+        {/* The rail sits beside the map, as on every other tab. It costs the
+            choropleth 220px of width; the SVG scales, and one control in one
+            place across four tabs is worth more than the pixels. The bar of
+            measure pills this replaced is gone. */}
+        <div className="at-nat-layout">
+        <div className="at-rail">{picker('rail')}</div>
 
-      <div className="at-pad" style={{ padding: '36px 56px 56px' }}>
+        <div style={{ minWidth: 0 }}>
+        <div className="at-natmenu">{picker('menu')}</div>
         {status !== 'ready' || !md ? (
           <div style={{ padding: '48px 0', fontFamily: 'Publico, Georgia, serif', fontStyle: 'italic', color: MUTE }}>
             {status === 'error' ? 'Could not load this metric.' : 'Loading state data…'}
@@ -3479,6 +3579,8 @@ function MapView({ data, metricId, setMetricId, anchorId, setAnchorId, priceType
             )}
           </React.Fragment>
         )}
+        </div>
+        </div>
       </div>
     </React.Fragment>
   );
