@@ -21,6 +21,7 @@ const {
   scaleByCPI, categoryLabel, ANCHORS, anchorById, anchorDate, buildFactText,
   isDeflatable, toReal, seriesForType, ALREADY_REAL_IDS, railChangeText,
   isRateSeries, changeIn, fmtChange, changeSince, changeBetween,
+  selAdd, selRemove, emptyWindowNote,
 } = H;
 
 // ── The seam between the two script blocks ──────────────────────────────────
@@ -650,4 +651,74 @@ test('fact: a non-FRED series names its own source instead of saying FRED', () =
   assert.match(s, /Source: Zillow ZORI, via/);
   const s2 = buildFactText(factItem({ fred_id: undefined, source_note: undefined }), { anchorId: '2019' });
   assert.match(s2, /Source: federal data, via/);
+});
+
+
+// ── Card order: newest added first (August 2026) ────────────────────────────
+// The National and My State grids order by most-recently-added, not by
+// category, so that clicking a metric always produces a visible result rather
+// than inserting a card three screens below the fold. These two functions are
+// the whole rule; the views hold the array and derive their Set from it.
+
+test('order: an added metric goes to the front, so the new card is the first one', () => {
+  assert.deepEqual(selAdd(['eggs', 'gas'], 'coffee'), ['coffee', 'eggs', 'gas']);
+});
+
+test('order: a bulk group add lands the whole group in front, in the order given', () => {
+  // The rail hands its groups in alphabetical order, so the group reads
+  // top-down on the page the way it reads in the rail.
+  assert.deepEqual(
+    selAdd(['eggs'], ['mortgage', 'rent', 'rent_burden']),
+    ['mortgage', 'rent', 'rent_burden', 'eggs'],
+  );
+});
+
+test('order: re-adding something already selected is a no-op, not a jump to the front', () => {
+  // Rows are toggles, so "add" only ever fires on something absent — but a
+  // group toggle passes the whole group, including what is already on.
+  assert.deepEqual(selAdd(['eggs', 'gas'], ['gas', 'milk']), ['milk', 'eggs', 'gas']);
+});
+
+test('order: removal preserves the order of everything else', () => {
+  assert.deepEqual(selRemove(['coffee', 'eggs', 'gas'], 'eggs'), ['coffee', 'gas']);
+  assert.deepEqual(selRemove(['coffee', 'eggs', 'gas'], ['coffee', 'gas']), ['eggs']);
+});
+
+test('order: removing something that is not selected changes nothing', () => {
+  assert.deepEqual(selRemove(['eggs'], 'milk'), ['eggs']);
+});
+
+// ── Empty measure-from windows ──────────────────────────────────────────────
+// An annual Census series measured from Jan 2025 when its last reading is 2024
+// resolves back to that single 2024 point, and Chart.js paints a full y-axis
+// around it. That reads as a broken chart, not as missing data, so the card
+// swaps the canvas for a blank panel.
+
+test('empty window: two or more readings in the window means there is a chart to draw', () => {
+  const visible = [{ date: '2024-01-01', value: 1 }, { date: '2025-01-01', value: 2 }];
+  assert.equal(emptyWindowNote(visible, visible, '2025'), null);
+});
+
+test('empty window: one reading names the anchor and the last publication', () => {
+  const src = [
+    { date: '2022-01-01', value: 30000 },
+    { date: '2023-01-01', value: 31500 },
+    { date: '2024-01-01', value: 33775 },
+  ];
+  const note = emptyWindowNote(src, [src[2]], '2025');
+  assert.equal(note.head, 'No data since Jan 2025');
+  // Annual cadence, so the last reading is named by year, not by month.
+  assert.match(note.sub, /Last published 2024\./);
+});
+
+test('empty window: the head follows the active anchor, not a hard-coded date', () => {
+  const src = [{ date: '2024-01-01', value: 1 }];
+  assert.equal(emptyWindowNote(src, src, '2019').head, 'No data since Dec 2019');
+  assert.equal(emptyWindowNote(src, src, 'y:2015').head, 'No data since 2015');
+});
+
+test('empty window: a series with no readings at all says so without naming a date', () => {
+  const note = emptyWindowNote([], [], '2025');
+  assert.equal(note.head, 'No data');
+  assert.doesNotMatch(note.sub, /Last published/);
 });

@@ -14,9 +14,9 @@ window.ABOUT_CONTENT = `
     <h2>National series</h2>
     <p class="lead">
       Every series here is public and free to cite. The Notes column carries the exact
-      definition, the start date, and the gaps — worth a look before you quote a figure.
-      Each card on the tracker downloads a CSV of precisely the series shown and names its
-      source series ID, so any number can be traced back to the agency that published it.
+      definition, the start date, and the gaps; read it before you quote a figure. Each card
+      downloads a CSV of the series shown and names its source series ID, so any number
+      traces back to the agency that published it.
     </p>
     <div class="table-wrap">
     <table>
@@ -32,13 +32,13 @@ window.ABOUT_CONTENT = `
           <td><b>Eggs, ground beef, chicken, milk, bread, coffee, bacon</b></td>
           <td>BLS Average Price data (US city average)</td>
           <td><span class="freq m">Monthly</span></td>
-          <td>Actual retail dollar prices, not indexes. Not seasonally adjusted, so egg and meat prices swing with the season. BLS publishes these nationally and by region but not by state, so they appear only on the national view. One gap worth knowing before you quote it: BLS skipped the coffee series in a number of months, including most of 2008&ndash;09 and 2018&ndash;19. Missing months are left open rather than filled in.</td>
+          <td>Actual retail dollar prices, not indexes. Not seasonally adjusted, so egg and meat prices swing with the season. BLS publishes these nationally and by region but not by state, so they appear only on the national view. BLS skipped the coffee series in a number of months, including most of 2008&ndash;09 and 2018&ndash;19; those months are left open rather than filled in.</td>
         </tr>
         <tr>
           <td><b>Electricity, natural gas</b></td>
           <td>BLS Average Price data (US city average)</td>
           <td><span class="freq m">Monthly</span></td>
-          <td>Dollars per kilowatt-hour and dollars per therm &mdash; the units on a utility bill. Electricity was previously shown as a CPI index, which could only be read as percent change; natural gas is new to the tracker. Not seasonally adjusted, and household energy is strongly seasonal, so compare a month with the same month a year earlier rather than with the month before. National and regional only, not by state; the state view carries an average monthly residential electricity bill from the EIA instead.</td>
+          <td>Dollars per kilowatt-hour and dollars per therm, the units on a utility bill. Electricity was previously shown as a CPI index, which could only be read as percent change; natural gas is new to the tracker. Not seasonally adjusted, and household energy is strongly seasonal, so compare a month with the same month a year earlier rather than with the month before. National and regional only, not by state; the state view carries an average monthly residential electricity bill from the EIA instead.</td>
         </tr>
         <tr>
           <td><b>Gasoline</b></td>
@@ -50,7 +50,7 @@ window.ABOUT_CONTENT = `
           <td><b>Water &amp; sewer</b></td>
           <td>BLS CPI (water, sewer &amp; trash collection services), via FRED</td>
           <td><span class="freq m">Monthly</span></td>
-          <td>National only. There is no public state-level water-rate series — the AWWA rate survey is proprietary — so the tracker shows no state water bills.</td>
+          <td>National only. There is no public state-level water-rate series (the AWWA rate survey is proprietary), so the tracker shows no state water bills.</td>
         </tr>
         <tr>
           <td><b>Rent (market)</b></td>
@@ -74,25 +74,25 @@ window.ABOUT_CONTENT = `
           <td><b>Wages, unemployment</b></td>
           <td>BLS (CES, CPS), via FRED</td>
           <td><span class="freq m">Monthly</span></td>
-          <td>Wages are average hourly earnings of all private employees, in nominal dollars; switch the page to Real to see them deflated by CPI-U and restated in the latest month's dollars. The tracker no longer carries job openings, the quit rate, or unemployment duration &mdash; they measure labor-market slack rather than what a household can afford.</td>
+          <td>Wages are average hourly earnings of all private employees, in nominal dollars; switch the page to Real to see them deflated by CPI-U and restated in the latest month's dollars. The tracker no longer carries job openings, the quit rate, or unemployment duration; those measure labor-market slack rather than what a household can afford.</td>
         </tr>
         <tr>
           <td><b>Credit card &amp; mortgage delinquency rates</b></td>
           <td>Federal Reserve (bank call reports), via FRED</td>
           <td><span class="freq q">Quarterly</span></td>
-          <td>Delinquency is 30+ days late at all commercial banks. For debt per person and per state, use household debt per capita below — it comes from a different panel and a stricter delinquency threshold, so don't mix the two. The national student loan balance is no longer shown: a trillion-dollar aggregate says little about any household, and student loan debt per capita covers the concept per person and per state.</td>
+          <td>Delinquency is 30+ days late at all commercial banks. For debt per person and per state, use household debt per capita below; it comes from a different panel and a stricter delinquency threshold, so don't mix the two. The national student loan balance is no longer shown: a trillion-dollar aggregate says little about any household, and student loan debt per capita covers the concept per person and per state.</td>
         </tr>
         <tr>
           <td><b>ACA benchmark premium</b></td>
           <td><a href="https://www.kff.org/affordable-care-act/state-indicator/average-marketplace-premiums-by-metal-tier/" target="_blank" rel="noopener">KFF</a> State Health Facts (Average Marketplace Premiums by Metal Tier)</td>
           <td><span class="freq a">Annual</span></td>
-          <td>Monthly premium for the second-lowest-cost silver plan for a 40-year-old — the "benchmark" plan ACA subsidies are pegged to, which makes it the standard yardstick for marketplace costs. This is the sticker premium before subsidies. Plan years 2018 onward.</td>
+          <td>Monthly premium for the second-lowest-cost silver plan for a 40-year-old. This is the benchmark plan ACA subsidies are pegged to, which makes it the standard yardstick for marketplace costs, and it is the sticker premium before any subsidy. Plan years 2018 onward.</td>
         </tr>
         <tr>
           <td><b>Uninsured rate</b></td>
           <td><a href="https://www.kff.org/state-health-policy-data/state-indicator/total-population/" target="_blank" rel="noopener">KFF</a> State Health Facts (Health Insurance Coverage of the Total Population)</td>
           <td><span class="freq a">Annual</span></td>
-          <td>Share of the total population with no health coverage; KFF estimates built on the Census ACS. 2008 onward, with no 2020 point — the ACS did not publish comparable 1-year estimates that year.</td>
+          <td>Share of the total population with no health coverage; KFF estimates built on the Census ACS. 2008 onward, with no 2020 point, because the ACS did not publish comparable 1-year estimates that year.</td>
         </tr>
         <tr>
           <td><b>Household debt per capita</b></td>
@@ -110,7 +110,7 @@ window.ABOUT_CONTENT = `
           <td><b>Income: 20th percentile</b></td>
           <td>Census ACS 1-year estimates, table B19080</td>
           <td><span class="freq a">Annual</span></td>
-          <td>A quintile upper limit: the income level one in five households falls below. The ACS publishes quintile limits and not arbitrary percentiles, so the tracker uses the published 20th point rather than interpolating a 25th. Nominal dollars — the Real switch deflates them. Median income arrives already inflation-adjusted and is left alone.</td>
+          <td>A quintile upper limit: the income level one in five households falls below. The ACS publishes quintile limits and not arbitrary percentiles, so the tracker uses the published 20th point rather than interpolating a 25th. Nominal dollars; the Real switch deflates them. Median income arrives already inflation-adjusted and is left alone.</td>
         </tr>
         <tr>
           <td><b>Rent in hours of work</b></td>
@@ -124,7 +124,7 @@ window.ABOUT_CONTENT = `
 
     <p class="lead">
       <b>Dollars, indexes, and the Real switch.</b> Dollar series display in dollars. Index
-      series — CPI subindexes, the FHFA house price index — display as cumulative percent
+      series (CPI subindexes, the FHFA house price index) display as cumulative percent
       change, never as index points, because an index level of 320 means nothing without its
       base year. The page-wide <b>Nominal / Real</b> switch deflates dollar and index series
       by CPI-U (all items) and restates them in the latest month's dollars, so the newest
@@ -138,20 +138,20 @@ window.ABOUT_CONTENT = `
     <p class="lead">
       <b>Comparison points.</b> The "Measure from" control sets the baseline: one year,
       January 2025, 2019, 2000, or the full history. The 2019 anchor is <b>December 2019</b>,
-      not early or mid-2020: anchoring inside 2020 puts the COVID price collapse in the
-      baseline — gasoline bottomed out in April 2020 — and produces changes that fall apart
-      under scrutiny. The tracker opens on December 2019 by default. Individual cards can
+      not early or mid-2020. Anchoring inside 2020 puts the COVID price collapse in the
+      baseline (gasoline bottomed out in April 2020) and produces changes that don't survive
+      a second look. The tracker opens on December 2019 by default. Individual cards can
       override the baseline; Nominal/Real and the dollars/percent toggle are page-wide.
     </p>
 
     <h2>State series</h2>
     <p class="lead">
-      Each state series covers all 50 states and DC unless the Notes say otherwise. One
-      constraint shapes this whole section: the BLS publishes no state-level consumer price
-      index, and no one else publishes a credible public one. So there are no state grocery,
-      gasoline, or insurance <i>prices</i> here — only measures that genuinely exist at the
-      state level. When you switch to Real, state dollar series are deflated by the national
-      CPI-U, the standard fallback.
+      Each state series covers all 50 states and DC unless the Notes say otherwise. The BLS
+      publishes no state-level consumer price index, and no one else publishes a credible
+      public one. That shapes this whole section: there are no state grocery, gasoline, or
+      insurance <i>prices</i> here, only measures that exist at the state level. When you
+      switch to Real, state dollar series are deflated by the national CPI-U, the standard
+      fallback.
     </p>
     <div class="table-wrap">
     <table>
@@ -173,7 +173,7 @@ window.ABOUT_CONTENT = `
           <td><b>Home prices</b></td>
           <td>FHFA All-Transactions House Price Index, via FRED</td>
           <td><span class="freq q">Quarterly</span></td>
-          <td>An index, shown as percent change — not a dollar price. Dollar-level state sale prices require proprietary data. Because index levels aren't comparable across states, this series is excluded from the map. Not seasonally adjusted.</td>
+          <td>An index, shown as percent change, not a dollar price. Dollar-level state sale prices require proprietary data. Because index levels aren't comparable across states, this series is excluded from the map. Not seasonally adjusted.</td>
         </tr>
         <tr>
           <td><b>Median household income</b></td>
@@ -185,7 +185,7 @@ window.ABOUT_CONTENT = `
           <td><b>Rent (market)</b></td>
           <td>Zillow ZORI, county data aggregated by ESP</td>
           <td><span class="freq m">Monthly</span></td>
-          <td>Zillow publishes ZORI for counties but not states, so we aggregate county ZORI to the state level using fixed county renter-household weights (Census ACS 2019–2023) — renter households being the right universe for a rental price. States where the covered counties hold less than half of the state's renter households are omitted rather than shown thin, and every state card displays its coverage share. Like the national series, this is asking rent on new leases.</td>
+          <td>Zillow publishes ZORI for counties but not states, so we aggregate county ZORI to the state level using fixed county renter-household weights (Census ACS 2019–2023), renter households being the right universe for a rental price. States where the covered counties hold less than half of the state's renter households are omitted rather than published on partial coverage, and every state card displays its coverage share. Like the national series, this is asking rent on new leases.</td>
         </tr>
         <tr>
           <td><b>Electricity bills</b></td>
@@ -197,7 +197,7 @@ window.ABOUT_CONTENT = `
           <td><b>ACA benchmark premium</b></td>
           <td><a href="https://www.kff.org/affordable-care-act/state-indicator/average-marketplace-premiums-by-metal-tier/" target="_blank" rel="noopener">KFF</a> State Health Facts</td>
           <td><span class="freq a">Annual</span></td>
-          <td>The same benchmark premium as the national card — second-lowest-cost silver, age 40, before subsidies — per state, plan years 2018 onward. A dollar premium, so unlike the CPI series it is directly comparable across states.</td>
+          <td>Per state, the same benchmark premium as the national card: second-lowest-cost silver, age 40, before subsidies. Plan years 2018 onward. A dollar premium, so unlike the CPI series it is directly comparable across states.</td>
         </tr>
         <tr>
           <td><b>Uninsured rate</b></td>
@@ -209,7 +209,7 @@ window.ABOUT_CONTENT = `
           <td><b>Household debt, student loan debt (per capita); credit card delinquency (90+)</b></td>
           <td><a href="https://www.newyorkfed.org/microeconomics/databank.html" target="_blank" rel="noopener">NY Fed</a> Consumer Credit Panel / Equifax, State-Level Household Debt Statistics</td>
           <td><span class="freq a">Annual</span></td>
-          <td>Per person with a credit file (ages 18+), not per resident, so states with more people outside the credit system aren't strictly comparable on a population basis. Delinquency is the percent of balance 90+ days late — a stricter threshold than the 30-day national bank series above, so the two are not interchangeable. Each point is a fourth quarter, 2003 onward. One panel covers the US and every state, so the national overlay on these charts is built the same way as the state lines.</td>
+          <td>Per person with a credit file (ages 18+), not per resident, so states with more people outside the credit system aren't strictly comparable on a population basis. Delinquency is the percent of balance 90+ days late, a stricter threshold than the 30-day national bank series above, so the two are not interchangeable. Each point is a fourth quarter, 2003 onward. One panel covers the US and every state, so the national overlay on these charts is built the same way as the state lines.</td>
         </tr>
         <tr>
           <td><b>Rent burden</b></td>
@@ -221,7 +221,7 @@ window.ABOUT_CONTENT = `
           <td><b>Income: 20th percentile</b></td>
           <td>Census ACS 1-year, table B19080</td>
           <td><span class="freq a">Annual</span></td>
-          <td>A quintile upper limit — the exact percentile the ACS publishes; see the national table above. Nominal dollars.</td>
+          <td>A quintile upper limit, the exact percentile the ACS publishes; see the national table above. Nominal dollars.</td>
         </tr>
         <tr>
           <td><b>Rent in hours of work</b></td>
@@ -236,17 +236,16 @@ window.ABOUT_CONTENT = `
     <p class="lead">
       <b>Rankings.</b> Every state metric carries a national rank, computed when the data is
       built, from each state's latest value (1 = highest; ties share a rank). Ranks are
-      direction-neutral — 1st highest income is good news and 1st highest rent is not — and
-      they only cover states that have data, which is why market rent omits low-coverage
-      states. The denominator is printed next to every rank so you can see what the state was
+      direction-neutral: 1st highest income is good news, 1st highest rent is not. They cover
+      only the states that have data, which is why market rent omits low-coverage states. The denominator is printed next to every rank so you can see what the state was
       ranked against.
     </p>
 
     <h2>Annual state indicators</h2>
     <p class="lead">
       Some of the costs that matter most are published only once a year. These appear as stat
-      tiles on each state's page: context for the live series, with a fixed vintage rather
-      than a moving time series.
+      tiles on each state's page: context for the live series, at a fixed vintage rather than
+      a moving time series.
     </p>
     <div class="table-wrap">
     <table>
@@ -255,12 +254,12 @@ window.ABOUT_CONTENT = `
         <tr>
           <td><b>Infant child care, center-based</b></td>
           <td><a href="https://info.childcareaware.org/price-and-supply-2025" target="_blank" rel="noopener">Child Care Aware of America</a>, 2025</td>
-          <td>Annual price of full-time center-based care for an infant. CO, DC, NM and SC reported no 2025 price. Seven states — AL, FL, MT, PA, TX, WV, WY — carry a footnote flag in CCAoA's published tables; check the report before quoting those states specifically.</td>
+          <td>Annual price of full-time center-based care for an infant. CO, DC, NM and SC reported no 2025 price. Seven states (AL, FL, MT, PA, TX, WV, WY) carry a footnote flag in CCAoA's published tables; check the report before quoting those states specifically.</td>
         </tr>
         <tr>
           <td><b>Medical debt in collections</b></td>
           <td><a href="https://apps.urban.org/features/debt-interactive-map/" target="_blank" rel="noopener">Urban Institute, Debt in America</a>, Aug 2025 panel</td>
-          <td>Share of people with a credit record who have medical debt in collections. Seven states that restrict medical-debt credit reporting — CA, CO, IL, NY, RI, VT, WA — have no comparable 2025 value and show no tile. That is an artifact of reporting rules, not an absence of medical debt.</td>
+          <td>Share of people with a credit record who have medical debt in collections. Seven states that restrict medical-debt credit reporting (CA, CO, IL, NY, RI, VT, WA) have no comparable 2025 value and show no tile. That is an artifact of reporting rules, not an absence of medical debt.</td>
         </tr>
         <tr>
           <td><b>Any debt in collections</b></td>
@@ -272,10 +271,9 @@ window.ABOUT_CONTENT = `
     </div>
 
     <p class="note">
-      Corrections and questions are welcome. Every series identifier is declared explicitly in
-      the tracker's data pipeline, and every CSV download carries its source. If a number here
-      can't be traced back to a public series in a couple of clicks, that's a bug worth
-      telling us about.
+      Corrections and questions are welcome: write to <b>TKTKATESP</b>. Every series
+      identifier is declared explicitly in the tracker's data pipeline, and every CSV
+      download carries its source.
     </p>
 
 `;

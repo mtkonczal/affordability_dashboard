@@ -174,8 +174,12 @@ and PNG export are still covered only by the manual pass in `What to Check.md`.
   **levels only** — a Map/Bar-chart toggle where Change/Level used to
   be, plus a year dropdown; within a year each state shows its last reading,
   so monthly/quarterly metrics default to the latest month. The sorted bar
-  chart shares the map's warm sequential ramp (`LEVEL_RAMP`, sand → burnt
-  sienna, quantile-clamped domain). Time series live on the pinned-states
+  chart shares the map's sequential ramp (`LEVEL_RAMP`, pale blue → ESP navy
+  `#2c3254`, quantile-clamped domain; the warm sand → burnt sienna ramp was
+  retired in August 2026 because red carries a bad-news signal this
+  direction-neutral scale doesn't mean). The hover card is warm red
+  (`MAP_TIP`, the brand red deepened until cream text clears WCAG AA) so it
+  reads as an overlay rather than as the darkest step of the ramp. Time series live on the pinned-states
   chart below (§02), which shows levels (default) or %-change and carries
   its own anchor + Nominal/Real + View controls — the global controls bar
   is hidden on this view. Both sections have CSV/PNG export footers: §01's
@@ -264,9 +268,12 @@ and PNG export are still covered only by the manual pass in `What to Check.md`.
   (Food), `bills` (Bills & getting around), `health` (Health & care), `income`
   (Paychecks & debt), `overall` (Overall inflation). The old `big` / `daily` /
   `labor` / `debt` ids are retired. **Under the recut the category IS the picker
-  group**, so `category` now decides rail placement, card order and color family
-  all at once — on both tabs: `STATE_METRICS` entries carry the same field, with
-  the same six values, of which three are reachable on a state tab.
+  group**, so `category` decides rail placement and color family — on both tabs:
+  `STATE_METRICS` entries carry the same field, with the same six values, of
+  which three are reachable on a state tab. It no longer decides **card order**:
+  since August 2026 the National and My State grids render newest-added-first
+  (see the card-order note under the picker); category order survives only as
+  the *initial* layout and as what Select all produces.
   - `CATEGORY_META` order is **editorial, not alphabetical** — biggest household
     line first, headline CPI **last** (readers come for specific items; ending
     on the overall index lets the individual prices add up to it). The
@@ -315,9 +322,11 @@ and PNG export are still covered only by the manual pass in `What to Check.md`.
   (`view=map&metric=rent` for the map tab; `state=US` is valid).
 - Embed mode via the query string (`?embed=1`, composes with any hash): for
   the iframe on the ESP site, which brings its own header. Hides the navy
-  topbar + hero, moves the view tabs into a light bar (with an "About the
-  data" link on its right), menu bars go `#F4F2E4`, page/chart background
-  goes white, and `height:100%`/min-heights come off `body`/`#root` so the
+  topbar and its navy hero, and renders the same masthead (title + subtitle,
+  `SITE_TITLE` / `SITE_SUBTITLE`) in the light palette above the view tabs,
+  with "Updated …" and an "About the data" link on that row's right.
+  Backgrounds are now identical in both modes (see the color note below), and
+  `height:100%`/min-heights come off `body`/`#root` so the
   height-postMessage script at the bottom of the page
   (`esp-dashboard-height`, consumed by the ESP parent page — see
   DEPLOYMENT.md) can shrink as well as grow. `embed_test.html` is a local
@@ -337,6 +346,39 @@ and PNG export are still covered only by the manual pass in `What to Check.md`.
   back into view (scrollIntoView reaches the parent page's scroll
   cross-origin). about.html stays live for direct links/bookmarks; its
   back links carry any incoming hash back to index.html.
+- **Color surfaces (August 2026).** `PAPER` `#FFFDF2` is the whole surround —
+  page, left rail, menu bars, standalone and embed alike — and `SURFACE`
+  `#FFFFFF` is the data panels only: the card grid, the heatmap, the map and
+  bar chart, the Compare panels, the annual stat tiles, the About tables. This
+  is for the ESP Resources template at
+  economicsecurityproject.org/affordability-data-tracker, whose page background
+  is `#FFFDF2`. It inverted the old scheme (beige `#f4f2e4` page with cream
+  panels, card interiors transparent) and it dropped the embed-only override
+  that used to make the page white. `BEIGE` survives only as the heatmap's
+  empty-cell tint. about.html carries the same split via `--paper` / `--surface`.
+- **Masthead.** `SITE_TITLE` / `SITE_SUBTITLE` render in **both** modes. They
+  used to live in the standalone-only navy hero, so the ESP embed — the
+  tracker's actual home — showed a bare row of tabs and never named the thing.
+  The old kicker ("The Affordability Tracker · YYYY") and headline ("What's
+  gotten more expensive.") are gone. Keep these in step with `<title>` and with
+  about.html's kicker.
+- **`FEEDBACK_EMAIL` is a placeholder** (`TKTKATESP`, not a valid address, so it
+  can't ship quietly). It appears in the index footer and in the corrections
+  note in `assets/about_content.js`; grep `TKTKATESP` for both.
+- **Card order is newest-added-first** on National and My State
+  (`selAdd`/`selRemove` in block one; each view holds the order array and
+  derives its `selectedIds` Set from it, never the reverse). Taxonomy order was
+  predictable but invisible: adding a metric inserted its card inside its
+  category block, often screens below the fold, and read as nothing happening.
+  Taxonomy order still supplies the first paint and Select all, where nothing
+  is "most recent". Compare and Map are unaffected.
+- **A card whose measure-from window holds fewer than two readings draws a
+  blank panel, not a chart** (`emptyWindowNote`, block one). An annual Census
+  series measured from Jan 2025 when its last point is 2024 clamps back to that
+  one observation, and Chart.js still paints a full y-axis around it, which
+  reads as a broken chart rather than as missing data. In % mode the headline
+  goes to `—` rather than "+0.0%", which would claim "unchanged" beside a note
+  saying there has been no reading.
 - Index-unit series (`rebase: true`) always display as cumulative % change,
   never raw index points. The 2019 anchor is Dec 2019 (not 2020 — avoids COVID
   base effects). Don't change these without flagging it.

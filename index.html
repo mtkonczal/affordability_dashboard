@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Affordability Tracker — Economic Security Project</title>
+<title>Economic Security Project's Affordability Tracker</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -35,7 +35,24 @@
   [style*="Neue Haas Grotesk"] { font-family: 'Public Sans', system-ui, sans-serif !important; }
   [style*="Publico Banner"] { font-family: 'Publico Banner', Georgia, serif !important; }
   #root { display: flex; justify-content: center; min-height: 100vh; background: #0E1320; }
-  #stage { background: #f4f2e4; box-shadow: 0 30px 80px rgba(0,0,0,.5); width: 100%; flex-shrink: 0; }
+  /* ESP cream everywhere except the data panels, which are white (August 2026,
+     to sit inside the Resources template on economicsecurityproject.org). The
+     page used to be beige #f4f2e4 with cream panels; that reads as one flat
+     surface next to the ESP page. Now the surround is #FFFDF2 and only chart
+     and table panels are white, so the data reads as sitting ON the page. */
+  #stage { background: #FFFDF2; box-shadow: 0 30px 80px rgba(0,0,0,.5); width: 100%; flex-shrink: 0; }
+
+  /* Hairline under the menu bars, inset to the content column (August 2026).
+     These bars are full-bleed, so a plain border-bottom ran the rule from
+     window edge to window edge while everything it separates — the rail on the
+     left, the cards on the right — starts 56px in. The rule now spans exactly
+     rail + cards by riding the same padding .at-pad uses, and tracks the
+     window because those paddings are the responsive ones below. */
+  .at-inset-rule { position: relative; }
+  .at-inset-rule::after {
+    content: ''; position: absolute; left: 56px; right: 56px; bottom: 0;
+    height: 1px; background: rgba(44,50,84,.18); pointer-events: none;
+  }
 
   /* Card grid items must allow shrinking below their min-content so the
      auto-fit minmax() track can actually compress the chart canvas with
@@ -46,6 +63,7 @@
   /* Responsive overrides — !important is needed because the React tree uses inline styles. */
   @media (max-width: 960px) {
     .at-pad { padding-left: 24px !important; padding-right: 24px !important; }
+    .at-inset-rule::after { left: 24px; right: 24px; }
     .at-card { border-right: none !important; }
     .at-range-row { flex-wrap: wrap !important; }
     .at-heatmap-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
@@ -54,8 +72,10 @@
   }
   @media (max-width: 640px) {
     .at-pad { padding-left: 16px !important; padding-right: 16px !important; }
-    .at-h1 { font-size: 38px !important; line-height: 1.08 !important; margin-bottom: 20px !important; }
-    .at-dek { font-size: 17px !important; }
+    .at-inset-rule::after { left: 16px; right: 16px; }
+    .at-h1 { font-size: 30px !important; line-height: 1.14 !important; margin-bottom: 16px !important; }
+    .at-h1-embed { font-size: 24px !important; line-height: 1.18 !important; }
+    .at-dek { font-size: 16px !important; }
     .at-hero { padding-top: 40px !important; padding-bottom: 36px !important; }
     .at-section-head { flex-wrap: wrap !important; }
     .at-section-dek { margin-left: 0 !important; flex-basis: 100% !important; }
@@ -156,14 +176,16 @@
                 border: 1px solid #2c3254; border-radius: 3px; }
 
   /* Embed mode (?embed=1): the dashboard sits in an iframe on the ESP site,
-     which supplies its own header. White page, no dark surround/shadow.
+     which supplies its own header. No dark surround/shadow, and the same
+     cream-surround / white-panel rule as standalone — the iframe background
+     has to MATCH the ESP page it sits on, and that page is #FFFDF2, not white.
      height:100% / min-height must come off in embed mode: the ESP height
      script measures document.body, and a body pinned to the iframe height
      could only ever grow, never shrink back on view switches. */
   html.embed, html.embed body { height: auto; }
-  html.embed body { background: #FFFFFF; }
-  html.embed #root { background: #FFFFFF; min-height: 0; }
-  html.embed #stage { background: #FFFFFF; box-shadow: none; }
+  html.embed body { background: #FFFDF2; }
+  html.embed #root { background: #FFFDF2; min-height: 0; }
+  html.embed #stage { background: #FFFDF2; box-shadow: none; }
 
   /* In-app About view. The content comes from assets/about_content.js and is
      injected verbatim, so these rules mirror about.html's styles for the
@@ -186,7 +208,7 @@
   .at-about p.note b { color: #0E1320; font-weight: 600; }
   .at-about .table-wrap { overflow-x: auto; margin: 18px 0 8px; }
   .at-about table {
-    width: 100%; border-collapse: collapse; background: #FFFDF2;
+    width: 100%; border-collapse: collapse; background: #FFFFFF;
     border: 1px solid var(--rule); font-size: 13.5px;
   }
   .at-about th {
@@ -1000,6 +1022,51 @@ function railChangeText(item, anchorId, priceType, cpi) {
   return v == null ? '—' : fmtChange(v, rate);
 }
 
+// ── Card order: most recently added first (August 2026) ─────────────────────
+// The National and My State grids used to render in taxonomy order — category
+// order, alphabetical within. Clicking "Coffee" then inserted it into the Food
+// block, which on a long selection put the new card several screens below the
+// fold and read as "nothing happened". Newest-first costs a reshuffle of the
+// cards already on screen; that trade was taken deliberately so a click always
+// has a visible result.
+//
+// The order array IS the selection — the Set the picker reads is derived from
+// it, never the other way round, so there is one source of truth. Adds land at
+// the front; a bulk group add puts the whole group at the front in the order it
+// was handed in (alphabetical), so the group reads top-down the way the rail
+// lists it. Re-adding something already selected is a no-op rather than a jump
+// to the front: the picker's rows are toggles, so "add" only ever fires on
+// something that isn't there.
+function selAdd(order, ids) {
+  const have = new Set(order);
+  return (Array.isArray(ids) ? ids : [ids]).filter(id => !have.has(id)).concat(order);
+}
+function selRemove(order, ids) {
+  const drop = new Set(Array.isArray(ids) ? ids : [ids]);
+  return order.filter(id => !drop.has(id));
+}
+
+// A card whose "measure from" window holds fewer than two readings has nothing
+// to plot. An annual Census series measured from Jan 2025 when its last point
+// is 2024 resolves back to that single 2024 observation, and Chart.js still
+// paints a full y-axis around the one point — which reads as a broken chart
+// rather than as missing data. Returns the two lines a blank panel prints, or
+// null when there is a real series to draw.
+//
+// Takes the *displayed* series (deflated in Real mode), not item.data, so a
+// series whose real-mode window is shorter than its nominal one is judged on
+// what the reader is actually looking at.
+function emptyWindowNote(srcData, visible, anchorId) {
+  if (visible && visible.length >= 2) return null;
+  const phrase = anchorById(anchorId).phrase;
+  if (!srcData || !srcData.length) return { head: 'No data', sub: 'This series has no readings to chart.' };
+  const last = srcData[srcData.length - 1].date;
+  return {
+    head: 'No data ' + phrase,
+    sub: 'Last published ' + fmtObsDate(last, srcData) + '. Measure from an earlier date to chart this series.',
+  };
+}
+
 Object.assign(window, {
   ESP, fmtVal, fmtDate, inferCadence, fmtObsDate, ordinal, pctChange, pctChangeBetween, valueAt, sliceFrom, downloadCSV, downloadCardAsPNG,
   downloadCompareCSV,
@@ -1007,6 +1074,7 @@ Object.assign(window, {
   ANCHORS, anchorById, anchorDate, anchorObsDate, buildFactText, loadDataFile,
   ALREADY_REAL_IDS, isDeflatable, toReal, seriesForType, railChangeText,
   isRateSeries, changeIn, fmtChange, changeSince, changeBetween,
+  selAdd, selRemove, emptyWindowNote,
 });
 
 })();
@@ -1032,13 +1100,36 @@ const { ESP, fmtVal, fmtDate, fmtObsDate, ordinal, valueAt, sliceFrom, downloadC
         linePath, toPoints, categoryLabel, hoursToAfford, REFERENCE_PRICES, scaleByCPI,
         ANCHORS, anchorById, anchorDate, anchorObsDate, buildFactText, loadDataFile,
         ALREADY_REAL_IDS, isDeflatable, toReal, seriesForType, railChangeText,
-        isRateSeries, changeIn, fmtChange, changeSince, changeBetween } = window;
+        isRateSeries, changeIn, fmtChange, changeSince, changeBetween,
+        selAdd, selRemove, emptyWindowNote } = window;
 const { useState, useMemo, useEffect, useRef } = React;
 
 const NAVY = '#2c3254';
 const WARM_RED = '#E04E39';
+// Map hover card. The brand red deepened until cream text clears WCAG AA
+// (5.03:1 against #FFFDF2; the brand red itself is 3.87:1, and every line in
+// that card is 10–12px). MAP_TIP_DIM/MAP_TIP_WARM are its secondary text
+// colors — the old ones were cool blue-grays tuned for a navy fill.
+const MAP_TIP = '#C43F2C';
+const MAP_TIP_DIM = '#F5CFC7';
+const MAP_TIP_WARM = '#FFE0C2';
 const BEIGE = '#f4f2e4';
 const PAPER = '#FFFDF2';
+// The one white in the design: chart panels, the heatmap, the map, the stat
+// tiles. Everything around them — page, rail, menu bars — is PAPER cream, so
+// the data reads as sitting on the page rather than being the page. Added
+// August 2026 for the ESP Resources template; before it the page was BEIGE
+// with cream panels and the card interiors were transparent, i.e. beige.
+const SURFACE = '#FFFFFF';
+
+// One masthead, both modes. Keep these in step with <title> in the head and
+// with about.html's header.
+const SITE_TITLE = "Economic Security Project's Affordability Tracker";
+const SITE_SUBTITLE = 'Follow the costs shaping household budgets, using public data to understand what is changing, where, and by how much.';
+// Placeholder — swap for the real inbox before launch. Deliberately not a
+// valid address so it can't quietly ship: grep TKTKATESP. It also appears in
+// assets/about_content.js, which about.html shares.
+const FEEDBACK_EMAIL = 'TKTKATESP';
 const INK = '#0E1320';
 const MUTE = '#6B6E78';
 const SOFT = '#9A9CA3';
@@ -1048,8 +1139,8 @@ const SOFT = '#9A9CA3';
 // menu bars go ESP cream #FFFDF2 to match the ESP site header (comms request,
 // July 2026) and the chart area stays white.
 const EMBED = document.documentElement.classList.contains('embed');
-const MENU_BG = EMBED ? '#FFFDF2' : PAPER;
-const PAGE_BG = EMBED ? '#FFFFFF' : BEIGE;
+const MENU_BG = PAPER;
+const PAGE_BG = PAPER;
 
 // The Real (inflation-adjusted) transform lives in the pure-helpers block
 // above (ALREADY_REAL_IDS / isDeflatable / toReal / seriesForType), so the
@@ -1109,6 +1200,18 @@ function allStatesPickerGroups(metrics, data) {
         }),
     }))
     .filter(g => g.items.length);
+}
+
+// Catalog metric ids in taxonomy order (CATEGORY_META order, alphabetical
+// within each group) — what "everything on" should look like on the state
+// tab's first paint and after Select all, where nothing is "most recently
+// added" and the payload's own order would be arbitrary to a reader.
+function stateCatalogOrder() {
+  const ms = ((window.AFFORDABILITY_STATES || {}).metrics || []);
+  return CATEGORY_META.flatMap(c => ms
+    .filter(m => m.category === c.id)
+    .sort((a, b) => a.label.localeCompare(b.label))
+    .map(m => m.id));
 }
 
 // State FIPS → postal, for joining us-atlas topojson features to our data.
@@ -1232,24 +1335,37 @@ const styles = {
     padding: '56px 56px 44px',
     position: 'relative', overflow: 'hidden',
   },
-  kicker: {
-    fontFamily: 'Publico, Georgia, serif',
-    fontSize: 28, letterSpacing: '-0.01em',
-    fontWeight: 600, color: WARM_RED, marginBottom: 18,
-  },
+  // The masthead title. 46px, not the 64px the old two-word headline used:
+  // "Economic Security Project's Affordability Tracker" is 48 characters and
+  // at 64px it broke to three lines at every width below about 1500px.
   h1: {
     fontFamily: 'Publico, Georgia, serif',
-    fontSize: 64, lineHeight: 1.05, letterSpacing: '-0.025em', fontWeight: 500,
-    color: PAPER, maxWidth: 1080,
-    marginBottom: 28,
+    fontSize: 46, lineHeight: 1.12, letterSpacing: '-0.02em', fontWeight: 500,
+    color: PAPER, maxWidth: 900,
+    marginBottom: 20,
   },
   dek: {
     fontFamily: 'Publico, Georgia, serif',
     fontSize: 20, lineHeight: 1.55, color: '#E8C9A8', maxWidth: 720,
     fontStyle: 'italic',
   },
+  // Embed variants: same words on the cream bar the ESP page sits behind, at
+  // the smaller scale a page that already has its own header calls for.
+  h1Embed: {
+    fontFamily: 'Publico, Georgia, serif',
+    fontSize: 32, lineHeight: 1.15, letterSpacing: '-0.02em', fontWeight: 500,
+    color: NAVY, maxWidth: 780, marginBottom: 10,
+  },
+  dekEmbed: {
+    fontFamily: 'Publico, Georgia, serif',
+    fontSize: 16, lineHeight: 1.5, color: MUTE, maxWidth: 660,
+    fontStyle: 'italic',
+  },
   controls: {
-    background: MENU_BG, borderBottom: `1px solid rgba(44,50,84,.18)`,
+    // The rule under this bar is drawn by .at-inset-rule, not border-bottom,
+    // so it stops at the content column instead of running window-edge to
+    // window-edge past everything it separates.
+    background: MENU_BG,
     padding: '16px 56px',
     display: 'flex', alignItems: 'center', gap: 20,
   },
@@ -1419,8 +1535,11 @@ function ChartCard({ item, anchorId, displayMode, priceType, cpiData, overlayIte
   }, []);
 
   useEffect(() => {
-    if (!chartReady || !canvasRef.current) return;
+    // Destroy first, and before the canvas check: when a card goes from a
+    // drawable window to an empty one the canvas unmounts, and a chart left
+    // attached to a detached canvas keeps its resize observer alive.
     if (chartRef.current) { chartRef.current.destroy(); chartRef.current = null; }
+    if (!chartReady || !canvasRef.current) return;
 
     const ctx = canvasRef.current.getContext('2d');
     const grad = ctx.createLinearGradient(0, 0, 0, 180);
@@ -1599,16 +1718,29 @@ function ChartCard({ item, anchorId, displayMode, priceType, cpiData, overlayIte
   // b25 nulls out for the same reason a card can go isStale: this series
   // (typically an annual Census/KFF one) hasn't published a reading past
   // Jan 2025 yet. Say so instead of just dropping the badge silently.
-  const staleNote25 = (b25 == null && latestDate) ? `Data through ${fmtObsDate(latestDate, srcData)}` : null;
+  const staleNote25raw = (b25 == null && latestDate) ? `Data through ${fmtObsDate(latestDate, srcData)}` : null;
 
+  // Nothing to plot in this window — one reading (or none) under a full y-axis
+  // reads as a broken chart, so the canvas is replaced by a blank panel that
+  // names the gap.
+  const emptyNote = emptyWindowNote(srcData, visibleData, activeId);
+
+  // In % mode an empty window rebases its one reading against itself and the
+  // headline comes out "+0.0%" — an unchanged-since claim, right beside a note
+  // saying there's been no reading at all. Print a dash instead. In $ mode the
+  // headline is that last reading's actual level, which is true, so it stands.
   const headlineText = asPct
-    ? fmtChange(headlineVal, rate)
+    ? (emptyNote ? '—' : fmtChange(headlineVal, rate))
     : fmtVal(headlineVal, displayUnits);
   const changeText = isStale
     ? (latestDate ? `Data through ${fmtObsDate(latestDate, srcData)}` : 'No data')
     : asPct
       ? (up ? '↑ ' : '↓ ') + activePhrase
       : (up ? '↑ +' : '↓ ') + Math.abs(change || 0).toFixed(1) + (rate ? ' pp ' : '% ') + activePhrase;
+  // The Jan-2025 badge slot and the headline note say the identical sentence
+  // whenever the active anchor IS Jan 2025 and the series stops before it, so
+  // the card printed "Data through 2024" twice. Keep the headline's copy.
+  const staleNote25 = staleNote25raw === changeText ? null : staleNote25raw;
 
   return (
     <div ref={cardRef} style={{
@@ -1696,11 +1828,32 @@ function ChartCard({ item, anchorId, displayMode, priceType, cpiData, overlayIte
         })}
       </div>
 
-      {/* Chart */}
+      {/* Chart — or, when the active window holds nothing to plot, a blank
+          panel instead of one point under a full y-axis */}
       <div style={{ height: 240, position: 'relative' }}>
-        <canvas ref={canvasRef} />
+        {emptyNote ? (
+          <div style={{
+            height: '100%', display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center', gap: 6,
+            textAlign: 'center', padding: '0 18px',
+            border: `1px dashed rgba(44,50,84,.22)`, borderRadius: 4,
+            background: hexToRgba(NAVY, 0.02),
+          }}>
+            <div style={{
+              fontFamily: '"Neue Haas Grotesk Display Pro", sans-serif',
+              fontSize: 12, fontWeight: 700, letterSpacing: '.06em',
+              textTransform: 'uppercase', color: MUTE,
+            }}>{emptyNote.head}</div>
+            <div style={{
+              fontFamily: 'Publico, Georgia, serif', fontStyle: 'italic',
+              fontSize: 13, color: SOFT, maxWidth: 300, lineHeight: 1.45,
+            }}>{emptyNote.sub}</div>
+          </div>
+        ) : (
+          <canvas ref={canvasRef} />
+        )}
       </div>
-      {overlayItem && (
+      {overlayItem && !emptyNote && (
         <div style={{
           fontFamily: '"Neue Haas Grotesk Display Pro", sans-serif',
           fontSize: 10, color: MUTE, marginTop: -6,
@@ -1810,7 +1963,7 @@ function Heatmap({ items, priceType, cpiData }) {
   if (!items.length) {
     return (
       <div style={{
-        background: PAPER, border: `1px solid rgba(44,50,84,.18)`,
+        background: SURFACE, border: `1px solid rgba(44,50,84,.18)`,
         padding: '32px', textAlign: 'center',
         fontFamily: 'Publico, Georgia, serif', fontStyle: 'italic', color: MUTE,
       }}>
@@ -1828,7 +1981,7 @@ function Heatmap({ items, priceType, cpiData }) {
   const cumCell = { borderLeft: `2px solid ${BEIGE}` };
 
   return (
-    <div style={{ background: PAPER, border: `1px solid rgba(44,50,84,.18)`, padding: '24px' }}>
+    <div style={{ background: SURFACE, border: `1px solid rgba(44,50,84,.18)`, padding: '24px' }}>
       <div style={{
         display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 8,
         fontSize: 10, color: MUTE, marginBottom: 14,
@@ -2049,21 +2202,23 @@ function NationalView({ data, anchorId, displayMode, priceType }) {
     }))
     .filter(g => g.items.length), [allItems]);
 
-  const [selectedIds, setSelectedIds] = useState(() =>
-    // Intersect with what's actually in the payload so a renamed/dropped
-    // series can't leave a phantom selection.
-    new Set(allItems.filter(i => DEFAULT_NATIONAL_IDS.includes(i.id)).map(i => i.id))
+  // The selection is an ORDER, newest first — see selAdd/selRemove. The Set
+  // below is derived from it for the picker's marks and counts.
+  const [selOrder, setSelOrder] = useState(() =>
+    // Read off `groups`, which intersects with what's actually in the payload
+    // (so a renamed/dropped series can't leave a phantom selection) and lands
+    // in taxonomy order. The opening set is not reversed: nothing has been
+    // "most recently added" on first paint, so the default page keeps the
+    // grouped reading it has always had.
+    groups.flatMap(g => g.items.filter(i => DEFAULT_NATIONAL_IDS.includes(i.id)).map(i => i.id))
   );
+  const selectedIds = useMemo(() => new Set(selOrder), [selOrder]);
   // Shared by both containers, so a filter typed in the rail survives a resize
   // into the menu.
   const [q, setQ] = useState('');
 
   const toggleId = (id) => {
-    setSelectedIds(prev => {
-      const n = new Set(prev);
-      if (n.has(id)) n.delete(id); else n.add(id);
-      return n;
-    });
+    setSelOrder(prev => prev.includes(id) ? selRemove(prev, id) : selAdd(prev, id));
   };
 
   const itemsIn = (catId) => {
@@ -2079,18 +2234,19 @@ function NationalView({ data, anchorId, displayMode, priceType }) {
     return on === 0 ? 'none' : on === items.length ? 'all' : 'some';
   };
   const toggleCategory = (catId) => {
-    const items = itemsIn(catId);
+    const ids = itemsIn(catId).map(i => i.id);
     const removing = catState(catId) === 'all';
-    setSelectedIds(prev => {
-      const n = new Set(prev);
-      items.forEach(i => { if (removing) n.delete(i.id); else n.add(i.id); });
-      return n;
-    });
+    setSelOrder(prev => removing ? selRemove(prev, ids) : selAdd(prev, ids));
   };
 
-  // Cards render in group order, alphabetical within each group — the same
-  // order the picker lists them in.
-  const selectedItems = groups.flatMap(g => g.items.filter(i => selectedIds.has(i.id)));
+  // Cards render newest-added first. `selOrder` is already that order; map it
+  // back through the payload and drop anything the data no longer has.
+  const byId = useMemo(() => {
+    const m = {};
+    allItems.forEach(i => { m[i.id] = i; });
+    return m;
+  }, [allItems]);
+  const selectedItems = selOrder.map(id => byId[id]).filter(Boolean);
   const anchor = anchorById(anchorId);
 
   const picker = (variant) => (
@@ -2098,8 +2254,10 @@ function NationalView({ data, anchorId, displayMode, priceType }) {
       variant={variant} groups={groups} selectedIds={selectedIds} total={allItems.length}
       q={q} setQ={setQ}
       toggleId={toggleId} toggleCategory={toggleCategory} catState={catState}
-      onSelectAll={() => setSelectedIds(new Set(allItems.map(i => i.id)))}
-      onClearAll={() => setSelectedIds(new Set())}
+      // Select all is the one case with no "most recent": lay the whole catalog
+      // out in taxonomy order rather than in whatever order Object.values gave.
+      onSelectAll={() => setSelOrder(groups.flatMap(g => g.items.map(i => i.id)))}
+      onClearAll={() => setSelOrder([])}
       anchorId={anchorId} priceType={priceType} cpiData={cpiData}
     />
   );
@@ -2128,7 +2286,7 @@ function NationalView({ data, anchorId, displayMode, priceType }) {
 
           {selectedItems.length === 0 ? (
             <div style={{
-              background: PAPER, border: `1px solid rgba(44,50,84,.18)`,
+              background: SURFACE, border: `1px solid rgba(44,50,84,.18)`,
               padding: '48px 32px', textAlign: 'center',
               fontFamily: 'Publico, Georgia, serif', fontStyle: 'italic', color: MUTE,
             }}>
@@ -2136,7 +2294,7 @@ function NationalView({ data, anchorId, displayMode, priceType }) {
             </div>
           ) : (
             <div className="at-cards-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: 0,
-              border: `1px solid rgba(44,50,84,.14)`, background: 'transparent' }}>
+              border: `1px solid rgba(44,50,84,.14)`, background: SURFACE }}>
               {selectedItems.map((item, i) => {
                 const col = i % 2;
                 const row = Math.floor(i / 2);
@@ -2200,10 +2358,10 @@ function StateView({ data, code, setCode, anchorId, displayMode, priceType }) {
   const [status, setStatus] = useState('loading');
 
   // Every metric on to start (see the note above). Keyed on the catalog id, so
-  // the set is meaningful for every state, not just the one on screen.
-  const [selectedIds, setSelectedIds] = useState(() =>
-    new Set(((window.AFFORDABILITY_STATES || {}).metrics || []).map(m => m.id))
-  );
+  // the order is meaningful for every state, not just the one on screen — and
+  // it is an ORDER, newest added first, the same rule the National grid uses.
+  const [selOrder, setSelOrder] = useState(stateCatalogOrder);
+  const selectedIds = useMemo(() => new Set(selOrder), [selOrder]);
   // One filter string across both containers, so typing in the rail survives a
   // resize into the menu.
   const [q, setQ] = useState('');
@@ -2244,8 +2402,8 @@ function StateView({ data, code, setCode, anchorId, displayMode, priceType }) {
   // The which-state bar. Distinct from the metric picker below it, which is why
   // it isn't called `picker` any more.
   const stateBar = (
-    <div className="at-pad" style={{
-      background: MENU_BG, borderBottom: `1px solid rgba(44,50,84,.18)`,
+    <div className="at-pad at-inset-rule" style={{
+      background: MENU_BG,
       padding: '16px 56px',
       display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap',
     }}>
@@ -2341,11 +2499,7 @@ function StateView({ data, code, setCode, anchorId, displayMode, priceType }) {
   }));
 
   const toggleId = (id) => {
-    setSelectedIds(prev => {
-      const n = new Set(prev);
-      if (n.has(id)) n.delete(id); else n.add(id);
-      return n;
-    });
+    setSelOrder(prev => prev.includes(id) ? selRemove(prev, id) : selAdd(prev, id));
   };
   const idsIn = (catId) => {
     const g = groups.find(x => x.id === catId);
@@ -2363,14 +2517,19 @@ function StateView({ data, code, setCode, anchorId, displayMode, priceType }) {
   const toggleCategory = (catId) => {
     const ids = idsIn(catId);
     const removing = catState(catId) === 'all';
-    setSelectedIds(prev => {
-      const n = new Set(prev);
-      ids.forEach(id => { if (removing) n.delete(id); else n.add(id); });
-      return n;
-    });
+    setSelOrder(prev => removing ? selRemove(prev, ids) : selAdd(prev, ids));
   };
 
-  const selectedCards = groups.flatMap(g => g.cards.filter(c => selectedIds.has(c.metric.id)));
+  // Newest-added first, the same rule as National. selOrder holds catalog ids
+  // for the whole catalog; map back through this state's cards, which drops the
+  // metrics this state doesn't publish.
+  //
+  // Deliberately not a useMemo: everything from here down runs after the
+  // loading/error early return above, so a hook here changes the hook order
+  // between renders. `cards` is 14 items.
+  const cardByMetric = {};
+  cards.forEach(c => { cardByMetric[c.metric.id] = c; });
+  const selectedCards = selOrder.map(id => cardByMetric[id]).filter(Boolean);
 
   const metricPicker = (variant) => (
     <MetricPicker
@@ -2381,9 +2540,10 @@ function StateView({ data, code, setCode, anchorId, displayMode, priceType }) {
       q={q} setQ={setQ}
       toggleId={toggleId} toggleCategory={toggleCategory} catState={catState}
       // Select all covers the whole catalog, not just this state's metrics, so
-      // it doesn't quietly drop a metric the next state does publish.
-      onSelectAll={() => setSelectedIds(new Set(idx.metrics.map(m => m.id)))}
-      onClearAll={() => setSelectedIds(new Set())}
+      // it doesn't quietly drop a metric the next state does publish. Taxonomy
+      // order, for the same reason as National: nothing is "most recent" here.
+      onSelectAll={() => setSelOrder(stateCatalogOrder())}
+      onClearAll={() => setSelOrder([])}
       anchorId={anchorId} priceType={priceType} cpiData={cpiData}
     />
   );
@@ -2414,7 +2574,7 @@ function StateView({ data, code, setCode, anchorId, displayMode, priceType }) {
 
             {selectedCards.length === 0 ? (
               <div style={{
-                background: PAPER, border: `1px solid rgba(44,50,84,.18)`,
+                background: SURFACE, border: `1px solid rgba(44,50,84,.18)`,
                 padding: '48px 32px', textAlign: 'center',
                 fontFamily: 'Publico, Georgia, serif', fontStyle: 'italic', color: MUTE,
               }}>
@@ -2424,7 +2584,7 @@ function StateView({ data, code, setCode, anchorId, displayMode, priceType }) {
               /* 380px to match National. At 420 the two tabs sized their cards
                  differently for no reason a reader could see. */
               <div className="at-cards-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: 0,
-                border: `1px solid rgba(44,50,84,.14)` }}>
+                border: `1px solid rgba(44,50,84,.14)`, background: SURFACE }}>
                 {selectedCards.map(({ item, factLabel, rankNote, rankText }, i) => {
                   const col = i % 2;
                   const row = Math.floor(i / 2);
@@ -2457,7 +2617,7 @@ function StateView({ data, code, setCode, anchorId, displayMode, priceType }) {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 14 }}>
               {annualTiles.map(a => (
                 <div key={a.id} style={{
-                  background: PAPER, border: `1px solid rgba(44,50,84,.16)`,
+                  background: SURFACE, border: `1px solid rgba(44,50,84,.16)`,
                   padding: '16px 18px',
                 }}>
                   <div style={{
@@ -2592,14 +2752,19 @@ function CompareChart({ metric, seriesList, anchorId, displayMode, height = 340 
 }
 
 // ── Level color scale, shared by the choropleth and the bar chart ───────────
-// Warm sequential ramp for levels (light sand → burnt sienna), pre-sampled
-// from a Lab interpolation so it stays perceptually even without needing d3
-// — the bar chart can render before the map libs finish loading. Domain is
-// quantile-clamped at the 5th/95th percentile (legend says ≤ / ≥) so one
-// outlier state (usually DC) can't wash every other state into the light
-// end. Direction-neutral on purpose: dark = high, whatever high means.
-const LEVEL_RAMP = ['#f6e7cf','#e9ceb5','#dbb69b','#cc9f83','#bd876b','#ae7153','#9e5a3d','#8d4427','#7c2d12'];
-const MAP_NO_DATA = '#DBD8CE'; // neutral gray — distinct from the ramp's warm light end
+// Sequential ramp for levels, pale blue → ESP navy #2c3254 at the top (August
+// 2026: the warm sand → burnt sienna ramp read as a heat map, and red carries a
+// bad-news signal this scale doesn't mean — dark = high, whatever high means).
+// Pre-sampled from a Lab interpolation, bent through a more saturated mid
+// (#6e7ca8) so the middle of the scale stays blue instead of going gray, and
+// held in a plain array so the bar chart can render before the map libs load.
+// Domain is quantile-clamped at the 5th/95th percentile (legend says ≤ / ≥) so
+// one outlier state (usually DC) can't wash every other state into the light
+// end.
+const LEVEL_RAMP = ['#d3dcf0','#b9c3de','#a0abcc','#8793ba','#6e7ca8','#5d6892','#4c567d','#3c4368','#2c3254'];
+// Warm neutral gray: it has to be unmistakably NOT a ramp step, and the ramp's
+// light end is now a cool blue, so the separation is hue as well as value.
+const MAP_NO_DATA = '#DBD8CE';
 
 function rampColor(t) {
   const x = Math.max(0, Math.min(1, t)) * (LEVEL_RAMP.length - 1);
@@ -2667,7 +2832,7 @@ function USMap({ metric, rows, pinned = [], onPick, periodLabel }) {
   if (err) {
     return (
       <div style={{
-        background: PAPER, border: '1px solid rgba(44,50,84,.18)', padding: '48px 32px',
+        background: SURFACE, border: '1px solid rgba(44,50,84,.18)', padding: '48px 32px',
         textAlign: 'center', fontFamily: 'Publico, Georgia, serif', fontStyle: 'italic', color: MUTE,
       }}>Could not load the map assets (offline?). The Compare States view has the same data.</div>
     );
@@ -2695,7 +2860,7 @@ function USMap({ metric, rows, pinned = [], onPick, periodLabel }) {
   const legendHi = '≥ ' + fmtVal(scale.hi, metric.units);
 
   return (
-    <div ref={boxRef} style={{ position: 'relative', background: PAPER, border: '1px solid rgba(44,50,84,.18)', padding: '20px 20px 12px' }}>
+    <div ref={boxRef} style={{ position: 'relative', background: SURFACE, border: '1px solid rgba(44,50,84,.18)', padding: '20px 20px 12px' }}>
       <svg viewBox="0 0 975 610" style={{ width: '100%', display: 'block' }}>
         {(shapes || []).map(s => {
           const r = byCode[s.code];
@@ -2704,7 +2869,7 @@ function USMap({ metric, rows, pinned = [], onPick, periodLabel }) {
               key={s.id}
               d={s.d}
               fill={scale.color(r ? r.value : null)}
-              stroke={PAPER}
+              stroke={SURFACE}
               strokeWidth="1"
               style={{ cursor: r && onPick ? 'pointer' : 'default' }}
               onClick={() => { if (r && onPick) onPick(s.code); }}
@@ -2728,7 +2893,11 @@ function USMap({ metric, rows, pinned = [], onPick, periodLabel }) {
         <div style={{
           position: 'absolute',
           left: Math.min(tip.x + 14, (tip.w || 300) - 190), top: tip.y + 14,
-          background: NAVY, color: PAPER, padding: '9px 12px', borderRadius: 4,
+          // Warm red, now that the states themselves are navy — the hover card
+          // has to read as an overlay, not as the darkest step of the ramp.
+          // MAP_TIP is a deepened brand red: cream on the brand #E04E39 is
+          // 3.87:1, under AA for body text, and this tooltip is all small type.
+          background: MAP_TIP, color: PAPER, padding: '9px 12px', borderRadius: 4,
           pointerEvents: 'none', zIndex: 5, width: 180,
           fontFamily: '"Neue Haas Grotesk Display Pro", sans-serif', fontSize: 12,
           boxShadow: '0 6px 18px rgba(0,0,0,.25)',
@@ -2737,17 +2906,17 @@ function USMap({ metric, rows, pinned = [], onPick, periodLabel }) {
           {tipRow && tipRow.value != null ? (
             <React.Fragment>
               <div>{fmtVal(tipRow.value, metric.units)}
-                {tipRow.obsLabel && <span style={{ color: '#E8C9A8' }}> · {tipRow.obsLabel}</span>}
+                {tipRow.obsLabel && <span style={{ color: MAP_TIP_WARM }}> · {tipRow.obsLabel}</span>}
               </div>
               {tipRow.rank != null && (
-                <div style={{ color: '#9BA8C2', marginTop: 2 }}>{ordinal(tipRow.rank)} highest of {tipRow.rankN}</div>
+                <div style={{ color: MAP_TIP_DIM, marginTop: 2 }}>{ordinal(tipRow.rank)} highest of {tipRow.rankN}</div>
               )}
               {onPick && (
-                <div style={{ color: '#9BA8C2', marginTop: 3, fontSize: 10 }}>Click to pin on the chart</div>
+                <div style={{ color: MAP_TIP_DIM, marginTop: 3, fontSize: 10 }}>Click to pin on the chart</div>
               )}
             </React.Fragment>
           ) : (
-            <div style={{ color: '#9BA8C2' }}>No data for this period</div>
+            <div style={{ color: MAP_TIP_DIM }}>No data for this period</div>
           )}
         </div>
       )}
@@ -2780,7 +2949,7 @@ function StateBarList({ metric, rows, pinned = [], onPick, periodLabel }) {
   const max = has.length ? has[0].value : 1;
 
   return (
-    <div style={{ background: PAPER, border: '1px solid rgba(44,50,84,.18)', padding: '20px 20px 12px' }}>
+    <div style={{ background: SURFACE, border: '1px solid rgba(44,50,84,.18)', padding: '20px 20px 12px' }}>
       <div style={{ fontFamily: '"Neue Haas Grotesk Display Pro", sans-serif' }}>
         {has.map(r => {
           const pi = pinned.indexOf(r.code);
@@ -2985,8 +3154,12 @@ function CompareMetricPanel({ metric, data, pinned, names, anchorId, displayMode
     if (s) seriesList.push({ label: names[code] || code, color: PIN_COLORS[i % PIN_COLORS.length], data: deflate(s.data), rawData: s.data });
   });
 
+  // A white data panel on the cream page, like the National/State card grid.
+  // The old transparent + hairline-on-top treatment let the chart sit directly
+  // on the page; under the cream/white split that would leave the Compare tab
+  // as the one place where charts are NOT on white.
   return (
-    <div ref={panelRef} style={{ background: 'transparent', borderTop: `1px solid rgba(44,50,84,.16)`, padding: '14px 2px 10px', minWidth: 0 }}>
+    <div ref={panelRef} style={{ background: SURFACE, border: `1px solid rgba(44,50,84,.16)`, padding: '14px 16px 10px', minWidth: 0 }}>
       {compact && (
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, marginBottom: 8 }}>
           <span style={{ fontFamily: 'Publico, Georgia, serif', fontSize: 17, fontWeight: 600, color: INK }}>{metric.label}</span>
@@ -3234,7 +3407,7 @@ function CompareView({ data, metricIds, setMetricIds, homeState, anchorId, displ
             </div>
 
             <div style={metrics.length === 1 ? {} : {
-              display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: '0 28px',
+              display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: '20px 28px',
             }}>
               {metrics.map(m => (
                 <CompareMetricPanel key={m.id} metric={m} data={data} pinned={pinned} names={names}
@@ -3502,7 +3675,7 @@ function MapView({ data, metricId, setMetricId, anchorId, setAnchorId, priceType
             </div>
             {pinned.length === 0 ? (
               <div style={{
-                background: PAPER, border: `1px solid rgba(44,50,84,.18)`,
+                background: SURFACE, border: `1px solid rgba(44,50,84,.18)`,
                 padding: '36px 32px', textAlign: 'center',
                 fontFamily: 'Publico, Georgia, serif', fontStyle: 'italic', color: MUTE,
               }}>
@@ -3558,7 +3731,7 @@ function MapView({ data, metricId, setMetricId, anchorId, setAnchorId, priceType
                     style={{ ...styles.smallBtn, border: 'none', textDecoration: 'underline', textUnderlineOffset: 3, fontSize: 10 }}
                   >Clear all</button>
                 </div>
-                <div ref={pinnedChartRef} style={{ background: 'transparent', borderTop: `1px solid rgba(44,50,84,.16)`, padding: '14px 2px 10px' }}>
+                <div ref={pinnedChartRef} style={{ background: SURFACE, border: `1px solid rgba(44,50,84,.16)`, padding: '14px 16px 10px' }}>
                   <CompareChart
                     metric={metric}
                     seriesList={pinned.map((code, i) => {
@@ -3816,14 +3989,18 @@ function AppMain({ data }) {
         </div>
       )}
 
+      {/* Masthead. The title and subtitle render in BOTH modes (August 2026):
+          they used to live in the standalone-only navy hero, so the ESP page —
+          the tracker's actual home — showed a bare row of tabs and never named
+          the thing. The ESP header sits above the iframe and doesn't repeat the
+          name, so the embed has to carry it. Navy on standalone, cream on
+          embed, one set of words either way. The old kicker ("The Affordability
+          Tracker · 2026") and headline ("What's gotten more expensive.") are
+          gone: the title says what this is, and a year in a kicker goes stale. */}
       {!EMBED && (
       <header className="at-pad at-hero" style={styles.hero}>
-        <div style={styles.kicker}>The Affordability Tracker · {(new Date()).getFullYear()}</div>
-        <h1 className="at-h1" style={styles.h1}>What's gotten<br/>more expensive.</h1>
-        <p className="at-dek" style={styles.dek}>
-          A long, careful look at the federal price data — national and state by state.
-          Built for the people who write about it, organize around it, and have to live inside it.
-        </p>
+        <h1 className="at-h1" style={styles.h1}>{SITE_TITLE}</h1>
+        <p className="at-dek" style={styles.dek}>{SITE_SUBTITLE}</p>
         {lastUpdated && (
           <div style={{
             marginTop: 22,
@@ -3848,37 +4025,41 @@ function AppMain({ data }) {
       </header>
       )}
 
-      {/* Embed mode: view tabs on a light bar where the hero used to be */}
+      {/* Embed mode: the same masthead in the light palette, then the tabs. One
+          block, not two bars, so the hairline lands under the whole masthead. */}
       {EMBED && (
-        <div className="at-pad" style={{
-          background: MENU_BG, borderBottom: '1px solid rgba(44,50,84,.12)',
-          padding: '18px 56px 16px',
-          display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
+        <div className="at-pad at-inset-rule" style={{
+          background: MENU_BG,
+          padding: '28px 56px 16px',
         }}>
-          {VIEWS.map(v => (
-            <button key={v.id} onClick={() => setView(v.id)} style={styles.viewTabLight(view === v.id)}>
-              {v.label}
-            </button>
-          ))}
-          <span style={{
-            marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap',
-            fontFamily: '"Neue Haas Grotesk Display Pro", sans-serif',
-            fontSize: 11, letterSpacing: '.16em', textTransform: 'uppercase',
-            color: MUTE, fontWeight: 600,
-          }}>
-            {lastUpdated && (
-              <span>
-                Updated {new Date(lastUpdated + 'T12:00:00').toLocaleDateString('en-US', {
-                  year: 'numeric', month: 'long', day: 'numeric',
-                })}
-              </span>
-            )}
-            <a href="about.html" {...aboutProps} style={{
-              color: NAVY, textDecoration: 'none',
-              borderBottom: view === 'about' ? '1px solid #2c3254' : '1px dotted rgba(44,50,84,.45)',
-              paddingBottom: 1,
-            }}>About the data →</a>
-          </span>
+          <h1 className="at-h1-embed" style={styles.h1Embed}>{SITE_TITLE}</h1>
+          <p className="at-dek" style={styles.dekEmbed}>{SITE_SUBTITLE}</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginTop: 22 }}>
+            {VIEWS.map(v => (
+              <button key={v.id} onClick={() => setView(v.id)} style={styles.viewTabLight(view === v.id)}>
+                {v.label}
+              </button>
+            ))}
+            <span style={{
+              marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap',
+              fontFamily: '"Neue Haas Grotesk Display Pro", sans-serif',
+              fontSize: 11, letterSpacing: '.16em', textTransform: 'uppercase',
+              color: MUTE, fontWeight: 600,
+            }}>
+              {lastUpdated && (
+                <span>
+                  Updated {new Date(lastUpdated + 'T12:00:00').toLocaleDateString('en-US', {
+                    year: 'numeric', month: 'long', day: 'numeric',
+                  })}
+                </span>
+              )}
+              <a href="about.html" {...aboutProps} style={{
+                color: NAVY, textDecoration: 'none',
+                borderBottom: view === 'about' ? '1px solid #2c3254' : '1px dotted rgba(44,50,84,.45)',
+                paddingBottom: 1,
+              }}>About the data →</a>
+            </span>
+          </div>
         </div>
       )}
 
@@ -3887,7 +4068,7 @@ function AppMain({ data }) {
           controls live on its pinned-states chart instead — and on the About
           view, which has no charts. */}
       {view !== 'map' && view !== 'about' && (
-      <div className="at-pad at-controls" style={styles.controls}>
+      <div className="at-pad at-controls at-inset-rule" style={styles.controls}>
         <span style={styles.controlLabel}>Measure from</span>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
           {ANCHORS.map(a => (
@@ -3944,9 +4125,15 @@ function AppMain({ data }) {
           textTransform: 'uppercase',
           display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap',
         }}>
-          <a href="about.html" {...aboutProps} style={{ color: MUTE, textDecoration: 'underline', textUnderlineOffset: 3 }}>
-            About the data: sources & methods
-          </a>
+          <span style={{ display: 'flex', gap: 18, flexWrap: 'wrap' }}>
+            <a href="about.html" {...aboutProps} style={{ color: MUTE, textDecoration: 'underline', textUnderlineOffset: 3 }}>
+              About the data: sources & methods
+            </a>
+            {/* Feedback route, on every view including the embed. Not a mailto:
+                yet — FEEDBACK_EMAIL is a placeholder, and a mailto that opens a
+                compose window addressed to nothing is worse than plain text. */}
+            <span>Found an error? {FEEDBACK_EMAIL}</span>
+          </span>
           <span style={{ textAlign: 'right' }}>
             Data: FRED · BLS · Census · FHFA · Zillow · Freddie Mac · EIA · NY Fed · KFF · Urban · CCAoA<br/>
             economicsecurityproject.org / affordability
@@ -3976,7 +4163,7 @@ window.AppMain = AppMain;
       return () => clearInterval(t);
     }, [ready]);
 
-    // Cream text on the dark standalone surround; ink on the white embed page.
+    // Cream text on the dark standalone surround; ink on the cream embed page.
     const loadColor = document.documentElement.classList.contains('embed') ? '#0E1320' : '#f4f2e4';
     if (!data) return <div style={{ color: loadColor, padding: 40, fontFamily: 'system-ui' }}>No data loaded.</div>;
     if (!ready) return <div style={{ color: loadColor, padding: 40, fontFamily: 'system-ui' }}>Loading…</div>;

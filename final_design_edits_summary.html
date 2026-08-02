@@ -1,0 +1,542 @@
+<title>Final design edits — what changed</title>
+<style>
+  :root {
+    --ground:   #FFFDF2;
+    --panel:    #FFFFFF;
+    --ink:      #1A1E2E;
+    --navy:     #2c3254;
+    --mute:     #6B6E78;
+    --soft:     #9A9CA3;
+    --rule:     rgba(44,50,84,.16);
+    --rule-str: rgba(44,50,84,.30);
+    --red:      #C43F2C;
+    --green:    #3E6E57;
+    --green-bg: #EAF1EC;
+    --red-bg:   #F7E6E2;
+    --neut-bg:  rgba(44,50,84,.06);
+    --shadow:   0 1px 0 rgba(44,50,84,.05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ground:   #14161F;
+      --panel:    #1C1F2B;
+      --ink:      #ECE8DC;
+      --navy:     #B7BFDA;
+      --mute:     #9BA0AE;
+      --soft:     #767B88;
+      --rule:     rgba(183,191,218,.18);
+      --rule-str: rgba(183,191,218,.34);
+      --red:      #E8836E;
+      --green:    #7FBF9E;
+      --green-bg: rgba(127,191,158,.14);
+      --red-bg:   rgba(232,131,110,.14);
+      --neut-bg:  rgba(183,191,218,.10);
+      --shadow:   none;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground:   #14161F;
+    --panel:    #1C1F2B;
+    --ink:      #ECE8DC;
+    --navy:     #B7BFDA;
+    --mute:     #9BA0AE;
+    --soft:     #767B88;
+    --rule:     rgba(183,191,218,.18);
+    --rule-str: rgba(183,191,218,.34);
+    --red:      #E8836E;
+    --green:    #7FBF9E;
+    --green-bg: rgba(127,191,158,.14);
+    --red-bg:   rgba(232,131,110,.14);
+    --neut-bg:  rgba(183,191,218,.10);
+    --shadow:   none;
+  }
+  :root[data-theme="light"] {
+    --ground:   #FFFDF2;
+    --panel:    #FFFFFF;
+    --ink:      #1A1E2E;
+    --navy:     #2c3254;
+    --mute:     #6B6E78;
+    --soft:     #9A9CA3;
+    --rule:     rgba(44,50,84,.16);
+    --rule-str: rgba(44,50,84,.30);
+    --red:      #C43F2C;
+    --green:    #3E6E57;
+    --green-bg: #EAF1EC;
+    --red-bg:   #F7E6E2;
+    --neut-bg:  rgba(44,50,84,.06);
+    --shadow:   0 1px 0 rgba(44,50,84,.05);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 56px 28px 96px;
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+  }
+
+  /* ── Masthead ─────────────────────────────────────────────── */
+  .head { display: flex; flex-direction: column; gap: 14px; }
+  .eyebrow {
+    font-size: 11px; font-weight: 700; letter-spacing: .18em;
+    text-transform: uppercase; color: var(--mute);
+  }
+  h1 {
+    margin: 0;
+    font-family: Georgia, "Iowan Old Style", serif;
+    font-size: clamp(28px, 4.4vw, 40px);
+    line-height: 1.14; font-weight: 500; letter-spacing: -.015em;
+    text-wrap: balance;
+  }
+  .standfirst {
+    margin: 0; max-width: 62ch;
+    font-size: 17px; color: var(--mute);
+  }
+
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 8px 22px;
+    padding-top: 16px; border-top: 1px solid var(--rule-str);
+    font-size: 12px; letter-spacing: .04em; color: var(--mute);
+    font-variant-numeric: tabular-nums;
+  }
+  .meta b { color: var(--ink); font-weight: 650; }
+
+  /* ── Items ────────────────────────────────────────────────── */
+  .items { display: flex; flex-direction: column; gap: 18px; }
+
+  .item {
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    box-shadow: var(--shadow);
+    padding: 22px 24px 24px;
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr);
+    column-gap: 18px;
+    row-gap: 12px;
+  }
+  .num {
+    font-variant-numeric: tabular-nums;
+    font-size: 13px; font-weight: 700; letter-spacing: .06em;
+    color: var(--soft);
+    padding-top: 4px;
+  }
+  .item-head {
+    display: flex; flex-wrap: wrap; align-items: baseline;
+    gap: 10px 14px;
+  }
+  h2 {
+    margin: 0;
+    font-family: Georgia, "Iowan Old Style", serif;
+    font-size: 21px; font-weight: 500; line-height: 1.25;
+    letter-spacing: -.01em;
+  }
+  .body { grid-column: 2; display: flex; flex-direction: column; gap: 10px; }
+  .body p { margin: 0; max-width: 66ch; }
+  .asked {
+    color: var(--mute);
+    font-style: italic;
+    padding-left: 14px;
+    border-left: 2px solid var(--rule-str);
+    max-width: 62ch;
+  }
+
+  .chip {
+    display: inline-block; flex-shrink: 0;
+    font-size: 10px; font-weight: 700; letter-spacing: .1em;
+    text-transform: uppercase;
+    padding: 3px 9px; border-radius: 2px;
+    white-space: nowrap;
+  }
+  .chip.done  { background: var(--green-bg); color: var(--green); }
+  .chip.same  { background: var(--neut-bg);  color: var(--mute); }
+  .chip.call  { background: var(--red-bg);   color: var(--red); }
+
+  .files {
+    font-size: 12.5px; color: var(--soft);
+    padding-top: 10px; border-top: 1px solid var(--rule);
+    display: flex; flex-wrap: wrap; gap: 4px 12px;
+  }
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: .875em;
+    background: var(--neut-bg);
+    padding: 1px 5px; border-radius: 2px;
+    color: var(--ink);
+  }
+  .files code { background: none; padding: 0; color: var(--soft); }
+
+  .flag {
+    background: var(--red-bg);
+    border-left: 3px solid var(--red);
+    padding: 12px 16px;
+    font-size: 14.5px;
+    max-width: 66ch;
+  }
+  .flag b { color: var(--red); }
+
+  /* ── Open questions ───────────────────────────────────────── */
+  .open {
+    background: var(--panel);
+    border: 1px solid var(--rule-str);
+    padding: 24px 26px;
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  .open h2 { font-size: 19px; }
+  .open ul { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 10px; }
+  .open li { max-width: 66ch; }
+
+  @media (max-width: 620px) {
+    .wrap { padding: 36px 18px 64px; }
+    .item { grid-template-columns: 1fr; row-gap: 10px; }
+    .num { padding-top: 0; }
+    .body { grid-column: 1; }
+  }
+
+  :focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+</style>
+
+<div class="wrap">
+
+  <header class="head">
+    <div class="eyebrow">Affordability Tracker · Final design pass</div>
+    <h1>Final design edits: what was asked, what changed</h1>
+    <p class="standfirst">
+      Ten items from <code>final_design_edits.md</code>. Eight changed the site, one needed
+      no change, and one is waiting on you.
+    </p>
+    <div class="meta">
+      <span><b>2 August 2026</b></span>
+      <span>Tests: <b>114 pass</b> (9 new)</span>
+      <span>Verified live at <b>1280px</b>, <b>900px</b>, and in <b>embed mode</b></span>
+    </div>
+  </header>
+
+  <div class="items">
+
+    <!-- 01 -->
+    <article class="item">
+      <div class="num">01</div>
+      <div class="item-head">
+        <h2>Where a newly clicked chart lands</h2>
+        <span class="chip done">Changed</span>
+      </div>
+      <div class="body">
+        <p class="asked">
+          The logic of adding charts to national and state isn't clear; sometimes they show up
+          near the top and sometimes it seems random.
+        </p>
+        <p>
+          It wasn't random: cards rendered in category order, alphabetical within. Clicking
+          "Coffee" inserted it into the Food block, often several screens below the fold, so
+          the click read as doing nothing.
+        </p>
+        <p>
+          Now the grid orders <b>most recently added first</b>, on National and My State. A
+          group header add puts the whole group on top in the order the rail lists it. The
+          first paint and Select all still lay out in category order, since nothing is "most
+          recent" there. Compare and Map are untouched.
+        </p>
+      </div>
+      <div class="files">
+        <code>index.html</code> — <code>selAdd</code> / <code>selRemove</code>, NationalView, StateView
+        <span>·</span>
+        <code>tests/helpers.test.js</code> — 5 new tests
+      </div>
+    </article>
+
+    <!-- 02 -->
+    <article class="item">
+      <div class="num">02</div>
+      <div class="item-head">
+        <h2>Category colors</h2>
+        <span class="chip same">Already fixed</span>
+      </div>
+      <div class="body">
+        <p class="asked">
+          Can each category get a color assigned? Seeing blues and purples mixed in "Bills &amp;
+          getting around", legacy labels like "Work and Wages" under "Rent and homes", and two
+          colors in "Paychecks &amp; debt".
+        </p>
+        <p>
+          Your hunch was right, this landed in the previous pass. Checked against the rendered
+          page: Food <code>#ebc382</code>, Bills <code>#472b51</code>, Health <code>#b0645f</code>,
+          Paychecks <code>#70ad8f</code>, Rent &amp; homes <code>#2c3254</code>, one color per
+          category with no exceptions. "Work &amp; Wages" survives only in a code comment in
+          <code>fetch_data.R</code> and in <code>picker_mockups.html</code>; it can't reach the app.
+          The two colors in Paychecks &amp; debt are the up/down change badges, red and green,
+          not the category color.
+        </p>
+        <div class="flag">
+          <b>Your call, not changed.</b> The Bills purple <code>#472b51</code> sits close to the
+          Rent &amp; homes navy <code>#2c3254</code> at chart-line weight, which is the most likely
+          source of "blues and purples mixed." Separating them is a one-line edit to
+          <code>ESP_CATEGORY_COLOR</code>. Say the word and I'll move Bills toward a clearly
+          violet purple.
+        </div>
+      </div>
+      <div class="files"><code>index.html</code> — no change made</div>
+    </article>
+
+    <!-- 03 -->
+    <article class="item">
+      <div class="num">03</div>
+      <div class="item-head">
+        <h2>Charts with no data in the window</h2>
+        <span class="chip done">Changed</span>
+      </div>
+      <div class="body">
+        <p class="asked">
+          Since Jan 2025 on the Census categories, where the last data is 2024, make the graphic
+          more obviously blank. The y-axis implies something is wrong.
+        </p>
+        <p>
+          Four national series publish nothing on or after Jan 2025: 20th-percentile income,
+          rent burden, uninsured rate, and median household income. The anchor clamped back to
+          the last 2024 reading and Chart.js painted a full y-axis around that one point.
+        </p>
+        <p>
+          The canvas is now replaced by a dashed blank panel that names the gap: <b>"No data
+          since Jan 2025 — Last published 2024."</b> In %-change mode the headline shows an
+          em-dash instead of "+0.0%", which was claiming "unchanged" right beside a note saying
+          there had been no reading at all. A duplicate "Data through 2024" that printed twice
+          on the same card is gone.
+        </p>
+      </div>
+      <div class="files">
+        <code>index.html</code> — <code>emptyWindowNote</code>, ChartCard
+        <span>·</span>
+        <code>tests/helpers.test.js</code> — 4 new tests
+      </div>
+    </article>
+
+    <!-- 04 -->
+    <article class="item">
+      <div class="num">04</div>
+      <div class="item-head">
+        <h2>#FFFDF2 everywhere but the data</h2>
+        <span class="chip done">Changed</span>
+      </div>
+      <div class="body">
+        <p class="asked">
+          To blend with the Resources template, the background for all sections except the white
+          data display area should be #FFFDF2: the left rail, the top menu button area, and the
+          area surrounding the tables.
+        </p>
+        <p>
+          Done, and it was an inversion rather than a tint. The page was beige
+          <code>#f4f2e4</code> with cream panels, and the card interiors were transparent, so
+          the charts were the same color as the page. Now the surround is <code>#FFFDF2</code>
+          — page, rail, menu bars, state selector, footer — and only the data panels are white:
+          the card grid, the heatmap, the map and bar chart, the Compare panels, the annual stat
+          tiles, the About tables.
+        </p>
+        <p>
+          Applied in <b>embed mode too</b>. Embed previously did the opposite (white page, cream
+          panels), which would have put a white iframe on a #FFFDF2 ESP page. <code>about.html</code>
+          got the same split so the two pages match.
+        </p>
+      </div>
+      <div class="files">
+        <code>index.html</code> — <code>SURFACE</code>, <code>PAGE_BG</code>, <code>MENU_BG</code>, ~14 panel sites
+        <span>·</span>
+        <code>about.html</code>
+      </div>
+    </article>
+
+    <!-- 05 -->
+    <article class="item">
+      <div class="num">05</div>
+      <div class="item-head">
+        <h2>Feedback address</h2>
+        <span class="chip call">Placeholder</span>
+      </div>
+      <div class="body">
+        <p class="asked">
+          We need an email address for receiving feedback, on the main page and on the about
+          page. Start with "TKTKATESP" as a bad email.
+        </p>
+        <p>
+          Two places: the footer on every view, reading "Found an error? TKTKATESP", and the
+          corrections note at the bottom of the About page, which now reads "Corrections and
+          questions are welcome: write to TKTKATESP."
+        </p>
+        <p>
+          Left as plain text rather than a <code>mailto:</code> link, since a compose window
+          addressed to nothing is worse than no link. It's deliberately not a valid address so
+          it can't ship quietly. Grep <code>TKTKATESP</code> to find both.
+        </p>
+      </div>
+      <div class="files"><code>index.html</code> — <code>FEEDBACK_EMAIL</code>, footer <span>·</span> <code>assets/about_content.js</code></div>
+    </article>
+
+    <!-- 06 -->
+    <article class="item">
+      <div class="num">06</div>
+      <div class="item-head">
+        <h2>Hairlines under the menu bars</h2>
+        <span class="chip done">Changed</span>
+      </div>
+      <div class="body">
+        <p class="asked">
+          The thin grey lines should track the window, set to the side rail plus the tables,
+          not extend to the left and right as currently configured.
+        </p>
+        <p>
+          The bars are full-bleed, so a plain <code>border-bottom</code> ran the rule window edge
+          to window edge while everything it separates starts 56px in. The rule is now drawn by
+          an inset pseudo-element that rides the same responsive padding the content column uses,
+          56px above 960px, then 24px, then 16px.
+        </p>
+        <p>
+          Measured at 1280px: the rule runs 56 → 1209, the rail's left edge is at 56, and the
+          card grid's right edge is at 1209. Exact. Applied to the global controls bar, the
+          state selector bar, and the embed tab bar.
+        </p>
+      </div>
+      <div class="files"><code>index.html</code> — <code>.at-inset-rule</code></div>
+    </article>
+
+    <!-- 07 -->
+    <article class="item">
+      <div class="num">07</div>
+      <div class="item-head">
+        <h2>Navy map, red hover card</h2>
+        <span class="chip done">Changed</span>
+      </div>
+      <div class="body">
+        <p class="asked">
+          The map gradient should not be red but more like dark navy, specifically #2c3254 at
+          the full. Style the hover card more like the reddish color it is now.
+        </p>
+        <p>
+          The ramp runs pale blue <code>#d3dcf0</code> to <code>#2c3254</code>, bent through a
+          more saturated mid so the middle of the scale stays blue instead of going gray. The
+          no-data gray is unchanged and now separates from the ramp by hue as well as value.
+          The sorted bar chart and the legend follow the same ramp automatically.
+        </p>
+        <p>
+          The hover card is warm red. One adjustment worth knowing: cream text on the brand
+          <code>#E04E39</code> is 3.87:1, under WCAG AA, and every line in that card is 10 to
+          12px. I deepened it to <code>#C43F2C</code>, which is 5.03:1, and warmed the two
+          secondary text colors that were tuned for the old navy fill.
+        </p>
+      </div>
+      <div class="files"><code>index.html</code> — <code>LEVEL_RAMP</code>, <code>MAP_TIP</code></div>
+    </article>
+
+    <!-- 08 -->
+    <article class="item">
+      <div class="num">08</div>
+      <div class="item-head">
+        <h2>Title, and where it appears</h2>
+        <span class="chip done">Changed · structural</span>
+      </div>
+      <div class="body">
+        <p class="asked">
+          Title suggestion: Economic Security Project's Affordability Tracker. Add to embed,
+          remove the old text, change the structure if necessary.
+        </p>
+        <p>
+          The title and subtitle lived in the standalone-only navy hero, so on the ESP page —
+          the tracker's actual home — a reader saw a bare row of tabs and the site never named
+          itself. The masthead now renders in <b>both modes</b>: navy on the standalone page,
+          the same words in the light palette above the tabs in embed.
+        </p>
+        <p>
+          Removed as instructed: the kicker "The Affordability Tracker · 2026" and the headline
+          "What's gotten more expensive." The old dek about federal price data is gone too,
+          replaced by the new subtitle. The browser tab title and about.html's kicker match.
+        </p>
+      </div>
+      <div class="files"><code>index.html</code> — <code>SITE_TITLE</code>, masthead, <code>styles.h1Embed</code> <span>·</span> <code>about.html</code></div>
+    </article>
+
+    <!-- 09 -->
+    <article class="item">
+      <div class="num">09</div>
+      <div class="item-head">
+        <h2>About page cleanup</h2>
+        <span class="chip done">Changed</span>
+      </div>
+      <div class="body">
+        <p class="asked">
+          Remove the "couple of clicks" sentence. Check it more generally for AI-slop and clean
+          it up to sound more human.
+        </p>
+        <p>
+          Sentence removed. The rest held up better than expected, so this was a light pass of
+          about eighteen edits, not a rewrite. What went: stock lead-ins ("One gap worth knowing
+          before you quote it", "One constraint shapes this whole section"), rhetorical
+          em-dashes throughout, and "changes that fall apart under scrutiny."
+        </p>
+        <p>
+          What stayed: every "X, not Y" line that carries a real definition, such as "per person
+          with a credit file, not per resident" and "an artifact of reporting rules, not an
+          absence of medical debt." Those are the cautions a reader needs, not a tic. No
+          empirical claim, source, definition, or date changed.
+        </p>
+      </div>
+      <div class="files"><code>assets/about_content.js</code> — shared by about.html and the in-app About view</div>
+    </article>
+
+    <!-- 10 -->
+    <article class="item">
+      <div class="num">10</div>
+      <div class="item-head">
+        <h2>Subtitle</h2>
+        <span class="chip done">Changed</span>
+      </div>
+      <div class="body">
+        <p class="asked">
+          Subtitle options — what are your thoughts?
+        </p>
+        <p>
+          Went with your first option, verbatim: <b>"Follow the costs shaping household budgets,
+          using public data to understand what is changing, where, and by how much."</b>
+        </p>
+        <p>
+          It was the only one of the three that says what the thing does and what it's for, and
+          "what is changing, where, and by how much" maps onto National, My State, and Compare.
+          The third asserted that life is unaffordable, which is an editorial claim the data on
+          the page doesn't establish and the kind of line a hostile reader uses to dismiss the
+          whole tracker.
+        </p>
+      </div>
+      <div class="files"><code>index.html</code> — <code>SITE_SUBTITLE</code></div>
+    </article>
+
+  </div>
+
+  <section class="open">
+    <h2>Waiting on you</h2>
+    <ul>
+      <li>
+        <b>The email.</b> <code>TKTKATESP</code> is in two places and is not a valid address.
+        Nothing else blocks launch.
+      </li>
+      <li>
+        <b>Bills purple vs. Rent &amp; homes navy.</b> Flagged in item 02. One line if you want
+        them further apart.
+      </li>
+      <li>
+        <b>The title wraps to two lines</b> at 1280px on the standalone page, which reads fine.
+        In embed it fits on one. Worth a look on the real ESP page before launch, since the
+        iframe width there is what actually decides it.
+      </li>
+    </ul>
+  </section>
+
+</div>
