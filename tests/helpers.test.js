@@ -19,7 +19,8 @@ const H = loadHelpers();
 const {
   fmtVal, fmtDate, inferCadence, fmtObsDate, ordinal, pctChange, pctChangeBetween, valueAt, sliceFrom, hoursToAfford,
   scaleByCPI, categoryLabel, ANCHORS, anchorById, anchorDate, buildFactText,
-  isDeflatable, toReal, seriesForType, ALREADY_REAL_IDS,
+  isDeflatable, toReal, seriesForType, ALREADY_REAL_IDS, railChangeText,
+  isRateSeries, changeIn, fmtChange, changeSince, changeBetween,
 } = H;
 
 // ── The seam between the two script blocks ──────────────────────────────────
@@ -268,9 +269,190 @@ test('scaleByCPI: scales a reference price by the CPI ratio', () => {
 });
 
 test('categoryLabel: every real category has a label, unknowns do not crash', () => {
-  assert.equal(categoryLabel('labor'), 'Work & Wages');
-  assert.equal(categoryLabel('groceries'), 'Groceries');
-  assert.equal(typeof categoryLabel('nonsense'), 'string');
+  // The six groups of the August 2026 recut. Under the recut the category IS
+  // the picker group, so these strings are the rail's group headers as well as
+  // the card eyebrows.
+  assert.equal(categoryLabel('income'), 'Paychecks & debt');
+  assert.equal(categoryLabel('groceries'), 'Food');
+  assert.equal(categoryLabel('housing'), 'Rent & homes');
+  assert.equal(categoryLabel('bills'), 'Bills & getting around');
+  assert.equal(categoryLabel('health'), 'Health & care');
+  assert.equal(categoryLabel('overall'), 'Overall inflation');
+  // An unrecognized category returns the raw id, deliberately: a stranded
+  // series should look wrong on the card rather than quietly wear some other
+  // group's name. The `known` sets in the other two suites are the real guard.
+  assert.equal(categoryLabel('nonsense'), 'nonsense');
+  assert.equal(typeof categoryLabel(undefined), 'string');
+});
+
+// ── The National picker's row number ────────────────────────────────────────
+// railChangeText is what each row of the rail/menu shows next to a metric name.
+// It follows the page anchor and the Nominal/Real toggle rather than pinning to
+// Dec 2019, so a row and the card it opens can never print different answers to
+// the same question. These pin the editorial rules, which were deliberate calls.
+
+const railItem = (over) => Object.assign({
+  id: 'x', units: '$ per Gallon',
+  data: [
+    { date: '2019-12-01', value: 100 },
+    { date: '2024-01-01', value: 120 },
+    { date: '2026-06-01', value: 150 },
+  ],
+}, over);
+
+test('rail row: percent change off the active anchor, not a fixed one', () => {
+  const it = railItem();
+  assert.equal(railChangeText(it, '2019', 'nominal', null), '+50.0%');   // 100 → 150
+  assert.equal(railChangeText(it, 'max', 'nominal', null), '+50.0%');
+  // A different anchor must move the number, or the rail and the card diverge.
+  assert.equal(railChangeText(it, 'y:2024', 'nominal', null), '+25.0%'); // 120 → 150
+});
+
+test('rail row: a falling series gets a real minus sign, not a hyphen', () => {
+  const it = railItem({ data: [{ date: '2019-12-01', value: 200 }, { date: '2026-06-01', value: 150 }] });
+  assert.equal(railChangeText(it, '2019', 'nominal', null), '−25.0%');
+  assert.ok(railChangeText(it, '2019', 'nominal', null).startsWith('−'));
+});
+
+test('rail row: rate series move in percentage points, never in percent', () => {
+  // "up 12%" on a rate is a percent-of-a-percent that fact-checkers flag.
+  const it = railItem({
+    units: 'Rate (%)',
+    data: [{ date: '2019-12-01', value: 3.5 }, { date: '2026-06-01', value: 6.3 }],
+  });
+  assert.equal(railChangeText(it, '2019', 'nominal', null), '+2.8 pp');
+});
+
+test('rail row: an anchor on the last reading is "—", not a false 0.0%', () => {
+  // An annual series with nothing published since isn't "unchanged", it's "no
+  // new data since" — and a 0.0% badge would claim the former.
+  const it = railItem({ data: [{ date: '2019-12-01', value: 100 }, { date: '2024-01-01', value: 120 }] });
+  assert.equal(railChangeText(it, 'y:2024', 'nominal', null), '—');
+  assert.equal(railChangeText(railItem({ data: [] }), '2019', 'nominal', null), '—');
+  assert.equal(railChangeText(railItem({ data: [{ date: '2026-06-01', value: 9 }] }), '2019', 'nominal', null), '—');
+});
+
+test('rail row: an anchor predating the series clamps forward, like the card does', () => {
+  const it = railItem({ data: [{ date: '2015-01-01', value: 50 }, { date: '2026-06-01', value: 75 }] });
+  assert.equal(railChangeText(it, '2000', 'nominal', null), '+50.0%');
+});
+
+test('rail row: Real deflates a dollar series and leaves a rate alone', () => {
+  const cpi = [
+    { date: '2019-12-01', value: 100 },
+    { date: '2026-06-01', value: 125 },
+  ];
+  const dollars = railItem({
+    data: [{ date: '2019-12-01', value: 100 }, { date: '2026-06-01', value: 150 }],
+  });
+  // Nominal +50%; in 2026 dollars the 2019 reading is 125, so real is +20%.
+  assert.equal(railChangeText(dollars, '2019', 'nominal', cpi), '+50.0%');
+  assert.equal(railChangeText(dollars, '2019', 'real', cpi), '+20.0%');
+
+  const rate = railItem({
+    units: 'Rate (%)',
+    data: [{ date: '2019-12-01', value: 3.5 }, { date: '2026-06-01', value: 6.3 }],
+  });
+  assert.equal(railChangeText(rate, '2019', 'real', cpi), '+2.8 pp');
+});
+
+test('rail row: an already-real series is never deflated twice', () => {
+  const cpi = [{ date: '2019-12-01', value: 100 }, { date: '2026-06-01', value: 125 }];
+  const income = railItem({
+    id: 'us_median_income', units: '$', already_real: true,
+    data: [{ date: '2019-12-01', value: 100 }, { date: '2026-06-01', value: 150 }],
+  });
+  assert.equal(railChangeText(income, '2019', 'real', cpi), '+50.0%');
+});
+
+// ── The one change rule every surface shares ────────────────────────────────
+// A rate series moves in percentage points. Before August 2026 only the picker
+// row and the Copy-fact sentence knew that: the card headline, the dual anchor
+// badges, the %-change view and the heatmap all ran raw pctChange, so the
+// mortgage card printed "+81.0%" for a rate that went 3.68% → 6.66% while the
+// row beside it printed "+3.0 pp". These pin the shared rule.
+
+const RATE = { units: 'Rate (%)' };
+const DOLLARS = { units: '$ per Dozen' };
+const rateSeries = [{ date: '2019-12-01', value: 3.68 }, { date: '2026-06-01', value: 6.66 }];
+
+test('change rule: a rate series is anything whose units carry a %', () => {
+  assert.equal(isRateSeries(RATE), true);
+  assert.equal(isRateSeries({ units: '% of Renters' }), true);   // rent burden
+  assert.equal(isRateSeries(DOLLARS), false);
+  assert.equal(isRateSeries({ units: 'Index (1982–84 = 100)' }), false);
+  assert.equal(isRateSeries(null), false);
+});
+
+test('change rule: rates move in points, everything else in percent', () => {
+  assert.equal(changeIn(3.68, 6.66, true).toFixed(1), '3.0');
+  assert.equal(changeIn(3.68, 6.66, false).toFixed(1), '81.0');
+  // A percent change with no base to divide by is null, not Infinity; a
+  // percentage-point change off zero is perfectly well defined.
+  assert.equal(changeIn(0, 5, false), null);
+  assert.equal(changeIn(0, 5, true), 5);
+  assert.equal(changeIn(null, 5, true), null);
+  assert.equal(changeIn(3, undefined, false), null);
+});
+
+test('change rule: formatting carries the unit and a real minus sign', () => {
+  assert.equal(fmtChange(2.98, true), '+3.0 pp');
+  assert.equal(fmtChange(-1.04, true), '−1.0 pp');
+  assert.equal(fmtChange(81.0, false), '+81.0%');
+  assert.equal(fmtChange(-40.3, false), '−40.3%');
+});
+
+test('change rule: the card badges and the picker row cannot disagree', () => {
+  // The bug this fixes: same series, same anchor, two published answers.
+  const item = { ...RATE, data: rateSeries };
+  const badge = changeSince(item.data, '2019-12-01', item);
+  assert.equal(fmtChange(badge, isRateSeries(item)), '+3.0 pp');
+  assert.equal(railChangeText(item, '2019', 'nominal', null), '+3.0 pp');
+});
+
+test('change rule: dollar series are untouched by it', () => {
+  const item = { ...DOLLARS, data: [{ date: '2019-12-01', value: 1.53 }, { date: '2026-06-01', value: 2.14 }] };
+  assert.equal(fmtChange(changeSince(item.data, '2019-12-01', item), false), '+39.9%');
+});
+
+test('change rule: changeSince keeps pctChange\'s "no new data" contract', () => {
+  // An annual rate with nothing published since the anchor is not "+0.0 pp".
+  const item = { ...RATE, data: [{ date: '2019-12-01', value: 9.2 }, { date: '2024-01-01', value: 8.2 }] };
+  assert.equal(changeSince(item.data, '2024-01-01', item), null);
+  assert.equal(changeSince(item.data, '2025-01-01', item), null);
+  assert.equal(changeSince([], '2019-12-01', item), null);
+  assert.equal(changeSince([{ date: '2026-06-01', value: 4 }], '2019-12-01', item), null);
+});
+
+test('change rule: changeBetween handles the heatmap\'s year-over-year cells', () => {
+  const rate = { ...RATE, data: [
+    { date: '2023-01-15', value: 3.4 }, { date: '2024-01-15', value: 3.7 }, { date: '2025-01-15', value: 4.1 },
+  ] };
+  assert.equal(changeBetween(rate.data, '2024-01-15', '2025-01-15', rate).toFixed(1), '0.4');
+  const dollars = { ...DOLLARS, data: [
+    { date: '2024-01-15', value: 2.00 }, { date: '2025-01-15', value: 2.50 },
+  ] };
+  assert.equal(changeBetween(dollars.data, '2024-01-15', '2025-01-15', dollars).toFixed(1), '25.0');
+});
+
+test('fmtVal: the %-change view labels a rate axis in points, not percent', () => {
+  // displayUnits for a rate series in %-change mode. Without the pp branch
+  // this hits the '%' branch and stamps a percent sign on a pp figure.
+  assert.equal(fmtVal(3.0, 'pp change since Dec 2019'), '3.0 pp');
+  assert.equal(fmtVal(-1.4, 'pp change'), '-1.4 pp');
+  assert.equal(fmtVal(39.9, '% change since Dec 2019'), '39.9%');
+});
+
+test('script blocks: the component block never prints a change without the unit rule', () => {
+  // The regression guard for the actual bug: the card reached for pctChange
+  // directly, which has no idea the series is a rate. Every change the
+  // component block renders must come from changeSince/changeBetween.
+  const html = fs.readFileSync(repoPath('index.html'), 'utf8');
+  const blocks = [...html.matchAll(/<script type="text\/babel"[^>]*>([\s\S]*?)<\/script>/g)].map(m => m[1]);
+  const componentBlock = blocks[1];
+  const calls = [...componentBlock.matchAll(/\bpctChange(Between)?\s*\(/g)];
+  assert.deepEqual(calls.map(m => m[0]), [],
+    'the component block calls pctChange directly — use changeSince/changeBetween so rate series stay in pp');
 });
 
 test('fmtDate: accepts an ISO string or a Chart.js millisecond timestamp', () => {

@@ -60,7 +60,18 @@ install, ~2 seconds. Two suites, described in `tests/README.md`:
   automated commit, so a bad refresh is never published.
 - `tests/helpers.test.js` pins the pure logic in index.html's first babel
   block, including the editorial rules in `buildFactText` (percentage points on
-  rate series, no index levels in a public fact) and the Dec-2019 anchor.
+  rate series, no index levels in a public fact), the Dec-2019 anchor, the six
+  recut category labels, and `railChangeText` — the National picker's row
+  number, which follows the live anchor and the Real toggle and so has to obey
+  the same pp/index/no-new-data rules the cards do. It also pins the shared
+  change rule (`isRateSeries` / `changeIn` / `fmtChange` / `changeSince` /
+  `changeBetween`) and guards it at the source: **the component block may not
+  call `pctChange`/`pctChangeBetween` directly.** Those return percent, which is
+  wrong for a rate — the card badges used them and published "+81.0%" for a
+  mortgage rate that rose 3.0 pp, while the picker row beside it said "+3.0 pp".
+  Every change the front end prints — card headline, dual badges, %-change view
+  (rate series plot a pp difference and label the axis "pp"), heatmap cells and
+  cumulative columns — now routes through the shared rule.
 - `tests/source_parity.test.js` — **run this after every `SERIES` edit.** Parses
   `SERIES` out of `fetch_data.R` (via `tests/lib/rseries.js`) and checks the
   committed payloads actually came from it: same ids in the same order, identical
@@ -150,8 +161,8 @@ and PNG export are still covered only by the manual pass in `What to Check.md`.
 
 ### Front-end (`index.html`, single file, React via Babel-standalone)
 
-- Four views in `AppMain`: `NationalView` (additive category/chip selection,
-  chart cards, YoY heatmap), `StateView` (all metrics for one state with a
+- Four views in `AppMain`: `NationalView` (the metric rail/menu, chart cards,
+  YoY heatmap), `StateView` (all metrics for one state with a
   national-rank badge, plus annual stat tiles; "United States" is a picker
   option built from the national payload — no default US overlay),
   `CompareView` (1–4 metrics as side-by-side panels of pinned states; the US
@@ -172,19 +183,59 @@ and PNG export are still covered only by the manual pass in `What to Check.md`.
   nominal series via `downloadCompareCSV`, like the Compare panels. Rebase/index metrics (home prices) are excluded from the map
   picker because index levels aren't comparable across states. Defaults to
   the ACA benchmark premium).
-- Categories and chips/cards are ordered alphabetically (comms request);
-  category grouping and color families are kept. National picker rows are
-  collapsible (collapsed by default, "N of M selected" + Show/Hide chevron);
-  the category pill still bulk-toggles without expanding.
-- Six categories. `overall` ("All prices (CPI)") holds `cpi_all_items` alone —
-  it moved out of `labor` in the July 2026 trim because headline CPI is the
-  price level every other card is measured against and the deflator behind the
-  Real toggle, not a labor statistic. Its label sorts first, so it leads the
-  picker without breaking the alphabetical rule. Adding a category means
-  updating three places in index.html (`CATEGORY_META`, `CATEGORY_LABELS`,
-  `ESP_CATEGORY_COLOR`) plus the hardcoded `known` set in
-  `tests/data_contract.test.js` — a series in an unknown category silently
-  vanishes from the National view, which is what that test guards.
+- **The National picker is "the merge"** (August 2026) — options 6 + 2 + 11 from
+  `picker_mockups.html`, which the team picked at the July review. One row
+  component (`MetricPicker`) in two containers: a **220px left rail** above
+  1060px, and the same rows as a **menu** below it. Both are always rendered;
+  CSS decides which is visible, and they share one selection and one filter
+  string, so crossing the breakpoint loses nothing. It replaced the collapsible
+  category-chip bar, which is gone along with `styles.catPill` / `checkChip` /
+  `checkBox`.
+  - The rail has **no inner scroll, no border and no background of its own** —
+    those three things, not the concept, were what made the earlier left-rail
+    proposal read as bolted on. It runs long in normal document flow.
+  - **No sticky "back to the picker" bar, deliberately.** The ESP page resizes
+    the iframe to the tracker's full content height, so the iframe never
+    scrolls — the parent page does. `position:fixed` inside it pins to the
+    bottom of the whole document, not the reader's screen, and `sticky` has
+    nothing to stick against. Such a bar would work only on the standalone page.
+    If reaching the picker from deep in the charts proves painful, the
+    embed-safe answer is a second picker in normal flow below the cards.
+  - Rows carry name + change + a plus/check. **The change follows the global
+    anchor and the Nominal/Real toggle** (`railChangeText`, pure, in block one)
+    rather than pinning to Dec 2019, so a row and the card it opens can never
+    print two different answers. Percentage points on rate series, % only on
+    index series, `—` when the anchor lands on the last reading.
+  - **Group headers are bulk toggles** (the standing comms request, "let me
+    throw groceries in with Big Ticket"), additive, with the hit area on the
+    header text rather than the full row.
+  - 1060px is the breakpoint: a 220px rail leaves room for two 380px chart
+    columns once the page is ~1092px. Between 1060 and 1092 the cards briefly
+    fall to one column, where the `i % 2` border logic in the grid leaves a
+    stray right-hand hairline. National cards are `minmax(380px, 1fr)`; the
+    state view is still 420 and should move when the rail goes there.
+- **Six categories, recut August 2026** — `housing` (Rent & homes), `groceries`
+  (Food), `bills` (Bills & getting around), `health` (Health & care), `income`
+  (Paychecks & debt), `overall` (Overall inflation). The old `big` / `daily` /
+  `labor` / `debt` ids are retired. **Under the recut the category IS the picker
+  group**, so `category` now decides rail placement, card order and color family
+  all at once.
+  - `CATEGORY_META` order is **editorial, not alphabetical** — biggest household
+    line first, headline CPI **last** (readers come for specific items; ending
+    on the overall index lets the individual prices add up to it). The
+    alphabetical comms rule still holds strictly *within* each group.
+  - Color families: housing = navy, groceries = gold, bills = purple,
+    health = brick, income = green, overall = olive. Merging `labor` and `debt`
+    freed brick, which went to health. `ESP_METRIC_COLOR` (state view, keyed by
+    metric id) is kept in step by hand — if it drifts, the same series changes
+    color when a reader switches tabs.
+  - Adding or renaming a category means four places: `CATEGORY_META`,
+    `CATEGORY_LABELS`, `ESP_CATEGORY_COLOR` in index.html, plus the `known` sets
+    in **both** `tests/data_contract.test.js` and `tests/source_parity.test.js`.
+    A series in an unknown category silently vanishes from the National view;
+    those two tests are the guard. `categoryLabel` falls back to the raw id
+    rather than to a plausible-looking group name, so a stranded series looks
+    wrong on the card instead of quietly wearing someone else's label.
 - The choropleth lazy-loads topojson-client + the full d3 bundle (the
   standalone d3-geo UMD breaks without d3-array/internmap — don't swap it
   in) and the us-atlas `states-10m.json` topology from jsDelivr on first
@@ -237,11 +288,14 @@ and PNG export are still covered only by the manual pass in `What to Check.md`.
 
 ### Adding indicators
 
-- **National series:** append to `SERIES` in `fetch_data.R`, run the script.
-  Colors are family-coordinated by category (daily = teal, groceries = amber,
-  big = indigo/violet, labor = green, debt = red); `ESP_CATEGORY_COLOR` in
-  index.html overrides these at render time, so the hex here only matters for
-  anything reading the payload directly.
+- **National series:** append to `SERIES` in `fetch_data.R`, run the script. Its
+  `category` decides which rail group it lands in, where its card renders and
+  what color it draws in — pick from the six above. `ESP_CATEGORY_COLOR` in
+  index.html overrides the entry's `color` at render time, so the hex there only
+  matters for anything reading the payload directly. Don't reorder existing
+  `SERIES` entries when recutting categories: `source_parity.test.js` checks
+  SERIES order against payload order, so a reshuffle churns every committed
+  artifact for no reader benefit. Move the section comment, not the entry.
 - **BLS average price (a dollar figure, not an index):** add a
   `source = "bls"` entry with `bls_id = "APU…"` and the same string as
   `fred_id` (the id pattern is `APU` + `0000` for the US city average + the BLS

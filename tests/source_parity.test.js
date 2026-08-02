@@ -203,7 +203,7 @@ test('parity: every category in SERIES is one the front end can render', () => {
   // data_contract.test.js checks this for the payload. Checking SERIES too
   // catches a new category *before* a refresh ships it, which is when it is
   // cheap to fix.
-  const known = new Set(['overall', 'big', 'daily', 'debt', 'groceries', 'labor']);
+  const known = new Set(['housing', 'groceries', 'bills', 'health', 'income', 'overall']);
   const bad = SERIES.filter(s => !known.has(s.category)).map(s =>
     `${s.id} → ${s.category} (add it to CATEGORY_META, CATEGORY_LABELS and ` +
     'ESP_CATEGORY_COLOR in index.html, and to the known set in ' +

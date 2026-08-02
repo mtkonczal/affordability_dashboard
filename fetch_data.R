@@ -166,22 +166,40 @@ fetch_bls <- function(bls_id, from = "2000-01-01") {
 # via manifest.json / app_data.js — no HTML edits required, PROVIDED the entry
 # reuses an existing category. A brand-new category value must also be added to
 # CATEGORY_META, CATEGORY_LABELS and ESP_CATEGORY_COLOR in index.html and to the
-# `known` set in tests/data_contract.test.js; a series in an unrecognized
-# category silently vanishes from the National view (that test is the guard).
+# `known` sets in BOTH tests/data_contract.test.js and tests/source_parity.test.js;
+# a series in an unrecognized category silently vanishes from the National view
+# (those two tests are the guard — source_parity catches it before a refresh
+# ships, data_contract catches it after).
 #
 # Fields:
 #   id           : slug used for filenames and JS lookups
 #   fred_id      : FRED series identifier
 #   label        : short display name
 #   subtitle     : one-line description shown under the chart title
-#   category     : chip grouping ("overall" | "daily" | "groceries" | "big" |
-#                  "labor" | "debt"). "overall" holds headline CPI alone.
+#   category     : picker grouping. Recut in August 2026 into six plain-language
+#                  groups, named the way the audience talks, replacing the
+#                  earlier "daily"/"big"/"labor"/"debt" taxonomy:
+#                    "housing"   → Rent & homes
+#                    "groceries" → Food
+#                    "bills"     → Bills & getting around
+#                    "health"    → Health & care
+#                    "income"    → Paychecks & debt
+#                    "overall"   → Overall inflation (headline CPI alone)
+#                  Under the recut the category IS the picker group, so this
+#                  field now decides where a series appears in the National
+#                  rail, what order its card renders in, and its color family.
+#                  Group order is editorial, not alphabetical — it runs from the
+#                  biggest line in a household budget down, with headline CPI
+#                  last, so the individual items add up to the overall rather
+#                  than trailing it. That order lives in CATEGORY_META in
+#                  index.html, not here.
 #   units        : axis label / tooltip suffix
 #   description  : longer text shown in tooltip / card header
-#   color        : hex color for the chart line. Colors are assigned in
-#                  families by category (daily = teal, groceries = amber,
-#                  big-ticket = indigo/violet, labor = green, debt = red) so
-#                  related series read together — a comms-team request.
+#   color        : hex color for the chart line. Superseded at render time by
+#                  ESP_CATEGORY_COLOR in index.html, so this hex only matters
+#                  to anything reading the payload directly. The live families
+#                  are housing = navy, groceries = gold, bills = purple,
+#                  health = brick, income = green, overall = olive.
 #   from         : earliest data date to fetch
 #   is_new       : optional — TRUE flags a series for the "Newest" filter
 #   invert_color : optional — TRUE means a rising value is good news (renders
@@ -193,13 +211,17 @@ fetch_bls <- function(bls_id, from = "2000-01-01") {
 #                  its own card
 
 SERIES <- list(
-  # ── Daily Items (teal family) ──
+  # ── Bills & getting around · utilities and fuel (purple family) ──
+  # The three car series live further down, in the block that used to be
+  # "Big Items" — entries are not reordered when a category is recut, because
+  # source_parity.test.js checks SERIES order against payload order and a
+  # reshuffle would churn every committed artifact for no reader benefit.
   list(
     id          = "water_sewer_trash",
     fred_id     = "CUSR0000SEHG",
     label       = "Water & Sewer",
     subtitle    = "Water, Sewer & Trash Collection CPI",
-    category    = "daily",
+    category    = "bills",
     units       = "Index (1982–84 = 100)",
     description = "CPI for water, sewer, and trash collection services, all urban consumers, seasonally adjusted. No state-level water-rate data exists from a public source (the AWWA rate survey is proprietary), so this national index is the defensible measure.",
     color       = "#0891B2",
@@ -211,7 +233,7 @@ SERIES <- list(
     fred_id     = "GASREGCOVW",
     label       = "Gasoline",
     subtitle    = "Regular Unleaded, US Average",
-    category    = "daily",
+    category    = "bills",
     units       = "$ per Gallon",
     description = "Weekly retail price of regular unleaded gasoline, averaged across all US regions. Published by the EIA.",
     color       = "#0D9488",
@@ -234,7 +256,7 @@ SERIES <- list(
     fred_id     = "APU000072610",
     label       = "Electricity",
     subtitle    = "Average Price, per Kilowatt-Hour",
-    category    = "daily",
+    category    = "bills",
     units       = "$ per kWh",
     description = "Average retail price of electricity per kilowatt-hour in U.S. city averages, from the BLS Average Price data. Not seasonally adjusted — electricity prices peak in summer, so compare a month with the same month a year earlier rather than with the month before.",
     color       = "#14B8A6",
@@ -247,14 +269,16 @@ SERIES <- list(
     fred_id     = "APU000072620",
     label       = "Natural Gas",
     subtitle    = "Average Price, per Therm",
-    category    = "daily",
+    category    = "bills",
     units       = "$ per Therm",
     description = "Average retail price of utility (piped) natural gas per therm in U.S. city averages, from the BLS Average Price data — the unit a gas heating bill is measured in. Not seasonally adjusted.",
     color       = "#0E7490",
     is_new      = TRUE,
     from        = "2000-01-01"
   ),
-  # ── Groceries (amber/orange family) ──
+  # ── Food (gold family) — category id stays "groceries" ──
+  # Membership didn't change in the recut, only the display label, so the id is
+  # left alone rather than churned for a rename.
   # The all-groceries CPI lives here with the individual items it aggregates
   # (moved out of Daily Items — comms feedback).
   list(
@@ -365,7 +389,11 @@ SERIES <- list(
     is_new      = TRUE,
     from        = "2000-01-01"
   ),
-  # ── Big Items (indigo/violet family) ──
+  # ── Bills & getting around · cars (purple family) ──
+  # The old "Big Items" block, split three ways by the August 2026 recut:
+  # cars and car insurance here, childcare into Health & care, rent/homes/
+  # mortgage into Rent & homes. The runs happen to be contiguous, so the split
+  # is three section headers rather than a reordering.
   list(
     id          = "car_insurance",
     source      = "bls",
@@ -374,7 +402,7 @@ SERIES <- list(
     source_url  = "https://data.bls.gov/timeseries/CUSR0000SETE",
     label       = "Car Insurance",
     subtitle    = "Motor Vehicle Insurance CPI",
-    category    = "big",
+    category    = "bills",
     units       = "Index (1982–84 = 100)",
     description = "CPI for motor vehicle insurance, all urban consumers, seasonally adjusted (fetched via the BLS API; not carried on FRED).",
     color       = "#6366F1",
@@ -389,7 +417,7 @@ SERIES <- list(
     fred_id     = "CUSR0000SETA01",
     label       = "New Cars",
     subtitle    = "New Vehicles CPI",
-    category    = "big",
+    category    = "bills",
     units       = "Index (1982–84 = 100)",
     description = "CPI for new vehicles, all urban consumers, seasonally adjusted.",
     color       = "#7C3AED",
@@ -400,12 +428,13 @@ SERIES <- list(
     fred_id     = "CUSR0000SETA02",
     label       = "Used Cars",
     subtitle    = "Used Cars and Trucks CPI",
-    category    = "big",
+    category    = "bills",
     units       = "Index (1982–84 = 100)",
     description = "CPI for used cars and trucks, all urban consumers, seasonally adjusted.",
     color       = "#A855F7",
     from        = "2000-01-01"
   ),
+  # ── Health & care (brick family) ──
   # Health insurance CPI (CUSR0000SEME) was cut in the July 2026 trim, and this
   # one is worth spelling out. The CPI health insurance index does not track
   # what a household pays in premiums — BLS prices only the portion insurers
@@ -422,12 +451,13 @@ SERIES <- list(
     source_url  = "https://data.bls.gov/timeseries/CUSR0000SEEB03",
     label       = "Childcare",
     subtitle    = "Day Care and Preschool CPI",
-    category    = "big",
+    category    = "health",
     units       = "Index (1982–84 = 100)",
     description = "CPI for day care and preschool services, all urban consumers, seasonally adjusted (fetched via the BLS API).",
     color       = "#C026D3",
     from        = "2000-01-01"
   ),
+  # ── Rent & homes (navy family) ──
   # Rent is market rent (Zillow ZORI) only. CPI rent (CUUR0000SEHA) was cut in
   # the July 2026 trim: two rent lines confused readers, the dollar figure is
   # the clearer one, and the state rent metric was already ZORI-only — so
@@ -439,7 +469,7 @@ SERIES <- list(
     source      = "zori",
     label       = "Rent (Market)",
     subtitle    = "Zillow Observed Rent Index, US",
-    category    = "big",
+    category    = "housing",
     units       = "$ per Month",
     description = "Typical market-rate asking rent (smoothed, seasonally adjusted), all homes and apartments. Zillow Observed Rent Index. Unlike CPI rent, this tracks what a new lease costs today, in dollars.",
     color       = "#7E22CE",
@@ -452,7 +482,7 @@ SERIES <- list(
     fred_id     = "MSPUS",
     label       = "Median Home Price",
     subtitle    = "Median Sales Price, Houses Sold (US)",
-    category    = "big",
+    category    = "housing",
     units       = "$",
     description = "Median sales price of houses sold in the United States. Quarterly, from the Census Bureau / HUD.",
     color       = "#312E81",
@@ -463,13 +493,13 @@ SERIES <- list(
     fred_id     = "MORTGAGE30US",
     label       = "30-Year Mortgage",
     subtitle    = "Freddie Mac Weekly Survey",
-    category    = "big",
+    category    = "housing",
     units       = "Rate (%)",
     description = "Average 30-year fixed-rate mortgage as reported in the Freddie Mac Primary Mortgage Market Survey.",
     color       = "#5B21B6",
     from        = "2000-01-01"
   ),
-  # ── Health coverage (KFF, violet family) ──
+  # ── Health & care · coverage (KFF, brick family) ──
   # Annual, from data/kff/*.csv (scripts/fetch_kff.py). Dollar/percent levels,
   # not index series, so they display like the other $ / rate cards.
   list(
@@ -478,7 +508,7 @@ SERIES <- list(
     kff_id      = "aca_benchmark_premium",
     label       = "ACA Benchmark Premium",
     subtitle    = "Second-Lowest-Cost Silver, Age 40",
-    category    = "big",
+    category    = "health",
     units       = "$ per Month",
     description = "Average benchmark premium — the second-lowest-cost silver Marketplace plan for a 40-year-old, the plan used to set ACA premium subsidies. KFF analysis of Healthcare.gov and state rate filings.",
     color       = "#9333EA",
@@ -493,7 +523,7 @@ SERIES <- list(
     kff_id      = "uninsured_rate",
     label       = "Uninsured Rate",
     subtitle    = "Share of Population Without Coverage",
-    category    = "big",
+    category    = "health",
     units       = "Rate (%)",
     description = "Share of the total population with no health insurance coverage. KFF State Health Facts, Health Insurance Coverage of the Total Population (KFF estimates from the Census ACS). No data for 2020, which the ACS did not release on a comparable basis.",
     color       = "#A21CAF",
@@ -502,7 +532,7 @@ SERIES <- list(
     source_note = "KFF State Health Facts, Health Insurance Coverage of the Total Population (annual)",
     source_url  = "https://www.kff.org/state-health-policy-data/state-indicator/total-population/"
   ),
-  # ── Housing burden (Census ACS, violet family) ──
+  # ── Rent & homes · housing burden (Census ACS, navy family) ──
   # Annual, from data/census/*.csv (scripts/fetch_census.py). Optional until
   # the first fetch_census.py run — skipped loudly, not a failure, if absent.
   list(
@@ -511,7 +541,7 @@ SERIES <- list(
     src_id      = "rent_burden",
     label       = "Rent Burden",
     subtitle    = "Renters Paying 30%+ of Income",
-    category    = "big",
+    category    = "housing",
     units       = "% of Renters",
     description = "Share of renter households spending 30 percent or more of household income on gross rent — the standard cost-burden threshold. Census ACS 1-year estimates, table B25070 (households where the ratio is not computed are excluded). No 2020 data (no standard ACS release).",
     color       = "#8B5CF6",
@@ -521,13 +551,13 @@ SERIES <- list(
     source_note = "Census ACS 1-year, table B25070 (annual)",
     source_url  = "https://data.census.gov/table?q=B25070"
   ),
-  # ── Labor Market (green family) ──
+  # ── Paychecks & debt · paychecks (green family) ──
   list(
     id          = "unemployment",
     fred_id     = "UNRATE",
     label       = "Unemployment Rate",
     subtitle    = "US Civilian Unemployment",
-    category    = "labor",
+    category    = "income",
     units       = "Rate (%)",
     description = "Percent of the labor force that is unemployed and actively seeking work. Monthly, seasonally adjusted.",
     color       = "#065F46",
@@ -538,7 +568,7 @@ SERIES <- list(
     fred_id     = "CES0500000003",
     label       = "Hourly Earnings",
     subtitle    = "Average, All Private Employees",
-    category    = "labor",
+    category    = "income",
     units       = "$ per Hour",
     description = "Average hourly earnings of all private-sector employees. A key measure of wage growth and purchasing power.",
     color       = "#10B981",
@@ -570,7 +600,7 @@ SERIES <- list(
     src_id      = "income_20th",
     label       = "Income: 20th Percentile (Nominal)",
     subtitle    = "Household Income, Lowest-Quintile Upper Limit",
-    category    = "labor",
+    category    = "income",
     units       = "$",
     description = "The household income level that 20 percent of households fall below — the upper limit of the lowest quintile. Census ACS 1-year estimates, table B19080. Nominal dollars; use the Real toggle for inflation-adjusted values. No 2020 data.",
     color       = "#4D7C0F",
@@ -596,7 +626,9 @@ SERIES <- list(
     color       = "#64748B",
     from        = "2000-01-01"
   ),
-  # ── Debt (red family) ──
+  # ── Paychecks & debt · debt (green family) ──
+  # Merged into "income" by the August 2026 recut: the group puts what you earn
+  # next to what you owe. Debt's former brick family moved to Health & care.
   # NY Fed Household Debt & Credit tracks these same balances at higher
   # resolution but only publishes Excel files; these FRED series (Fed G.19
   # release) cover the same concepts and let the existing CSV fetcher work
@@ -615,7 +647,7 @@ SERIES <- list(
     fred_id     = "DRCCLACBS",
     label       = "Credit Card Delinquency",
     subtitle    = "Delinquency Rate, All Commercial Banks",
-    category    = "debt",
+    category    = "income",
     units       = "Rate (%)",
     description = "Share of credit card loan balances 30+ days delinquent at all commercial banks. Quarterly, seasonally adjusted.",
     color       = "#B91C1C",
@@ -629,7 +661,7 @@ SERIES <- list(
     fred_id     = "DRSFRMACBS",
     label       = "Mortgage Delinquency",
     subtitle    = "Single-Family Residential, All Commercial Banks",
-    category    = "debt",
+    category    = "income",
     units       = "Rate (%)",
     description = "Share of single-family residential mortgage balances 30+ days delinquent at all commercial banks. Quarterly, seasonally adjusted.",
     color       = "#7F1D1D",
@@ -645,7 +677,7 @@ SERIES <- list(
     src_id      = "debt_per_capita",
     label       = "Household Debt per Capita",
     subtitle    = "All Debt per Person with a Credit File",
-    category    = "debt",
+    category    = "income",
     units       = "$ per Person",
     description = "Total household debt (mortgage, auto, credit card, student loan, other) per person with a credit file. NY Fed Consumer Credit Panel / Equifax, State-Level Household Debt Statistics — annual, each point is Q4.",
     color       = "#9F1239",
@@ -663,7 +695,7 @@ SERIES <- list(
     src_id       = "studentloan_per_capita",
     label        = "Student Loan Debt per Capita",
     subtitle     = "Per Person with a Credit File, US",
-    category     = "debt",
+    category     = "income",
     units        = "$ per Person",
     description  = "Student loan debt per person with a credit file, US. NY Fed Consumer Credit Panel / Equifax — annual, each point is Q4. National comparison line for the state metric.",
     color        = "#991B1B",
@@ -678,7 +710,7 @@ SERIES <- list(
     src_id       = "cc_delinquency_90",
     label        = "Credit Card Delinquency (90+)",
     subtitle     = "Share of Balance 90+ Days Late, US",
-    category     = "debt",
+    category     = "income",
     units        = "% of Balance",
     description  = "Share of credit card balances 90 or more days delinquent, US. NY Fed Consumer Credit Panel / Equifax — annual, each point is Q4. National comparison line for the state metric.",
     color        = "#B91C1C",
@@ -693,7 +725,7 @@ SERIES <- list(
     fred_id      = "USSTHPI",
     label        = "US Home Prices",
     subtitle     = "FHFA All-Transactions HPI, US",
-    category     = "big",
+    category     = "housing",
     units        = "Index (1980 Q1 = 100)",
     description  = "FHFA All-Transactions House Price Index for the United States, quarterly, not seasonally adjusted. Used as the national comparison line on state home-price charts.",
     color        = "#312E81",
@@ -705,7 +737,7 @@ SERIES <- list(
     fred_id      = "MEHOINUSA672N",
     label        = "US Median Income",
     subtitle     = "Real Median Household Income, US",
-    category     = "labor",
+    category     = "income",
     units        = "$",
     description  = "Real (CPI-U-RS-adjusted) median household income in the United States, annual, from the Census Bureau. Also drawn as the national comparison line on state income charts.",
     color        = "#7C3AED",
@@ -1354,7 +1386,7 @@ if (!is.null(all_data$zori_rent) && !is.null(all_data$hourly_earnings)) {
     id           = "rent_hours",
     label        = "Rent in Hours of Work",
     subtitle     = "Hours at the Average Wage per Month's Rent",
-    category     = "labor",
+    category     = "housing",
     units        = "Hours of Work",
     description  = "How many hours of work at the average private-sector hourly wage it takes to pay one month's market-rate rent (Zillow ZORI ÷ BLS average hourly earnings). Rising hours mean rent is outpacing pay.",
     color        = "#15803D",

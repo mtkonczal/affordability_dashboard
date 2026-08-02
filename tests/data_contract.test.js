@@ -74,9 +74,11 @@ test('national: every series carries the fields the front end reads', () => {
 });
 
 test('national: every category is one the front end can render', () => {
-  // CATEGORY_META in index.html. A series in an unknown category gets no chip
-  // row and disappears from the National view without any error.
-  const known = new Set(['overall', 'big', 'daily', 'debt', 'groceries', 'labor']);
+  // CATEGORY_META in index.html. A series in an unknown category gets no rail
+  // group and disappears from the National view without any error.
+  // Recut in August 2026: under the recut the category IS the picker group, so
+  // this set is also the set of groups in the National rail.
+  const known = new Set(['housing', 'groceries', 'bills', 'health', 'income', 'overall']);
   const bad = NAT_IDS.filter(id => !known.has(NAT[id].category))
     .map(id => `${id} → ${NAT[id].category}`);
   assert.deepEqual(bad, []);

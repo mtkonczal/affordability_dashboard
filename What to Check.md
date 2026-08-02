@@ -38,4 +38,37 @@ Confirm when: every selected button is navy with white text; every unselected on
 
 ---
 
-*Note: these can all be confirmed by eye on the live page above. The only one that can hide a fault is #2 — if the big numbers silently fall back to a generic serif, it still "works" but isn't the ESP font, so look closely there.*
+## The new National picker (August 2026)
+
+The National tab's row of expanding category buttons was replaced by a list of all 31 metrics down the left-hand side. These items are about that change. Everything here is on the **National** tab.
+
+**9. The list is on the left, and it scrolls with the page**
+Why: the old picker was a bar across the top that had to be expanded a category at a time.
+Confirm when: all 31 metrics are visible at once in a narrow column on the left, grouped under six headings, with the charts beside them. Scroll down: the list should slide up and out of view with everything else. If it scrolls *inside its own little box* while the charts stay put, that's wrong.
+
+**10. Six group names, in budget order**
+Why: the old names ("Big-ticket", "Daily", "Work & Wages") were internal shorthand.
+Confirm when: the headings read **Rent & homes · Food · Bills & getting around · Health & care · Paychecks & debt · Overall inflation**, in that order — housing first, overall inflation last. Metrics inside each group are alphabetical.
+
+**11. Every row shows a number before you click it**
+Why: the point of the change is that the picker itself tells you what moved.
+Confirm when: each row has the metric name and a change figure on the right. Now change "Measure from" at the top of the page: **every number in the list must change too.** Flip Nominal/Real: they change again. If the list and the chart card for the same metric ever disagree, that's the one real bug to catch here.
+
+**12. Percentages vs. percentage points**
+Why: a rate going from 3.5% to 6.3% has not risen "80%".
+Confirm when: rate rows (30-Year Mortgage, Unemployment, Uninsured Rate, Rent Burden, the delinquency rows) read **"pp"** — e.g. "+2.8 pp". Price rows read "%". A row with nothing new published since the date you picked shows "—", not "0.0%".
+
+**13. Clicking a group heading adds the whole group**
+Why: the old category buttons did this and people used it.
+Confirm when: clicking **Food** ticks all eight food rows without disturbing anything selected elsewhere; clicking it again unticks them. The heading should highlight on hover so it's clearly clickable.
+
+**14. Narrow the window**
+Why: there isn't room for a left-hand list on a small screen, so it becomes a menu.
+Confirm when: dragging the browser narrower than about 1060px replaces the left list with a single **"Add a metric ▾"** button above the charts. Open it — same rows, same ticks, same filter text. Widen again and the list comes back with nothing lost.
+
+**15. The filter box**
+Confirm when: typing `egg` narrows the list to Eggs. The charts already on screen **do not change** — filtering hides rows, it never unselects anything. Clearing the box brings the full list back.
+
+---
+
+*Note: most of these can be confirmed by eye on the live page above. Three can hide a fault: #2, if the big numbers silently fall back to a generic serif, it still "works" but isn't the ESP font. #11, if the list's numbers stop following the date and Nominal/Real controls, the page is publishing two different answers to the same question. And #14 — the left-hand list is the part that has to survive inside the frame on the ESP page, so check it there rather than only on a standalone copy.*

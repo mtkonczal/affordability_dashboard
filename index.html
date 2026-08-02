@@ -61,6 +61,95 @@
     .at-section-dek { margin-left: 0 !important; flex-basis: 100% !important; }
   }
 
+  /* ── National metric picker: one row component, two containers ─────────────
+     "The merge" from picker_mockups.html (options 6 + 2 + 11). Above the
+     breakpoint the rows are a left rail; below it the same rows collapse into
+     a menu. One row component, two containers, one selection.
+
+     The rail deliberately has no inner scroll, no border and no background of
+     its own. Those three things — not the concept — were what made the earlier
+     left-rail proposal read as bolted on. It runs long in normal document flow
+     and the page scrolls as one document, which is how the shop filters this is
+     modelled on actually behave.
+
+     There is no sticky "jump back to the picker" bar, on purpose. The ESP page
+     resizes the iframe to the tracker's full content height, so the iframe
+     never scrolls — the parent page does. Inside it, position:fixed pins to the
+     bottom of the whole document rather than the reader's screen, and sticky
+     has nothing to stick against. Such a bar would work only on the standalone
+     page, i.e. only for the version of this the public does not see.
+
+     1060px is the breakpoint: a 220px rail still leaves room for two 380px
+     chart columns once the page is ~1092px (page − 112px of .at-pad padding
+     − 220px of rail ≥ 760px). Between 1060 and 1092 the charts briefly fall to
+     one column; below 1060 the rail hands over to the menu entirely. */
+  .at-nat-layout { display: block; }
+  .at-rail { display: none; }
+  .at-natmenu { display: block; }
+  @media (min-width: 1060px) {
+    .at-nat-layout { display: grid; grid-template-columns: 220px minmax(0, 1fr); align-items: start; }
+    .at-rail { display: block; padding: 2px 18px 30px 0; }
+    .at-natmenu { display: none; }
+  }
+
+  /* The shared row: name, change from the active anchor, and a mark to add. */
+  .at-prow { display: grid; grid-template-columns: 14px minmax(0, 1fr) auto; gap: 9px;
+             align-items: center; width: 100%; background: none; border: 0;
+             padding: 5px 6px; border-radius: 2px; cursor: pointer; text-align: left;
+             font-family: "Neue Haas Grotesk Display Pro", sans-serif; font-size: 13px;
+             color: #2c3254; }
+  .at-prow:hover { background: rgba(44,50,84,.07); }
+  .at-prow.on { background: rgba(112,173,143,.17); color: #232849; font-weight: 600; }
+  .at-prow:focus-visible { outline: 2px solid #2c3254; outline-offset: 1px; }
+  /* Long labels — "Rent in Hours of Work", "Credit Card Delinquency" — wrap
+     rather than push the change number out of a 220px rail. */
+  .at-prow-name { line-height: 1.3; overflow-wrap: break-word; min-width: 0; }
+  .at-prow-mark { color: #caccd4; font-size: 12px; text-align: center;
+                  align-self: start; margin-top: 2px; }
+  .at-prow.on .at-prow-mark { color: #3E6E57; font-weight: 800; }
+  .at-prow-ch { font-size: 11.5px; font-weight: 600; color: #6B6E78;
+                font-variant-numeric: tabular-nums; }
+  .at-prow.on .at-prow-ch { color: #8A4640; }
+
+  /* Group headers are bulk toggles — the comms request this picker inherited
+     ("let me throw groceries in with Big Ticket"). The hit area is the text
+     itself rather than the full row, so a near-miss lands on nothing instead
+     of silently adding eight metrics. */
+  .at-grp { display: inline-block; margin: 20px 0 5px 1px; padding: 2px 5px;
+            background: none; border: 0; border-radius: 2px; cursor: pointer;
+            font-family: "Neue Haas Grotesk Display Pro", sans-serif;
+            font-size: 9.5px; font-weight: 700; letter-spacing: .14em;
+            text-transform: uppercase; color: #6B6E78; }
+  .at-grp:first-child { margin-top: 0; }
+  .at-grp:hover { background: rgba(44,50,84,.09); color: #2c3254; }
+  .at-grp.on { color: #2c3254; }
+  .at-grp:focus-visible { outline: 2px solid #2c3254; outline-offset: 1px; }
+
+  .at-pfilter { width: 100%; padding: 6px 9px; border: 1px solid #2c3254;
+                border-radius: 3px; background: #fff; color: #232849;
+                font-family: "Neue Haas Grotesk Display Pro", sans-serif;
+                font-size: 12.5px; font-weight: 500; }
+  .at-pfilter::placeholder { color: #6B6E78; font-weight: 400; }
+  .at-phead { display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+              margin: 9px 0 13px; }
+  .at-pcount { font-family: "Neue Haas Grotesk Display Pro", sans-serif;
+               font-size: 11.5px; color: #6B6E78; }
+  .at-plnk { background: none; border: 0; padding: 0; cursor: pointer; color: #2c3254;
+             font-family: "Neue Haas Grotesk Display Pro", sans-serif; font-size: 10px;
+             font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+             text-decoration: underline; text-underline-offset: 3px; }
+  .at-plnk:hover { color: #0E1320; }
+  .at-pstub { font-family: Publico, Georgia, serif; font-style: italic;
+              font-size: 12.5px; color: #6B6E78; padding: 8px 6px; }
+
+  /* The menu container, below the breakpoint. In normal document flow, so it
+     pushes the charts down rather than overlaying them — an overlay would need
+     the same viewport the iframe doesn't have. */
+  .at-menubar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+                padding: 2px 0 12px; }
+  .at-menupop { margin-top: 11px; max-width: 420px; padding: 14px; background: #fff;
+                border: 1px solid #2c3254; border-radius: 3px; }
+
   /* Embed mode (?embed=1): the dashboard sits in an iframe on the ESP site,
      which supplies its own header. White page, no dark surround/shadow.
      height:100% / min-height must come off in embed mode: the ESP height
@@ -157,6 +246,10 @@ const ESP = {
 // Format helpers. Percents get one decimal place (comms request: easier to
 // read on charts); dollars keep cents only when small.
 function fmtVal(val, units = '') {
+  // "pp change since …" — what the %-change view calls its axis on a rate
+  // series. Must precede the '%' branch, which would otherwise stamp a percent
+  // sign on a percentage-point figure.
+  if (units.startsWith('pp change')) return val.toFixed(1) + ' pp';
   if (units.includes('%')) return val.toFixed(1) + '%';
   if (units.includes('Billions')) return '$' + val.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + 'B';
   // "Hours of Work" (the derived rent_hours metric) — check before the $
@@ -526,7 +619,10 @@ function fmtObsDate(dateInput, data, opts) {
 // both resolve to the very same observation — an annual series that hasn't
 // published anything since `fromDate` isn't "unchanged," it's "no new data
 // since," and a 0.0% badge would claim the former.
-function pctChangeBetween(data, fromDate, toDate) {
+// Resolving the two cutoffs to observations is the half that percent and
+// percentage-point changes share; splitting it out keeps them under one null
+// contract instead of two hand-kept copies of the same rules.
+function endpointsBetween(data, fromDate, toDate) {
   if (!data || data.length < 2) return null;
   const idxAt = (dateStr) => {
     const cutoff = new Date(dateStr);
@@ -540,9 +636,13 @@ function pctChangeBetween(data, fromDate, toDate) {
   const priorIdx = idxAt(fromDate);
   const curIdx = idxAt(toDate);
   if (priorIdx == null || curIdx == null || priorIdx === curIdx) return null;
-  const prior = data[priorIdx].value;
-  if (prior === 0) return null;
-  return ((data[curIdx].value - prior) / prior) * 100;
+  return { from: data[priorIdx].value, to: data[curIdx].value };
+}
+
+function pctChangeBetween(data, fromDate, toDate) {
+  const pts = endpointsBetween(data, fromDate, toDate);
+  if (!pts || pts.from === 0) return null;
+  return ((pts.to - pts.from) / pts.from) * 100;
 }
 
 function pctChange(data, fromDate) {
@@ -611,12 +711,24 @@ function scaleByCPI(series, date, refPrice, anchorDate = '2025-01-01') {
   return refPrice * (at / anchor);
 }
 
+// Six plain-language groups, named the way the audience talks (August 2026
+// recut). Under the recut the category IS the picker group, so this is both the
+// rail's group header and the card eyebrow. Order lives in CATEGORY_META in the
+// app block, not here — it is editorial, not alphabetical.
 const CATEGORY_LABELS = {
-  overall: 'All prices', labor: 'Work & Wages', daily: 'Daily',
-  groceries: 'Groceries', big: 'Big-ticket', debt: 'Debt',
+  housing: 'Rent & homes',
+  groceries: 'Food',
+  bills: 'Bills & getting around',
+  health: 'Health & care',
+  income: 'Paychecks & debt',
+  overall: 'Overall inflation',
 };
 function categoryLabel(category) {
-  return CATEGORY_LABELS[category] || 'Big-ticket';
+  // Fall back to the raw id, not to a plausible-looking group name. A series in
+  // an unrecognized category should look obviously wrong on the card rather
+  // than quietly wearing another group's label; the `known` sets in
+  // data_contract.test.js and source_parity.test.js are the real guard.
+  return CATEGORY_LABELS[category] || category || '';
 }
 
 // Press-release-ready sentence for the "Copy fact" button. Leads with the
@@ -781,12 +893,84 @@ function seriesForType(item, cpi, real) {
   return (real && isDeflatable(item)) ? toReal(item.data, cpi) : item.data;
 }
 
+// ── One rule for "how much did this move" ───────────────────────────────────
+// A rate series moves in PERCENTAGE POINTS. The mortgage rate going from 3.68%
+// to 6.66% has risen 3.0 pp; calling that "+81.0%" is the percent-of-a-percent
+// fact-checkers flag, and it is a claim the tracker should never publish.
+//
+// Every surface that prints a change routes through these three helpers —
+// the picker rows, the card headline, the dual anchor badges, the %-change
+// view and the heatmap — so no two of them can print different answers for
+// the same movement. buildFactText applies the same rule in prose.
+function isRateSeries(item) { return !!item && (item.units || '').includes('%'); }
+
+// Change from `base` to `v` in the unit the series actually moves in: points
+// for a rate, percent for everything else. Null when a percent change has no
+// base to divide by, or when either endpoint is missing.
+function changeIn(base, v, rate) {
+  if (!Number.isFinite(base) || !Number.isFinite(v)) return null;
+  if (rate) return v - base;
+  return base ? (v / base - 1) * 100 : null;
+}
+
+// "+3.0 pp" / "−12.4%". The minus is U+2212, matching the rest of the UI.
+function fmtChange(v, rate) {
+  return `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(1)}${rate ? ' pp' : '%'}`;
+}
+
+// Change between two dates in the series' own unit, under pctChangeBetween's
+// null contract (null when both cutoffs resolve to the same observation — an
+// annual series with nothing new isn't "unchanged", it's "no new data since").
+function changeBetween(data, fromDate, toDate, item) {
+  if (!isRateSeries(item)) return pctChangeBetween(data, fromDate, toDate);
+  const pts = endpointsBetween(data, fromDate, toDate);
+  return pts ? pts.to - pts.from : null;
+}
+
+// The common case: anchor to latest reading.
+function changeSince(data, fromDate, item) {
+  if (!data || data.length < 2) return null;
+  return changeBetween(data, fromDate, data[data.length - 1].date, item);
+}
+
+// The change number each row of the National picker carries, next to the name.
+// It follows the page anchor and the Nominal/Real toggle rather than pinning to
+// Dec 2019, so a row and the card it opens can never disagree: this is a
+// fact-checking surface, and two different answers to the same question on one
+// screen is the failure that matters here.
+//
+// Editorial rules, the same ones buildFactText applies:
+//   · %-unit series move in PERCENTAGE POINTS — "up 12%" on a rate is a
+//     percent-of-a-percent that fact-checkers flag.
+//   · Index series quote % change only. They have no level worth showing, which
+//     is why no row ever prints one.
+//   · An anchor landing on the last reading returns '—', not "0.0%". An annual
+//     series with nothing published since isn't "unchanged", it's "no new data
+//     since", and a 0.0% badge would claim the former.
+function railChangeText(item, anchorId, priceType, cpi) {
+  const data = seriesForType(item, cpi, priceType === 'real');
+  if (!data || data.length < 2) return '—';
+  const cutoff = new Date(anchorDate(anchorId, data));
+  let k = -1;
+  for (let i = 0; i < data.length; i++) {
+    if (new Date(data[i].date) <= cutoff) k = i; else break;
+  }
+  // An anchor predating the series clamps forward to its first reading — the
+  // same clamp the chart and the Copy-fact sentence use.
+  if (k < 0) k = 0;
+  if (k === data.length - 1) return '—';
+  const rate = isRateSeries(item);
+  const v = changeIn(data[k].value, data[data.length - 1].value, rate);
+  return v == null ? '—' : fmtChange(v, rate);
+}
+
 Object.assign(window, {
   ESP, fmtVal, fmtDate, inferCadence, fmtObsDate, ordinal, pctChange, pctChangeBetween, valueAt, sliceFrom, downloadCSV, downloadCardAsPNG,
   downloadCompareCSV,
   linePath, toPoints, hoursToAfford, REFERENCE_PRICES, scaleByCPI, categoryLabel,
   ANCHORS, anchorById, anchorDate, buildFactText, loadDataFile,
-  ALREADY_REAL_IDS, isDeflatable, toReal, seriesForType,
+  ALREADY_REAL_IDS, isDeflatable, toReal, seriesForType, railChangeText,
+  isRateSeries, changeIn, fmtChange, changeSince, changeBetween,
 });
 
 })();
@@ -803,11 +987,16 @@ Object.assign(window, {
 //                     measure at a time, levels for a selected year; change
 //                     lives on its pinned-states chart
 
-const { ESP, fmtVal, fmtDate, fmtObsDate, ordinal, pctChange, pctChangeBetween, valueAt, sliceFrom, downloadCSV, downloadCardAsPNG,
+// No pctChange/pctChangeBetween here on purpose: every change this block
+// prints goes through changeSince/changeBetween, which know that a rate series
+// moves in percentage points. Reaching for the raw percent helper is how the
+// card came to publish "+81.0%" for a mortgage rate that rose 3.0 pp.
+const { ESP, fmtVal, fmtDate, fmtObsDate, ordinal, valueAt, sliceFrom, downloadCSV, downloadCardAsPNG,
         downloadCompareCSV,
         linePath, toPoints, categoryLabel, hoursToAfford, REFERENCE_PRICES, scaleByCPI,
         ANCHORS, anchorById, anchorDate, buildFactText, loadDataFile,
-        ALREADY_REAL_IDS, isDeflatable, toReal, seriesForType } = window;
+        ALREADY_REAL_IDS, isDeflatable, toReal, seriesForType, railChangeText,
+        isRateSeries, changeIn, fmtChange, changeSince, changeBetween } = window;
 const { useState, useMemo, useEffect, useRef } = React;
 
 const NAVY = '#2c3254';
@@ -830,20 +1019,28 @@ const PAGE_BG = EMBED ? '#FFFFFF' : BEIGE;
 // above (ALREADY_REAL_IDS / isDeflatable / toReal / seriesForType), so the
 // unit tests in tests/ can import it without a JSX transform.
 
-// Alphabetical by label (comms request); chips within each row are
-// alphabetized too, in NationalView.
-// "All prices (CPI)" holds headline CPI alone. It moved out of Work & wages in
-// the July 2026 trim — it is the price level everything else is measured
-// against and the deflator behind the Real toggle, not a labor statistic — and
-// its label happens to sort first, so it leads the picker without breaking the
-// alphabetical rule.
+// The six groups, in render order — this array is the order of the National
+// rail and of the cards below it.
+//
+// Order is editorial, not alphabetical, which reverses the earlier comms rule
+// at the group level (August 2026). That rule was a proxy for "don't let
+// ordering imply a ranking we can't defend," and that risk lives at the metric
+// level, where a reader compares coffee to ground beef — metrics stay strictly
+// alphabetical within every group. Six named groups are navigation, and
+// alphabetizing editorial group names is arbitrary in a way alphabetizing
+// metrics is not.
+//
+// The order runs from the biggest line in a household budget downward, with
+// headline CPI LAST rather than first: readers come for specific items, and
+// ending on the overall index lets the individual prices add up to it instead
+// of trailing behind it.
 const CATEGORY_META = [
-  { id: 'overall',   label: 'All prices (CPI)' },
-  { id: 'big',       label: 'Big-ticket' },
-  { id: 'daily',     label: 'Daily items' },
-  { id: 'debt',      label: 'Debt' },
-  { id: 'groceries', label: 'Groceries' },
-  { id: 'labor',     label: 'Work & wages' },
+  { id: 'housing',   label: 'Rent & homes' },
+  { id: 'groceries', label: 'Food' },
+  { id: 'bills',     label: 'Bills & getting around' },
+  { id: 'health',    label: 'Health & care' },
+  { id: 'income',    label: 'Paychecks & debt' },
+  { id: 'overall',   label: 'Overall inflation' },
 ];
 
 // State FIPS → postal, for joining us-atlas topojson features to our data.
@@ -865,24 +1062,33 @@ const FIPS_TO_POSTAL = {
 const ESP_SERIES = ['#2c3254', '#70ad8f', '#ebc382', '#472b51', '#b0645f', '#7f8c53', '#c98a3c'];
 // National single-series cards are colored by category, preserving the
 // one-family-per-category cue while pulling every family into the ESP palette.
+// Under the August 2026 recut, color means "which group is this in" — the two
+// are now the same fact. Four families kept their exact hex through the recut;
+// the only series that changed color are the ones that changed group. Merging
+// the old labor and debt categories into "Paychecks & debt" freed brick, which
+// went to Health & care: under the recut, credit-card delinquency really is in
+// the same group as wages, which is the argument that group name is making.
 const ESP_CATEGORY_COLOR = {
-  overall:   '#7f8c53', // Olive — headline CPI, its own family of one
-  big:       '#2c3254', // Warm Navy
-  labor:     '#70ad8f', // Soft Green
+  housing:   '#2c3254', // Warm Navy — rent, homes, mortgages
   groceries: '#ebc382', // Warm Gold
-  daily:     '#472b51', // Deep Purple
-  debt:      '#b0645f', // muted brick (replaces the former neon red)
+  bills:     '#472b51', // Deep Purple — utilities, fuel, cars
+  health:    '#b0645f', // muted brick
+  income:    '#70ad8f', // Soft Green — what you earn and what you owe
+  overall:   '#7f8c53', // Olive — headline CPI, its own family of one
 };
 // State-view metrics carry no `category` (states_index.js), so map them by id
-// into the same ESP families: work/wages → green, housing → navy, daily →
-// purple, health → gold, debt → brick.
+// into the same six families the National view uses. Kept in step with
+// ESP_CATEGORY_COLOR by hand: if a metric is green on National and brick here,
+// the same series changes color when a reader switches tabs. The recut moved
+// two blocks — health coverage gold → brick, and the debt trio brick → green,
+// following their series into "Paychecks & debt".
 const ESP_METRIC_COLOR = {
   wages: '#70ad8f', hourly_earnings: '#70ad8f',
   income: '#70ad8f', unemployment: '#70ad8f', income_20th: '#70ad8f',
+  debt_per_capita: '#70ad8f', studentloan_per_capita: '#70ad8f', cc_delinquency_90: '#70ad8f',
   home_prices: '#2c3254', rent: '#2c3254', zori_rent: '#2c3254', rent_hours: '#2c3254', rent_burden: '#2c3254',
   electricity_bill: '#472b51',
-  aca_benchmark_premium: '#ebc382', uninsured_rate: '#ebc382',
-  debt_per_capita: '#b0645f', studentloan_per_capita: '#b0645f', cc_delinquency_90: '#b0645f',
+  aca_benchmark_premium: '#b0645f', uninsured_rate: '#b0645f',
 };
 function espColorFor(item) {
   if (!item) return ESP_SERIES[0];
@@ -1035,40 +1241,10 @@ const styles = {
     padding: '6px 13px', cursor: 'pointer', borderRadius: 3,
     transition: 'all .12s',
   }),
-  // The category-accent tint is gone from the selected state (comms request:
-  // no accent colors for ordinary UI states). The chip's chart-line color
-  // survives only as the small filled checkBox mark inside the chip.
-  checkChip: (on, accent) => ({
-    fontFamily: '"Neue Haas Grotesk Display Pro", sans-serif',
-    fontSize: 13, fontWeight: 600,
-    padding: '6px 13px 6px 11px',
-    border: `1px solid ${NAVY}`,
-    background: on ? NAVY : 'transparent',
-    color: on ? PAPER : NAVY,
-    cursor: 'pointer',
-    transition: 'all .12s',
-    borderRadius: 3,
-    display: 'inline-flex', alignItems: 'center', gap: 8,
-  }),
-  checkBox: (on, accent) => ({
-    width: 13, height: 13, borderRadius: 2,
-    border: `1.5px solid ${on ? accent : 'rgba(44,50,84,.4)'}`,
-    background: on ? accent : 'transparent',
-    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-    color: PAPER, fontSize: 9, fontWeight: 800,
-    flexShrink: 0,
-  }),
-  catPill: (state) => ({
-    // state: 'all' | 'some' | 'none'
-    fontFamily: '"Neue Haas Grotesk Display Pro", sans-serif',
-    fontSize: 11, fontWeight: 700, letterSpacing: '.12em', textTransform: 'uppercase',
-    padding: '6px 13px',
-    border: `1px solid ${NAVY}`,
-    background: state === 'all' ? NAVY : state === 'some' ? hexToRgba(NAVY, 0.10) : 'transparent',
-    color: state === 'all' ? PAPER : NAVY,
-    cursor: 'pointer', borderRadius: 3, transition: 'all .12s',
-    flexShrink: 0,
-  }),
+  // checkChip / checkBox / catPill lived here for the National chip picker
+  // that the rail replaced in August 2026. Removed with it — the rail's rows
+  // and group headers are class-based (.at-prow / .at-grp) so they can carry
+  // hover and focus states, which an inline style object cannot express.
   sectionHead: {
     display: 'flex', alignItems: 'baseline', gap: 14,
     marginBottom: 18, paddingBottom: 8,
@@ -1149,14 +1325,18 @@ function ChartCard({ item, anchorId, displayMode, priceType, cpiData, overlayIte
   // global $/% toggle.
   const asPct = item.rebase || displayMode === 'pct';
   const real = priceType === 'real';
+  const rate = isRateSeries(item);
   const srcData = seriesForType(item, cpiData, real);
 
   const visibleData = sliceFrom(srcData, cardSince);
   const v0 = (asPct && visibleData.length) ? visibleData[0].value : null;
-  const toPct = (data, base) => data.map(d => ({ date: d.date, value: base ? (d.value / base - 1) * 100 : 0 }));
+  // On a rate series the "% change" view plots the percentage-point difference
+  // from the anchor, not a ratio — see the changeIn comment. The axis label
+  // says which, and fmtVal keys off it for the ticks and the tooltip.
+  const toPct = (data, base) => data.map(d => ({ date: d.date, value: changeIn(base, d.value, rate) ?? 0 }));
   const displayData = asPct ? toPct(visibleData, v0) : visibleData;
   const displayUnits = asPct
-    ? `% change since ${fmtDate(visibleData[0]?.date || cardSince, { year: 'numeric', month: 'short' })}`
+    ? `${rate ? 'pp' : '%'} change since ${fmtDate(visibleData[0]?.date || cardSince, { year: 'numeric', month: 'short' })}`
     : item.units;
   const headlineVal = asPct
     ? (displayData.length ? displayData[displayData.length - 1].value : 0)
@@ -1312,18 +1492,20 @@ function ChartCard({ item, anchorId, displayMode, priceType, cpiData, overlayIte
     };
   }, [chartReady, item, cardSince, accent, displayMode, priceType, overlayItem]);
 
-  let change = pctChange(srcData, cardSince);
+  let change = changeSince(srcData, cardSince, item);
   // If the anchor predates this series (e.g. a global "since 2000" or a custom
-  // 2000 on a series that only starts in 2006), pctChange finds no reading
+  // 2000 on a series that only starts in 2006), changeSince finds no reading
   // at/before the anchor and returns null. Fall back to the change since the
   // earliest available reading — the same base the chart draws from — instead
   // of showing a misleading 0.0%. When we clamp, remember the true start so the
   // label reads "since Mar 2006", not "since 2000".
   let clampedStart = null;
-  if (change == null && visibleData.length >= 2 && visibleData[0].value) {
-    const base = visibleData[0].value;
-    change = ((visibleData[visibleData.length - 1].value - base) / base) * 100;
-    clampedStart = visibleData[0].date;
+  if (change == null && visibleData.length >= 2) {
+    const clamped = changeIn(visibleData[0].value, visibleData[visibleData.length - 1].value, rate);
+    if (clamped != null) {
+      change = clamped;
+      clampedStart = visibleData[0].date;
+    }
   }
   const activePhrase = clampedStart ? 'since ' + fmtDate(clampedStart) : active.phrase;
   // change is still null here only when the active anchor is on/after the
@@ -1336,14 +1518,17 @@ function ChartCard({ item, anchorId, displayMode, priceType, cpiData, overlayIte
   const changeColorFor = (v) => (item.invert_color ? v < 0 : v >= 0) ? WARM_RED : '#2E7D5B';
   const latestDate = srcData.length ? srcData[srcData.length - 1].date : null;
 
-  // The two message anchors, always visible regardless of the active range
-  const b25 = pctChange(srcData, '2025-01-01');
-  const b19 = pctChange(srcData, '2019-12-01');
+  // The two message anchors, always visible regardless of the active range.
+  // Percentage points on a rate series, the same as the picker row and the
+  // Copy-fact sentence — a card must not answer one way when read and another
+  // when quoted.
+  const b25 = changeSince(srcData, '2025-01-01', item);
+  const b19 = changeSince(srcData, '2019-12-01', item);
   const badge = (v, lbl) => v == null ? null : (
     <span key={lbl} style={{ whiteSpace: 'nowrap' }}>
       <span style={{ color: MUTE }}>{lbl} </span>
       <span style={{ color: changeColorFor(v), fontWeight: 700 }}>
-        {v >= 0 ? '+' : '−'}{Math.abs(v).toFixed(1)}%
+        {fmtChange(v, rate)}
       </span>
     </span>
   );
@@ -1353,13 +1538,13 @@ function ChartCard({ item, anchorId, displayMode, priceType, cpiData, overlayIte
   const staleNote25 = (b25 == null && latestDate) ? `Data through ${fmtObsDate(latestDate, srcData)}` : null;
 
   const headlineText = asPct
-    ? (headlineVal >= 0 ? '+' : '') + headlineVal.toFixed(1) + '%'
+    ? fmtChange(headlineVal, rate)
     : fmtVal(headlineVal, displayUnits);
   const changeText = isStale
     ? (latestDate ? `Data through ${fmtObsDate(latestDate, srcData)}` : 'No data')
     : asPct
       ? (up ? '↑ ' : '↓ ') + activePhrase
-      : (up ? '↑ +' : '↓ ') + Math.abs(change || 0).toFixed(1) + '% ' + activePhrase;
+      : (up ? '↑ +' : '↓ ') + Math.abs(change || 0).toFixed(1) + (rate ? ' pp ' : '% ') + activePhrase;
 
   return (
     <div ref={cardRef} style={{
@@ -1529,13 +1714,18 @@ function Heatmap({ items, priceType, cpiData }) {
   const years = [2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026];
   const real = priceType === 'real';
 
+  // Rate rows are in percentage points, everything else in percent — the same
+  // rule the cards and the picker follow. The colour ramp is shared, so a rate
+  // row now reads pale (a 0.6 pp move is a 0.6 on a ±15 scale); that is the
+  // honest weight for it, where the old percent-of-a-percent inflated it.
   const matrix = items.map(item => {
     const d = seriesForType(item, cpiData, real);
     return {
       item,
-      cells: years.map(yr => pctChangeBetween(d, `${yr - 1}-01-15`, `${yr}-01-15`)),
-      cum19: pctChange(d, '2019-12-01'),
-      cum25: pctChange(d, '2025-01-01'),
+      rate: isRateSeries(item),
+      cells: years.map(yr => changeBetween(d, `${yr - 1}-01-15`, `${yr}-01-15`, item)),
+      cum19: changeSince(d, '2019-12-01', item),
+      cum25: changeSince(d, '2025-01-01', item),
     };
   });
 
@@ -1607,6 +1797,7 @@ function Heatmap({ items, priceType, cpiData }) {
               {row.item.label}
               <div style={{ fontSize: 10, color: MUTE, fontWeight: 400, marginTop: 2 }}>
                 {row.item.subtitle}
+                {row.rate && <span style={{ fontStyle: 'italic' }}> · in percentage points</span>}
               </div>
             </div>
             {row.cells.map((v, i) => (
@@ -1627,7 +1818,7 @@ function Heatmap({ items, priceType, cpiData }) {
                 fontFamily: '"Neue Haas Grotesk Display Pro", sans-serif',
                 fontSize: 13, fontWeight: 700, ...cumCell,
               }}>
-                {v == null ? '—' : `${v >= 0 ? '+' : ''}${v.toFixed(1)}%`}
+                {v == null ? '—' : `${v >= 0 ? '+' : ''}${v.toFixed(1)}${row.rate ? ' pp' : '%'}`}
               </div>
             ))}
           </React.Fragment>
@@ -1648,38 +1839,119 @@ const DEFAULT_NATIONAL_IDS = [
   'car_insurance', 'aca_benchmark_premium', 'gas',
   'credit_card_delinquency', 'eggs', 'hourly_earnings', 'electricity',
 ];
+// One list of rows, rendered into either container: a rail above the 1060px
+// breakpoint, a menu below it. Selection, filter text and group state all live
+// in NationalView, so these are two views of one picker rather than two
+// pickers that have to be kept in sync.
+function MetricPicker({
+  variant, groups, selectedIds, total, q, setQ,
+  toggleId, toggleCategory, catState, onSelectAll, onClearAll,
+  anchorId, priceType, cpiData,
+}) {
+  const [open, setOpen] = useState(false);
+  const needle = q.trim().toLowerCase();
+
+  // Filtering hides rows from the list only. Charts already on the page are
+  // never touched and the selection is never cleared — typing "egg" while
+  // seven charts are up must not imply those seven have gone away.
+  const rows = groups.map(g => {
+    const items = needle ? g.items.filter(i => i.label.toLowerCase().includes(needle)) : g.items;
+    if (!items.length) return null;
+    const state = catState(g.id);
+    return (
+      <React.Fragment key={g.id}>
+        <button
+          className={`at-grp${state === 'none' ? '' : ' on'}`}
+          onClick={() => toggleCategory(g.id)}
+          title={state === 'all'
+            ? `Remove all ${g.items.length} metrics in ${g.label}`
+            : `Add all ${g.items.length} metrics in ${g.label}`}
+        >{g.label}</button>
+        {items.map(item => {
+          const on = selectedIds.has(item.id);
+          return (
+            <button key={item.id} className={`at-prow${on ? ' on' : ''}`}
+                    onClick={() => toggleId(item.id)} aria-pressed={on}>
+              <span className="at-prow-mark" aria-hidden="true">{on ? '✓' : '＋'}</span>
+              <span className="at-prow-name">{item.label}</span>
+              <span className="at-prow-ch">{railChangeText(item, anchorId, priceType, cpiData)}</span>
+            </button>
+          );
+        })}
+      </React.Fragment>
+    );
+  }).filter(Boolean);
+
+  const list = (
+    <div className="at-plist">
+      {rows.length ? rows : (
+        <div className="at-pstub">
+          No metrics match “{q.trim()}”.{' '}
+          <button className="at-plnk" onClick={() => setQ('')}>Clear filter</button>
+        </div>
+      )}
+    </div>
+  );
+
+  const head = (
+    <React.Fragment>
+      <input className="at-pfilter" value={q} onChange={e => setQ(e.target.value)}
+             placeholder={`Filter ${total} metrics…`} aria-label="Filter metrics"
+             autoComplete="off" />
+      <div className="at-phead">
+        <span className="at-pcount">{selectedIds.size} of {total} on</span>
+        <button className="at-plnk" onClick={onSelectAll}>Select all</button>
+        <button className="at-plnk" onClick={onClearAll}>Clear</button>
+      </div>
+    </React.Fragment>
+  );
+
+  if (variant === 'rail') return <div>{head}{list}</div>;
+
+  // The menu keeps the transparent button in both states and changes its label
+  // rather than filling navy when open — an open menu is not a selected state.
+  return (
+    <div>
+      <div className="at-menubar">
+        <button onClick={() => setOpen(!open)} aria-expanded={open}
+                style={{ ...styles.smallBtn, fontSize: 11, padding: '6px 12px' }}>
+          {open ? 'Hide the list' : 'Add a metric ▾'}
+        </button>
+        <span className="at-pcount">{selectedIds.size} of {total} on</span>
+      </div>
+      {open && <div className="at-menupop">{head}{list}</div>}
+    </div>
+  );
+}
+
 function NationalView({ data, anchorId, displayMode, priceType }) {
   const cpiData = data.cpi_all_items ? data.cpi_all_items.data : null;
   const allItems = useMemo(
     () => Object.values(data).filter(i => !i.overlay_only),
     [data]
   );
-  const byCategory = useMemo(() => {
-    const m = {};
-    CATEGORY_META.forEach(c => {
-      m[c.id] = allItems
+
+  // Groups in CATEGORY_META order — editorial, biggest household line first,
+  // headline CPI last. Metrics stay strictly alphabetical inside each group;
+  // the comms alphabetical rule was reversed at the group level only.
+  const groups = useMemo(() => CATEGORY_META
+    .map(c => ({
+      id: c.id,
+      label: c.label,
+      items: allItems
         .filter(i => i.category === c.id)
-        .sort((a, b) => a.label.localeCompare(b.label)); // alphabetical chips
-    });
-    return m;
-  }, [allItems]);
+        .sort((a, b) => a.label.localeCompare(b.label)),
+    }))
+    .filter(g => g.items.length), [allItems]);
 
   const [selectedIds, setSelectedIds] = useState(() =>
     // Intersect with what's actually in the payload so a renamed/dropped
     // series can't leave a phantom selection.
     new Set(allItems.filter(i => DEFAULT_NATIONAL_IDS.includes(i.id)).map(i => i.id))
   );
-
-  // Collapsible category rows (41 chips was too busy): rows start collapsed,
-  // showing just the pill + a selected count; the chevron expands the chips.
-  const [openCats, setOpenCats] = useState(() => new Set());
-  const toggleOpen = (id) => {
-    setOpenCats(prev => {
-      const n = new Set(prev);
-      if (n.has(id)) n.delete(id); else n.add(id);
-      return n;
-    });
-  };
+  // Shared by both containers, so a filter typed in the rail survives a resize
+  // into the menu.
+  const [q, setQ] = useState('');
 
   const toggleId = (id) => {
     setSelectedIds(prev => {
@@ -1689,160 +1961,105 @@ function NationalView({ data, anchorId, displayMode, priceType }) {
     });
   };
 
-  // Category pills are additive bulk toggles: clicking one adds (or removes)
-  // its items without touching what's selected elsewhere — the comms team's
-  // "let me throw groceries in with Big Ticket" request. Every chip stays
-  // visible; unselected ones are grayed, not hidden.
+  const itemsIn = (catId) => {
+    const g = groups.find(x => x.id === catId);
+    return g ? g.items : [];
+  };
+  // Group headers are additive bulk toggles: adding a group never touches
+  // what's selected elsewhere — the comms team's "let me throw groceries in
+  // with Big Ticket" request, carried over from the chip picker this replaces.
   const catState = (catId) => {
-    const items = byCategory[catId] || [];
+    const items = itemsIn(catId);
     const on = items.filter(i => selectedIds.has(i.id)).length;
     return on === 0 ? 'none' : on === items.length ? 'all' : 'some';
   };
   const toggleCategory = (catId) => {
-    const items = byCategory[catId] || [];
-    const state = catState(catId);
+    const items = itemsIn(catId);
+    const removing = catState(catId) === 'all';
     setSelectedIds(prev => {
       const n = new Set(prev);
-      if (state === 'all') items.forEach(i => n.delete(i.id));
-      else items.forEach(i => n.add(i.id));
+      items.forEach(i => { if (removing) n.delete(i.id); else n.add(i.id); });
       return n;
     });
   };
 
-  // Cards render in category order, alphabetical within each category —
-  // matching the chip rows above.
-  const selectedItems = CATEGORY_META.flatMap(c =>
-    (byCategory[c.id] || []).filter(i => selectedIds.has(i.id)));
+  // Cards render in group order, alphabetical within each group — the same
+  // order the picker lists them in.
+  const selectedItems = groups.flatMap(g => g.items.filter(i => selectedIds.has(i.id)));
   const anchor = anchorById(anchorId);
 
+  const picker = (variant) => (
+    <MetricPicker
+      variant={variant} groups={groups} selectedIds={selectedIds} total={allItems.length}
+      q={q} setQ={setQ}
+      toggleId={toggleId} toggleCategory={toggleCategory} catState={catState}
+      onSelectAll={() => setSelectedIds(new Set(allItems.map(i => i.id)))}
+      onClearAll={() => setSelectedIds(new Set())}
+      anchorId={anchorId} priceType={priceType} cpiData={cpiData}
+    />
+  );
+
   return (
-    <React.Fragment>
-      {/* Selection chips, grouped by category with family colors */}
-      <div className="at-pad" style={{
-        background: MENU_BG, borderBottom: `1px solid rgba(44,50,84,.18)`,
-        padding: '16px 56px 18px',
-        display: 'flex', flexDirection: 'column', gap: 10,
-      }}>
-        {CATEGORY_META.map(cat => {
-          const items = byCategory[cat.id] || [];
-          const nOn = items.filter(i => selectedIds.has(i.id)).length;
-          const open = openCats.has(cat.id);
-          return (
-            <div key={cat.id} style={{ borderBottom: '1px solid rgba(44,50,84,.08)', paddingBottom: open ? 12 : 6 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <button onClick={() => toggleCategory(cat.id)}
-                        title="Select or clear every metric in this category"
-                        style={{ ...styles.catPill(catState(cat.id)), width: 130, textAlign: 'center' }}>
-                  {cat.label}
-                </button>
-                <button
-                  onClick={() => toggleOpen(cat.id)}
-                  aria-expanded={open}
-                  title={open ? 'Hide the metrics in this category' : 'Show the metrics in this category'}
-                  style={{
-                    flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    gap: 10, background: 'transparent', border: 'none', cursor: 'pointer',
-                    padding: '6px 4px', textAlign: 'left',
-                  }}
-                >
-                  <span style={{
-                    fontFamily: 'Publico, Georgia, serif', fontStyle: 'italic',
-                    fontSize: 12.5, color: nOn ? INK : MUTE,
-                  }}>
-                    {nOn ? `${nOn} of ${items.length} selected` : `${items.length} metrics`}
-                  </span>
-                  <span style={{
-                    fontFamily: '"Neue Haas Grotesk Display Pro", sans-serif',
-                    fontSize: 11, fontWeight: 700, color: NAVY, flexShrink: 0,
-                    display: 'inline-flex', alignItems: 'center', gap: 8,
-                  }}>
-                    {open ? 'Hide' : 'Show'}
-                    <svg width="11" height="8" viewBox="0 0 11 8" fill="none" aria-hidden="true"
-                      style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .15s' }}>
-                      <path d="M1 1.5L5.5 6L10 1.5" stroke={NAVY} strokeWidth="1.75"
-                        strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </span>
-                </button>
-              </div>
-              {open && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
-                  {items.map(item => {
-                    const on = selectedIds.has(item.id);
-                    return (
-                      <button key={item.id} onClick={() => toggleId(item.id)} style={styles.checkChip(on, espColorFor(item))}>
-                        <span style={styles.checkBox(on, espColorFor(item))}>{on ? '✓' : ''}</span>
-                        {item.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
+    <div className="at-pad" style={{ padding: '20px 56px 56px' }}>
+      {/* Both containers are always rendered; CSS decides which one is visible
+          at the current width. They share one selection and one filter string,
+          so crossing the breakpoint never loses state. */}
+      <div className="at-nat-layout">
+        <div className="at-rail">{picker('rail')}</div>
+
+        <div style={{ minWidth: 0 }}>
+          <div className="at-natmenu">{picker('menu')}</div>
+
+          <div className="at-section-head" style={styles.sectionHead}>
+            <span style={styles.sectionTitle}>
+              {selectedItems.length === 0
+                ? 'Nothing selected'
+                : selectedItems.length === 1
+                  ? selectedItems[0].label
+                  : `${selectedItems.length} metrics, ${anchor.phrase}`}
+            </span>
+            <span className="at-section-dek" style={styles.sectionDek}>Hover any chart for monthly values.</span>
+          </div>
+
+          {selectedItems.length === 0 ? (
+            <div style={{
+              background: PAPER, border: `1px solid rgba(44,50,84,.18)`,
+              padding: '48px 32px', textAlign: 'center',
+              fontFamily: 'Publico, Georgia, serif', fontStyle: 'italic', color: MUTE,
+            }}>
+              Pick a metric from the list to chart it.
             </div>
-          );
-        })}
-        <div style={{ display: 'flex', gap: 16, marginTop: 2 }}>
-          <button
-            onClick={() => setSelectedIds(new Set(allItems.map(i => i.id)))}
-            style={{ ...styles.smallBtn, border: 'none', textDecoration: 'underline', textUnderlineOffset: 3, fontSize: 10 }}
-          >Select all</button>
-          <button
-            onClick={() => setSelectedIds(new Set())}
-            style={{ ...styles.smallBtn, border: 'none', textDecoration: 'underline', textUnderlineOffset: 3, fontSize: 10 }}
-          >Clear all</button>
+          ) : (
+            <div className="at-cards-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: 0,
+              border: `1px solid rgba(44,50,84,.14)`, background: 'transparent' }}>
+              {selectedItems.map((item, i) => {
+                const col = i % 2;
+                const row = Math.floor(i / 2);
+                const total = selectedItems.length;
+                const lastRow = Math.floor((total - 1) / 2);
+                return (
+                  <div key={item.id} className="at-card" style={{
+                    borderRight: col < 1 ? `1px solid rgba(44,50,84,.14)` : 'none',
+                    borderBottom: row < lastRow ? `1px solid rgba(44,50,84,.14)` : 'none',
+                  }}>
+                    <ChartCard item={item} anchorId={anchorId} displayMode={displayMode}
+                               priceType={priceType} cpiData={cpiData} />
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 
-      <div className="at-pad" style={{ padding: '20px 56px 56px' }}>
-        <div className="at-section-head" style={styles.sectionHead}>
-          <span style={styles.sectionTitle}>
-            {selectedItems.length === 0
-              ? 'Nothing selected'
-              : selectedItems.length === 1
-                ? selectedItems[0].label
-                : `${selectedItems.length} metrics, ${anchor.phrase}`}
-          </span>
-          <span className="at-section-dek" style={styles.sectionDek}>Hover any chart for monthly values.</span>
-        </div>
-
-        {selectedItems.length === 0 ? (
-          <div style={{
-            background: PAPER, border: `1px solid rgba(44,50,84,.18)`,
-            padding: '48px 32px', textAlign: 'center',
-            fontFamily: 'Publico, Georgia, serif', fontStyle: 'italic', color: MUTE,
-          }}>
-            Pick one or more metrics above to see them charted.
-          </div>
-        ) : (
-          <div className="at-cards-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: 0,
-            border: `1px solid rgba(44,50,84,.14)`, background: 'transparent' }}>
-            {selectedItems.map((item, i) => {
-              const col = i % 2;
-              const row = Math.floor(i / 2);
-              const total = selectedItems.length;
-              const lastRow = Math.floor((total - 1) / 2);
-              return (
-                <div key={item.id} className="at-card" style={{
-                  borderRight: col < 1 ? `1px solid rgba(44,50,84,.14)` : 'none',
-                  borderBottom: row < lastRow ? `1px solid rgba(44,50,84,.14)` : 'none',
-                }}>
-                  <ChartCard item={item} anchorId={anchorId} displayMode={displayMode}
-                             priceType={priceType} cpiData={cpiData} />
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        <div className="at-section-head" style={{ ...styles.sectionHead, marginTop: 48 }}>
-          <span style={styles.sectionTitle}>Year by year</span>
-          <span className="at-section-dek" style={styles.sectionDek}>YoY % change each January, plus the two anchors, for the metrics you've selected.</span>
-        </div>
-        <div className="at-heatmap-scroll">
-          <Heatmap items={selectedItems} priceType={priceType} cpiData={cpiData} />
-        </div>
+      <div className="at-section-head" style={{ ...styles.sectionHead, marginTop: 48 }}>
+        <span style={styles.sectionTitle}>Year by year</span>
+        <span className="at-section-dek" style={styles.sectionDek}>Year-over-year change each January, plus the two anchors, for the metrics you've selected. Rate series are in percentage points.</span>
       </div>
-    </React.Fragment>
+      <div className="at-heatmap-scroll">
+        <Heatmap items={selectedItems} priceType={priceType} cpiData={cpiData} />
+      </div>
+    </div>
   );
 }
 
@@ -2041,6 +2258,8 @@ function CompareChart({ metric, seriesList, anchorId, displayMode, height = 340 
   useEffect(() => { loadChartJs().then(() => setChartReady(true)); }, []);
 
   const asPct = metric.rebase || displayMode === 'pct';
+  // Same rule as the national cards: a rate series shows points, not percent.
+  const rate = isRateSeries(metric);
 
   useEffect(() => {
     if (!chartReady || !canvasRef.current) return;
@@ -2052,7 +2271,7 @@ function CompareChart({ metric, seriesList, anchorId, displayMode, height = 340 
       let vis = sliceFrom(s.data, since);
       if (asPct && vis.length) {
         const v0 = vis[0].value;
-        vis = vis.map(d => ({ date: d.date, value: v0 ? (d.value / v0 - 1) * 100 : 0 }));
+        vis = vis.map(d => ({ date: d.date, value: changeIn(v0, d.value, rate) ?? 0 }));
       }
       return {
         label: s.label,
@@ -2079,7 +2298,7 @@ function CompareChart({ metric, seriesList, anchorId, displayMode, height = 340 
     const xMin = ts.length ? Math.min(...ts) - tPad : undefined;
     const xMax = ts.length ? Math.max(...ts) + tPad : undefined;
 
-    const displayUnits = asPct ? '%' : metric.units;
+    const displayUnits = asPct ? (rate ? 'pp change' : '%') : metric.units;
 
     chartRef.current = new window.Chart(ctx, {
       type: 'line',
