@@ -206,6 +206,17 @@
   }
 
   :focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+
+  /* ── Print ────────────────────────────────────────────────── */
+  @media print {
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; color-adjust: exact; }
+    @page { margin: 0.55in; }
+    body { background: #fff; }
+    .wrap { max-width: 100%; padding: 0; gap: 26px; }
+    .item, .open, header.head { break-inside: avoid; page-break-inside: avoid; }
+    .item + .item, .open { break-before: auto; }
+    .items { gap: 16px; }
+  }
 </style>
 
 <div class="wrap">
