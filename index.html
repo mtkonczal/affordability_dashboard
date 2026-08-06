@@ -73,9 +73,6 @@
   @media (max-width: 640px) {
     .at-pad { padding-left: 16px !important; padding-right: 16px !important; }
     .at-inset-rule::after { left: 16px; right: 16px; }
-    .at-h1 { font-size: 30px !important; line-height: 1.14 !important; margin-bottom: 16px !important; }
-    .at-h1-embed { font-size: 24px !important; line-height: 1.18 !important; }
-    .at-dek { font-size: 16px !important; }
     .at-hero { padding-top: 40px !important; padding-bottom: 36px !important; }
     .at-section-head { flex-wrap: wrap !important; }
     .at-section-dek { margin-left: 0 !important; flex-basis: 100% !important; }
@@ -1106,14 +1103,13 @@ const { useState, useMemo, useEffect, useRef } = React;
 
 const NAVY = '#2c3254';
 const WARM_RED = '#E04E39';
-// Map hover card. A light coral fill with dark navy text — navy on
-// #ff8361 is 5.13:1, and every line in that card is 10–12px, so it needs to
-// clear WCAG AA on its own rather than lean on a "large text" exemption.
+// Map hover card. Cream fill (matches BEIGE) with dark navy text — navy on
+// #F4F2E4 clears WCAG AA well past the coral-background numbers this used to
+// cite, even at the 10–12px this card prints everything in.
 // MAP_TIP_WARM (the obsLabel accent) reuses the full-contrast navy;
 // MAP_TIP_DIM (rank / "click to pin", meant to read as quieter) is a dark
-// rust that still clears 4.5:1 — a lighter tint would look calmer but drop
-// below AA on a background this light.
-const MAP_TIP = '#ff8361';
+// rust that still clears 4.5:1.
+const MAP_TIP = '#F4F2E4';
 const MAP_TIP_DIM = '#5C2A20';
 const MAP_TIP_WARM = '#2c3254';
 const BEIGE = '#f4f2e4';
@@ -1125,10 +1121,6 @@ const PAPER = '#FFFDF2';
 // with cream panels and the card interiors were transparent, i.e. beige.
 const SURFACE = '#FFFFFF';
 
-// One masthead, both modes. Keep these in step with <title> in the head and
-// with about.html's header.
-const SITE_TITLE = "Economic Security Project's Affordability Tracker";
-const SITE_SUBTITLE = 'Follow the costs shaping household budgets, using public data to understand what is changing, where, and by how much.';
 // Placeholder — swap for the real inbox before launch. Deliberately not a
 // valid address so it can't quietly ship: grep TKTKATESP. It also appears in
 // assets/about_content.js, which about.html shares.
@@ -1343,32 +1335,6 @@ const styles = {
     background: NAVY, color: PAPER,
     padding: '56px 56px 44px',
     position: 'relative', overflow: 'hidden',
-  },
-  // The masthead title. 46px, not the 64px the old two-word headline used:
-  // "Economic Security Project's Affordability Tracker" is 48 characters and
-  // at 64px it broke to three lines at every width below about 1500px.
-  h1: {
-    fontFamily: 'Publico, Georgia, serif',
-    fontSize: 46, lineHeight: 1.12, letterSpacing: '-0.02em', fontWeight: 500,
-    color: PAPER, maxWidth: 900,
-    marginBottom: 20,
-  },
-  dek: {
-    fontFamily: 'Publico, Georgia, serif',
-    fontSize: 20, lineHeight: 1.55, color: '#E8C9A8',
-    fontStyle: 'italic',
-  },
-  // Embed variants: same words on the cream bar the ESP page sits behind, at
-  // the smaller scale a page that already has its own header calls for.
-  h1Embed: {
-    fontFamily: 'Publico, Georgia, serif',
-    fontSize: 32, lineHeight: 1.15, letterSpacing: '-0.02em', fontWeight: 500,
-    color: NAVY, maxWidth: 780, marginBottom: 10,
-  },
-  dekEmbed: {
-    fontFamily: 'Publico, Georgia, serif',
-    fontSize: 16, lineHeight: 1.5, color: MUTE,
-    fontStyle: 'italic',
   },
   controls: {
     // The rule under this bar is drawn by .at-inset-rule, not border-bottom,
@@ -4002,18 +3968,10 @@ function AppMain({ data }) {
         </div>
       )}
 
-      {/* Masthead. The title and subtitle render in BOTH modes (August 2026):
-          they used to live in the standalone-only navy hero, so the ESP page —
-          the tracker's actual home — showed a bare row of tabs and never named
-          the thing. The ESP header sits above the iframe and doesn't repeat the
-          name, so the embed has to carry it. Navy on standalone, cream on
-          embed, one set of words either way. The old kicker ("The Affordability
-          Tracker · 2026") and headline ("What's gotten more expensive.") are
-          gone: the title says what this is, and a year in a kicker goes stale. */}
+      {/* Masthead. Title/subtitle removed August 2026 — the hosted ESP page
+          now carries them, so index.html no longer duplicates the name. */}
       {!EMBED && (
       <header className="at-pad at-hero" style={styles.hero}>
-        <h1 className="at-h1" style={styles.h1}>{SITE_TITLE}</h1>
-        <p className="at-dek" style={styles.dek}>{SITE_SUBTITLE}</p>
         {lastUpdated && (
           <div style={{
             marginTop: 22,
@@ -4038,16 +3996,14 @@ function AppMain({ data }) {
       </header>
       )}
 
-      {/* Embed mode: the same masthead in the light palette, then the tabs. One
-          block, not two bars, so the hairline lands under the whole masthead. */}
+      {/* Embed mode: title/subtitle removed August 2026 — the hosted ESP page
+          now carries them. Just the tabs remain. */}
       {EMBED && (
         <div className="at-pad at-inset-rule" style={{
           background: MENU_BG,
           padding: '28px 56px 16px',
         }}>
-          <h1 className="at-h1-embed" style={styles.h1Embed}>{SITE_TITLE}</h1>
-          <p className="at-dek" style={styles.dekEmbed}>{SITE_SUBTITLE}</p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginTop: 22 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
             {VIEWS.map(v => (
               <button key={v.id} onClick={() => setView(v.id)} style={styles.viewTabLight(view === v.id)}>
                 {v.label}
