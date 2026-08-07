@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## What this project is
 
 A static, self-contained affordability tracker dashboard with national and
-state-level data. `fetch_data.R` pulls time series from FRED, the BLS API,
+state-level data to read. `fetch_data.R` pulls time series from FRED, the BLS API,
 Zillow, the Census API, and (optionally) EIA, and writes static JS payloads
 into `data/`; `index.html` renders three views (National / My State / Compare
 States) with React + Chart.js loaded from CDNs. There is no build step, no
