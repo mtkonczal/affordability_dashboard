@@ -169,7 +169,12 @@ and PNG export are still covered only by the manual pass in `What to Check.md`.
   picker option built from the national payload — no default US overlay),
   `CompareView` (the same rail/menu, any number of metrics as side-by-side
   panels of pinned states, minimum one; the US average is pinnable like any
-  state, not shown by default; defaults to the ACA benchmark premium), and
+  state, not shown by default; defaults to the ACA benchmark premium; pinned
+  lines are colored from `PIN_COLORS`, a **12-color** list of its own since
+  August 2026 — it opens on the same navy/green/gold as `ESP_SERIES` and then
+  diverges, and it is not an alias of that palette, which is the *category*
+  table and has no meaning past six groups. Colors still cycle past twelve),
+  and
   `MapView` (its own tab: the same rail/menu, single-select,
   **levels only** — a Map/Bar-chart toggle where Change/Level used to
   be, plus a year dropdown; within a year each state shows its last reading,
@@ -362,9 +367,10 @@ and PNG export are still covered only by the manual pass in `What to Check.md`.
   The old kicker ("The Affordability Tracker · YYYY") and headline ("What's
   gotten more expensive.") are gone. Keep these in step with `<title>` and with
   about.html's kicker.
-- **`FEEDBACK_EMAIL` is a placeholder** (`TKTKATESP`, not a valid address, so it
-  can't ship quietly). It appears in the index footer and in the corrections
-  note in `assets/about_content.js`; grep `TKTKATESP` for both.
+- **`FEEDBACK_EMAIL` is `press@economicsecurityproject.org`** (August 2026; it
+  was the `TKTKATESP` placeholder). Two places, both live `mailto:` links: the
+  index footer and the corrections note in `assets/about_content.js`, which
+  about.html shares. Change them together.
 - **Card order is newest-added-first** on National and My State
   (`selAdd`/`selRemove` in block one; each view holds the order array and
   derives its `selectedIds` Set from it, never the reverse). Taxonomy order was

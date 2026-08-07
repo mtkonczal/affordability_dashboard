@@ -271,7 +271,8 @@ window.ABOUT_CONTENT = `
     </div>
 
     <p class="note">
-      Corrections and questions are welcome: write to <b>TKTKATESP</b>. Every series
+      Corrections and questions are welcome: write to
+      <a href="mailto:press@economicsecurityproject.org">press@economicsecurityproject.org</a>. Every series
       identifier is declared explicitly in the tracker's data pipeline, and every CSV
       download carries its source.
     </p>

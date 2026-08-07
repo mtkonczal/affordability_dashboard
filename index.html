@@ -1121,10 +1121,9 @@ const PAPER = '#FFFDF2';
 // with cream panels and the card interiors were transparent, i.e. beige.
 const SURFACE = '#FFFFFF';
 
-// Placeholder — swap for the real inbox before launch. Deliberately not a
-// valid address so it can't quietly ship: grep TKTKATESP. It also appears in
-// assets/about_content.js, which about.html shares.
-const FEEDBACK_EMAIL = 'TKTKATESP';
+// The public inbox for corrections and questions. It also appears in
+// assets/about_content.js, which about.html shares — change both together.
+const FEEDBACK_EMAIL = 'press@economicsecurityproject.org';
 const INK = '#0E1320';
 const MUTE = '#6B6E78';
 const SOFT = '#9A9CA3';
@@ -1226,11 +1225,13 @@ const FIPS_TO_POSTAL = {
   '54':'WV','55':'WI','56':'WY',
 };
 
-// ESP brand chart palette (comms request, July 2026). Series begin with ESP
-// navy, green and gold, then stay within a muted, warm range — no neon. This
-// is the front-end source of truth for chart color; it overrides the
+// ESP brand chart palette (comms request, July 2026): ESP navy, green and gold
+// first, then a muted, warm range — no neon. Chart color overrides the
 // per-category hexes still baked into the data payloads by fetch_data.R, so no
 // data refresh is needed. (To make it permanent, port these into fetch_data.R.)
+// Since PIN_COLORS split off in August 2026 this list is read only for its
+// navy first entry, the fallback in espColorFor below; ESP_CATEGORY_COLOR is
+// what actually colors a card. Kept whole as the reference ordering.
 const ESP_SERIES = ['#2c3254', '#70ad8f', '#ebc382', '#472b51', '#b0645f', '#7f8c53', '#c98a3c'];
 // National single-series cards are colored by category, preserving the
 // one-family-per-category cue while pulling every family into the ESP palette.
@@ -1261,9 +1262,23 @@ function espColorFor(item) {
   return ESP_CATEGORY_COLOR[item.category] || item.color || ESP_SERIES[0];
 }
 
-// Distinct colors assigned to pinned states in the compare view; beyond the
-// palette length the colors cycle (tooltips and chips still name every line).
-const PIN_COLORS = ESP_SERIES;
+// Distinct colors assigned to pinned states in the Compare view and on the Map
+// tab's pinned-states chart; beyond the palette length the colors cycle
+// (tooltips and chips still name every line).
+//
+// Twelve, not seven (comms request, August 2026). It opens on the same ESP
+// navy / green / gold as ESP_SERIES — the two lists agree on the first three
+// and diverge after — then runs through nine further hues chosen to stay
+// distinguishable that deep into a pinned set. Nobody expects twelve states
+// pinned at once, but the 8th through 12th lines used to be repeats of the
+// 1st through 5th, which is a chart that lies. This is deliberately its own
+// list rather than an alias of ESP_SERIES: that palette is the *category*
+// palette (one family per group), and stretching it to twelve would invent
+// category colors nothing maps to.
+const PIN_COLORS = [
+  '#2c3254', '#70ad8f', '#ebc382', '#c96062', '#4f78a8', '#8f5d91',
+  '#d0783c', '#347f82', '#8a8d3f', '#a94f70', '#6864a6', '#8b6347',
+];
 
 // Lazy-load Chart.js + date adapter once
 let chartJsPromise = null;
@@ -4100,10 +4115,14 @@ function AppMain({ data }) {
             <a href="about.html" {...aboutProps} style={{ color: MUTE, textDecoration: 'underline', textUnderlineOffset: 3 }}>
               About the data: sources & methods
             </a>
-            {/* Feedback route, on every view including the embed. Not a mailto:
-                yet — FEEDBACK_EMAIL is a placeholder, and a mailto that opens a
-                compose window addressed to nothing is worse than plain text. */}
-            <span>Found an error? {FEEDBACK_EMAIL}</span>
+            {/* Feedback route, on every view including the embed. */}
+            <span>
+              Found an error?{' '}
+              <a href={`mailto:${FEEDBACK_EMAIL}`}
+                 style={{ color: MUTE, textDecoration: 'underline', textUnderlineOffset: 3 }}>
+                {FEEDBACK_EMAIL}
+              </a>
+            </span>
           </span>
           <span style={{ textAlign: 'right' }}>
             Data: FRED · BLS · Census · FHFA · Zillow · Freddie Mac · EIA · NY Fed · KFF · Urban · CCAoA<br/>
