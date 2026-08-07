@@ -2021,15 +2021,15 @@ function Heatmap({ items, priceType, cpiData }) {
 }
 
 // ── National view ────────────────────────────────────────────────────────────
-// Default card set (comms request, July 2026): a cross-category headline mix
-// rather than one whole category.
-// real_hourly_earnings was cut in the July 2026 trim; nominal hourly_earnings
-// takes its slot and reads as real whenever the Real toggle is on. Electricity
-// joins the default set now that it is priced in dollars per kWh rather than
-// index points.
+// Default card set (comms request, August 2026): a cross-category headline mix
+// rather than one whole category, ending on headline CPI so the individual
+// prices above it add up to the overall number.
+// This list is ORDERED — it is the first paint's card order top to bottom, not
+// just a membership set, so taxonomy order does not reshuffle it. Everything
+// after first paint follows the usual newest-added-first rule.
 const DEFAULT_NATIONAL_IDS = [
-  'car_insurance', 'aca_benchmark_premium', 'gas',
-  'credit_card_delinquency', 'eggs', 'hourly_earnings', 'electricity',
+  'electricity', 'gas', 'aca_benchmark_premium', 'zori_rent',
+  'mortgage', 'coffee', 'ground_beef', 'cpi_all_items',
 ];
 // One list of rows, rendered into either container: a rail above the 1060px
 // breakpoint, a menu below it. Selection, filter text and group state all live
@@ -2179,14 +2179,16 @@ function NationalView({ data, anchorId, displayMode, priceType }) {
 
   // The selection is an ORDER, newest first — see selAdd/selRemove. The Set
   // below is derived from it for the picker's marks and counts.
-  const [selOrder, setSelOrder] = useState(() =>
-    // Read off `groups`, which intersects with what's actually in the payload
-    // (so a renamed/dropped series can't leave a phantom selection) and lands
-    // in taxonomy order. The opening set is not reversed: nothing has been
-    // "most recently added" on first paint, so the default page keeps the
-    // grouped reading it has always had.
-    groups.flatMap(g => g.items.filter(i => DEFAULT_NATIONAL_IDS.includes(i.id)).map(i => i.id))
-  );
+  const [selOrder, setSelOrder] = useState(() => {
+    // Intersect with what's actually in the payload, so a renamed or dropped
+    // series can't leave a phantom selection — but keep DEFAULT_NATIONAL_IDS'
+    // own order, which is the editorial card order for the opening page.
+    // (It used to read off `groups` and land in taxonomy order; the default
+    // set is now sequenced deliberately, so the list wins.) Nothing has been
+    // "most recently added" on first paint, so no reversal here either.
+    const have = new Set(groups.flatMap(g => g.items.map(i => i.id)));
+    return DEFAULT_NATIONAL_IDS.filter(id => have.has(id));
+  });
   const selectedIds = useMemo(() => new Set(selOrder), [selOrder]);
   // Shared by both containers, so a filter typed in the rail survives a resize
   // into the menu.
