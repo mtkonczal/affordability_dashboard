@@ -168,8 +168,10 @@ and PNG export are still covered only by the manual pass in `What to Check.md`.
   card with a national-rank badge, plus annual stat tiles; "United States" is a
   picker option built from the national payload — no default US overlay),
   `CompareView` (the same rail/menu, any number of metrics as side-by-side
-  panels of pinned states, minimum one; the US average is pinnable like any
-  state, not shown by default; defaults to the ACA benchmark premium; pinned
+  panels of pinned states, down to zero — clearing every metric shows the same
+  "Pick a metric from the list to chart it." empty state as My State; the US
+  average is pinnable like any state, not shown by default; defaults to the
+  ACA benchmark premium; pinned
   lines are colored from `PIN_COLORS`, a **12-color** list of its own since
   August 2026 — it opens on the same navy/green/gold as `ESP_SERIES` and then
   diverges, and it is not an alias of that palette, which is the *category*
@@ -206,17 +208,21 @@ and PNG export are still covered only by the manual pass in `What to Check.md`.
   breakpoint (My State, then Compare and Map, all 2 Aug 2026; the bespoke metric
   and measure pill bars are gone). `sidebar_format.md` is the full handoff doc.
   - One `mode` prop is the only difference between tabs, because they don't mean
-    the same thing by "picked". `multi` (National, My State): add and remove
-    freely, group headers bulk-toggle, Select all + Clear. `keep-one` (Compare):
-    the last metric can't be removed, so **no Clear** (nothing valid to clear to)
-    and **no Select all** (one click would open 14 panels, each lazy-loading a
-    51-state payload); group headers stay but a group holding everything selected
-    won't remove. `single` (Map): rows are radio marks `●`/`○` with
-    `role="radio"`, group headings are plain labels, and the head is just the
-    filter — `＋` would say "add another" and "1 of 13 on" says nothing when only
-    one is ever possible. Collapsed into the menu, Map's summary shows the chosen
-    measure's *name*, not a count. A test pins four call sites and the two named
-    modes, so a fifth tab growing its own picker fails loudly.
+    the same thing by "picked". `multi` (National, My State, **and Compare
+    since August 2026**): add and remove freely, down to nothing, group headers
+    bulk-toggle, Select all + Clear. Compare used to run its own `keep-one`
+    mode — the last metric couldn't be removed, so no Clear (nothing valid to
+    clear to) and no Select all (one click opening 14 panels, each lazy-loading
+    a 51-state payload, read as broken rather than fast). It was unified with
+    `multi`: emptying Compare now shows the same "Pick a metric from the list
+    to chart it." empty state as My State, so Clear has somewhere to land and
+    Select all's cost is an accepted tradeoff. `single` (Map): rows are radio
+    marks `●`/`○` with `role="radio"`, group headings are plain labels, and the
+    head is just the filter — `＋` would say "add another" and "1 of 13 on"
+    says nothing when only one is ever possible. Collapsed into the menu, Map's
+    summary shows the chosen measure's *name*, not a count. A test pins four
+    call sites and the one named mode (`single`), so a fifth tab growing its
+    own picker, or Compare growing a bespoke one again, fails loudly.
   - **Compare and Map have no state selected**, so their row numbers use the
     **US series** for the metric (`allStatesPickerGroups`), read from the
     already-loaded national payload — the same figure the National rail prints,

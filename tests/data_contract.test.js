@@ -405,13 +405,13 @@ test('index.html: all four tabs pick metrics with the shared picker', () => {
   // The rail/menu replaced four separate controls (a category-chip bar, a flat
   // alphabetical card list, a metric pill bar, a measure pill bar). Nothing
   // renders in these tests, so this is a source-level guard: four call sites,
-  // and the two that aren't plain multi-select declare which mode they are.
-  // A future tab that grows its own bespoke picker instead is the regression.
+  // and the one that isn't plain multi-select declares its mode. A future tab
+  // that grows its own bespoke picker instead is the regression.
   const src = require('node:fs').readFileSync(repoPath('index.html'), 'utf8');
   const uses = (src.match(/<MetricPicker\b/g) || []).length;
   assert.equal(uses, 4,
     `expected MetricPicker at 4 call sites (National, My State, Compare, Map), found ${uses}`);
-  for (const mode of ['single', 'keep-one']) {
+  for (const mode of ['single']) {
     const n = (src.match(new RegExp(`mode="${mode}"`, 'g')) || []).length;
     assert.equal(n, 1, `expected exactly one mode="${mode}" call site, found ${n}`);
   }

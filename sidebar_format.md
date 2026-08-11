@@ -52,7 +52,7 @@ data question rather than a UI question.
 | `index.html` ~1929 | `MetricPicker` — one component, all four tabs; `mode` is the only difference |
 | `index.html` ~2032 | `NationalView` (`mode` default, `multi`) |
 | `index.html` ~2196 | `StateView` (`multi`) |
-| `index.html` ~3084 | `CompareView` (`keep-one`) |
+| `index.html` ~3084 | `CompareView` (`multi`, since late Aug 2026 — was `keep-one`) |
 | `index.html` ~3260 | `MapView` (`single`) |
 | `fetch_data.R` ~177 | the `category` field docs; `SERIES` entries carry the value |
 | `fetch_data.R` ~791 | the `STATE_METRICS` header: `category` on state metrics, and why `bills` is folded |
@@ -313,21 +313,31 @@ the two containers are byte-identical across all four tabs; what varies is one
 
 | mode | tabs | rows | group headers | head |
 |---|---|---|---|---|
-| `multi` | National, My State | `✓` / `＋` | bulk toggle | count · Select all · Clear |
-| `keep-one` | Compare States | `✓` / `＋` | bulk toggle, guarded | count only |
+| `multi` | National, My State, Compare States | `✓` / `＋` | bulk toggle | count · Select all · Clear |
 | `single` | Map | `●` / `○` | plain labels | filter only |
 
-### Why each mode differs
+> **Update, August 2026 (later same month):** Compare's `keep-one` mode
+> (below, kept for the record) was unified into `multi`. Emptying Compare all
+> the way to zero panels now shows the same "Pick a metric from the list to
+> chart it." empty state My State already had, so Clear has somewhere valid
+> to land and Select all is just the same affordance every other tab gives —
+> the 14-panel/51-state-payload cost that motivated leaving it out is now an
+> accepted tradeoff rather than a hard no. The group-toggle guard described
+> below (no-op when a group holds everything selected) is gone too; removing
+> such a group now empties the view like it does everywhere else.
 
-**`keep-one` (Compare).** A Compare tab with no panels has nothing to show, so
-the last metric can't be removed — that was already true of the pill bar. Two
-consequences: **Clear is absent**, since there is no valid empty state to clear
-to, and **Select all is absent**, because one click would open all 14 panels,
-each lazy-loading a 51-state payload and drawing a chart. (Fourteen is still
-reachable, at fourteen deliberate clicks, exactly as it was with pills.) Group
-headers stay — they cap at seven, and bulk-toggling is the documented comms
-request. The group toggle is **guarded**: removing a group that holds everything
-currently selected is a no-op rather than an empty view.
+### Why each mode differed (historical: `keep-one`, retired)
+
+**`keep-one` (Compare, as shipped 2 Aug 2026).** A Compare tab with no panels
+has nothing to show, so the last metric couldn't be removed — that was already
+true of the pill bar. Two consequences: **Clear was absent**, since there was
+no valid empty state to clear to, and **Select all was absent**, because one
+click would open all 14 panels, each lazy-loading a 51-state payload and
+drawing a chart. (Fourteen was still reachable, at fourteen deliberate clicks,
+exactly as it was with pills.) Group headers stayed — they cap at seven, and
+bulk-toggling is the documented comms request. The group toggle was
+**guarded**: removing a group that held everything currently selected was a
+no-op rather than an empty view.
 
 **`single` (Map).** The choropleth paints one measure at a time. Clicking a row
 switches; clicking the selected row does nothing. `＋` would have said "add

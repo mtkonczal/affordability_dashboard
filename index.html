@@ -2054,14 +2054,16 @@ const DEFAULT_NATIONAL_IDS = [
 // All four tabs use it. `mode` is the only thing that varies, because the four
 // views don't all mean the same thing by "picked":
 //
-//   'multi'    National, My State — add and remove freely, down to nothing.
-//              Group headers bulk-toggle; Select all and Clear both apply.
-//   'keep-one' Compare States — same, except a panel-less Compare has nothing
-//              to show, so the last metric can't be removed. Clear is therefore
-//              absent (there is no valid empty state to clear to) and so is
-//              Select all: one click would open 14 panels, each lazy-loading a
-//              51-state payload and drawing a chart. Group headers stay — that
-//              caps at seven and it's the documented comms request.
+//   'multi'    National, My State, Compare States — add and remove freely,
+//              down to nothing. Group headers bulk-toggle; Select all and
+//              Clear both apply. Compare used to be a separate 'keep-one'
+//              mode that couldn't drop below one panel (no Clear, no Select
+//              all — one click opening 14 panels, each lazy-loading a
+//              51-state payload, read as broken rather than fast). It was
+//              unified with 'multi' in August 2026: emptying Compare now
+//              shows the same "pick a metric" empty state as the other two,
+//              so Clear has somewhere valid to land, and Select all's cost
+//              is an accepted tradeoff rather than a hard no.
 //   'single'   Map — the choropleth paints one measure at a time. Rows are
 //              radio marks (● / ○), not ✓ / ＋: a plus would say "add another",
 //              which this tab cannot do. Group headers are plain labels rather
@@ -3269,14 +3271,15 @@ function CompareView({ data, metricIds, setMetricIds, homeState, anchorId, displ
   }, [metricIds.join(',')]);
 
   if (!idx) return null;
-  // Multi-select with no cap: clicking adds a panel, clicking again removes it.
-  // The last one can't be removed — a Compare tab with no panels has nothing to
-  // show, which is why the picker runs in 'keep-one' mode (no Clear).
+  // Multi-select with no cap, same as National/My State: clicking adds a
+  // panel, clicking again removes it, all the way down to zero — at which
+  // point the view shows the same "pick a metric" empty state as those tabs
+  // rather than forcing one panel to stay open.
   const metrics = metricIds.map(id => idx.metrics.find(m => m.id === id)).filter(Boolean);
-  const metric = metrics[0] || idx.metrics[0];
+  const metric = metrics[0];
   const toggleMetric = (id) => {
     if (metricIds.includes(id)) {
-      if (metricIds.length > 1) setMetricIds(metricIds.filter(m => m !== id));
+      setMetricIds(metricIds.filter(m => m !== id));
     } else {
       setMetricIds([...metricIds, id]);
     }
@@ -3293,28 +3296,30 @@ function CompareView({ data, metricIds, setMetricIds, homeState, anchorId, displ
     const on = ids.filter(id => metricIds.includes(id)).length;
     return on === 0 ? 'none' : on === ids.length ? 'all' : 'some';
   };
-  // Additive, like everywhere else — but removing a whole group must not empty
-  // the view. If a group holds everything currently selected, removing it is a
-  // no-op rather than a Compare tab with nothing on it.
   const toggleCategory = (catId) => {
     const ids = idsIn(catId);
     if (catState(catId) === 'all') {
-      const left = metricIds.filter(id => !ids.includes(id));
-      if (left.length) setMetricIds(left);
+      setMetricIds(metricIds.filter(id => !ids.includes(id)));
     } else {
       setMetricIds([...metricIds, ...ids.filter(id => !metricIds.includes(id))]);
     }
   };
   const picker = (variant) => (
     <MetricPicker
-      variant={variant} mode="keep-one" groups={groups} total={idx.metrics.length}
+      variant={variant} groups={groups} total={idx.metrics.length}
       selectedIds={new Set(metricIds)} q={q} setQ={setQ}
       toggleId={toggleMetric} toggleCategory={toggleCategory} catState={catState}
+      // Select all opens every metric as its own panel — a known-expensive
+      // click (14 panels, each lazy-loading a 51-state payload) but the same
+      // affordance the other tabs give, and the empty state above makes Clear
+      // a real "start over" rather than a dead end.
+      onSelectAll={() => setMetricIds(groups.flatMap(g => g.items.map(i => i.id)))}
+      onClearAll={() => setMetricIds([])}
       anchorId={anchorId} priceType={priceType} cpiData={cpiData}
     />
   );
-  const md = window.STATE_METRIC ? window.STATE_METRIC[metric.id] : null;
-  const primaryFailed = failedIds.has(metric.id);
+  const md = metric && window.STATE_METRIC ? window.STATE_METRIC[metric.id] : null;
+  const primaryFailed = metric ? failedIds.has(metric.id) : false;
 
   const names = { US: 'United States' };
   idx.states.forEach(s => { names[s.code] = s.name; });
@@ -3336,7 +3341,7 @@ function CompareView({ data, metricIds, setMetricIds, homeState, anchorId, displ
     }
   }
 
-  const status = primaryFailed ? 'error' : (md ? 'ready' : 'loading');
+  const status = !metric ? 'empty' : primaryFailed ? 'error' : (md ? 'ready' : 'loading');
 
   return (
     <React.Fragment>
@@ -3348,7 +3353,15 @@ function CompareView({ data, metricIds, setMetricIds, homeState, anchorId, displ
 
         <div style={{ minWidth: 0 }}>
         <div className="at-natmenu">{picker('menu')}</div>
-        {status !== 'ready' || !md ? (
+        {status === 'empty' ? (
+          <div style={{
+            background: SURFACE, border: `1px solid rgba(44,50,84,.18)`,
+            padding: '48px 32px', textAlign: 'center',
+            fontFamily: 'Publico, Georgia, serif', fontStyle: 'italic', color: MUTE,
+          }}>
+            Pick a metric from the list to chart it.
+          </div>
+        ) : status !== 'ready' || !md ? (
           <div style={{ padding: '48px 0', fontFamily: 'Publico, Georgia, serif', fontStyle: 'italic', color: MUTE }}>
             {status === 'error' ? 'Could not load this metric.' : 'Loading state data…'}
           </div>
