@@ -255,9 +255,17 @@ and PNG export are still covered only by the manual pass in `What to Check.md`.
     header text rather than the full row.
   - 1060px is the breakpoint: a 220px rail leaves room for two 380px chart
     columns once the page is ~1092px. Between 1060 and 1092 the cards briefly
-    fall to one column, where the `i % 2` border logic in the grid leaves a
-    stray right-hand hairline. Both views' cards are `minmax(380px, 1fr)` (the
-    state view moved off 420 with the rail), so the wart applies equally.
+    fall to one column. Both views' cards are `minmax(380px, 1fr)` (the state
+    view moved off 420 with the rail), so they behave identically.
+  - **The card grid's hairlines are drawn in CSS, not by index math**
+    (`.at-cards-clip` / `.at-cards-grid > .at-card`, August 2026). Every card
+    carries a right and bottom rule; the grid is pulled 1px past an
+    `overflow: hidden` wrapper so the outermost rules get clipped instead of
+    drawn. The grid is `auto-fit`, so it resolves to anywhere from one to four
+    columns, and the `i % 2` logic this replaced assumed two: on a wide monitor
+    a four-card row lost its rule between the 2nd and 3rd cards, straight down
+    the middle, and the last row carried a half-width horizontal rule. Don't
+    reintroduce a per-card `borderRight`/`borderBottom` computed from the index.
   - On the state tab: **defaults to every metric on** (that's what the view did
     before it had a picker), selection is keyed on the bare metric id so
     stepping through states with ← → keeps it, and only three groups can appear
@@ -329,6 +337,35 @@ and PNG export are still covered only by the manual pass in `What to Check.md`.
   never double-deflated. State series use the national CPI-U (no state CPI).
 - Every card shows dual badges (change since Jan 2025 and since Dec 2019),
   and has Copy-fact / CSV / PNG buttons.
+- **PNG export re-renders Chart.js charts offscreen; it does not photograph the
+  on-page canvas** (`chartToExportCanvas`, block one, August 2026). The branded
+  card's chart slot is 1280×540 (2.37:1) and a card canvas is ~695×480 (1.45:1),
+  so the old straight `drawImage` into the slot stretched every chart ~60% wide,
+  by an amount that changed with the reader's window. The offscreen clone keeps
+  the live chart's logical **height** (the area-fill gradient is built in
+  logical units against the card's own context, so changing the height moves
+  where the fade lands) and takes its width from the slot ratio, at a
+  `devicePixelRatio` that makes the buffer land on exactly the slot's device
+  pixels. `Chart.getChart()` is what distinguishes a chart canvas from the map
+  and bar-list canvases, which rasterize themselves at 1280 wide and fall
+  through to the source. The final `drawImage` is contain-fit, so nothing can be
+  stretched again even on that fallback path. The export's wordmark reads
+  **"AFFORDABILITY DASHBOARD"** — see the naming note below.
+- **The product is the "Affordability Dashboard"** (renamed from "Affordability
+  Tracker", August 2026). Reader-visible copy lives in five places and they have
+  to agree: `<title>` in index.html, the Copy-fact string (`buildFactText` — a
+  test pins it, since that sentence gets pasted into press releases), the PNG
+  export wordmark, about.html's `<title>` + kicker, and the About prose shared
+  through `assets/about_content.js`. Lowercase "the tracker" in body copy went
+  to "the dashboard" in the same pass; what's left in the repo is comments and
+  internal docs. **Two things still say Tracker on purpose:** the ESP page slug
+  `economicsecurityproject.org/affordability-data-tracker` and its iframe
+  `title="Affordability Tracker"` (both in DEPLOYMENT.md, both owned by whoever
+  edits the ESP page), and the four root design-review files
+  (`picker_mockups.html`, `response.html`, `final_design_edits_summary.html`,
+  `embed_test.html`) — those are dated records of a review, so renaming inside
+  them would misreport what the team looked at. The GitHub Pages path is already
+  `/affordability_dashboard/`, so no repo rename is needed.
 - Deep links via the URL hash: `#view=state&state=IL&anchor=2019&type=real`
   (`view=map&metric=rent` for the map tab; `state=US` is valid).
 - Embed mode via the query string (`?embed=1`, composes with any hash): for

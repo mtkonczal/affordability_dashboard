@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Economic Security Project's Affordability Tracker</title>
+<title>Economic Security Project's Affordability Dashboard</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -60,11 +60,24 @@
      (≈ min-content) and the chart stops shrinking. */
   .at-card { min-width: 0; }
 
+  /* Card grid rules. Every card carries a right and bottom hairline and the
+     grid is pulled 1px past its clipping wrapper, so the outermost rules are
+     cut off rather than drawn. This has to be CSS, not index math: the grid is
+     `auto-fit`, so it resolves to 1–4 columns depending on the viewport, and
+     the old `i % 2` logic assumed two. On a four-wide row that dropped the
+     rule between the 2nd and 3rd cards (straight down the middle) and left a
+     stray horizontal rule under the first two cards of the last row. */
+  .at-cards-clip { overflow: hidden; }
+  .at-cards-grid { margin-right: -1px; margin-bottom: -1px; }
+  .at-cards-grid > .at-card {
+    border-right: 1px solid rgba(44,50,84,.14);
+    border-bottom: 1px solid rgba(44,50,84,.14);
+  }
+
   /* Responsive overrides — !important is needed because the React tree uses inline styles. */
   @media (max-width: 960px) {
     .at-pad { padding-left: 24px !important; padding-right: 24px !important; }
     .at-inset-rule::after { left: 24px; right: 24px; }
-    .at-card { border-right: none !important; }
     .at-range-row { flex-wrap: wrap !important; }
     .at-heatmap-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
     .at-heatmap-scroll > div { min-width: 860px; }
@@ -347,6 +360,76 @@ function loadEspLogo() {
   return _espLogoPromise;
 }
 
+// Re-render a live Chart.js chart offscreen at the export slot's aspect ratio.
+//
+// The exporter used to rasterize the on-page canvas straight into the slot,
+// which stretched it: a card canvas is ~695×480 (1.45:1) and the slot is
+// 1280×540 (2.37:1), so every axis label came out ~60% too wide, and the
+// distortion changed with the reader's window width. Re-rendering also means
+// the chart is drawn at export resolution instead of being upscaled ~3.7×.
+//
+// The offscreen chart keeps the live chart's logical HEIGHT and takes its width
+// from the slot ratio. Height has to be preserved because the area-fill
+// gradient is built in logical units (0→180) against the card's own context;
+// change the height and the fade lands somewhere else. Only the width moves,
+// which is also what makes the 10px tick labels land at a sane size relative to
+// the 76px headline beside them.
+function chartToExportCanvas(chartCanvas, slotW, slotH, scale) {
+  const Ctor = window.Chart;
+  const live = (Ctor && Ctor.getChart) ? Ctor.getChart(chartCanvas) : null;
+  // Not a Chart.js canvas (the map and bar-list exports rasterize themselves at
+  // 1280 wide already) — the caller falls back to contain-fitting the source.
+  if (!live) return null;
+
+  const cfg = live.config;
+  const offH = Math.max(1, Math.round(live.height || 240));
+  const offW = Math.max(1, Math.round(offH * (slotW / slotH)));
+
+  const canvas = document.createElement('canvas');
+  canvas.width = offW;
+  canvas.height = offH;
+  // Chart.js skips the initial draw on a detached canvas (`attached` is false),
+  // so the canvas goes in the document offscreen for the duration.
+  canvas.style.cssText = 'position:fixed;left:-10000px;top:0;pointer-events:none';
+  document.body.appendChild(canvas);
+
+  let clone = null;
+  try {
+    clone = new Ctor(canvas, {
+      type: cfg.type,
+      // Fresh arrays: Chart.js tags the arrays it listens to (`_chartjs`), so
+      // sharing them would tear down the live chart's listeners on destroy().
+      data: {
+        labels: cfg.data.labels ? cfg.data.labels.slice() : undefined,
+        datasets: (cfg.data.datasets || []).map(d => ({ ...d, data: (d.data || []).slice() })),
+      },
+      options: {
+        ...(cfg.options || {}),
+        responsive: false,
+        animation: false,
+        // Buffer lands on exactly the device pixels the slot occupies, so the
+        // final drawImage is 1:1 rather than a resample.
+        devicePixelRatio: (slotW * scale) / offW,
+        plugins: { ...((cfg.options || {}).plugins || {}), tooltip: { enabled: false } },
+      },
+      plugins: cfg.plugins,
+    });
+    clone.update('none');
+    // destroy() clears the canvas it drew on, so snapshot before tearing down.
+    const snap = document.createElement('canvas');
+    snap.width = canvas.width;
+    snap.height = canvas.height;
+    snap.getContext('2d').drawImage(canvas, 0, 0);
+    return snap;
+  } catch (e) {
+    console.error('offscreen chart re-render failed; falling back to the on-page canvas', e);
+    return null;
+  } finally {
+    if (clone) clone.destroy();
+    canvas.remove();
+  }
+}
+
 async function downloadCardAsPNG({
   chartCanvas, item, accent, headlineText, changeText, changeColor, rangeLabel, legend,
   chartH = 540, // taller charts (the Map view's all-states bar list) grow the card
@@ -406,7 +489,7 @@ async function downloadCardAsPNG({
   ctx.textAlign = 'right';
   ctx.fillStyle = NAVY;
   ctx.font = `700 16px ${DISPLAY}`;
-  ctx.fillText('THE AFFORDABILITY TRACKER', W - padX, 110);
+  ctx.fillText('AFFORDABILITY DASHBOARD', W - padX, 110);
   ctx.fillStyle = MUTE;
   ctx.font = `600 14px ${DISPLAY}`;
   const today = new Date().toLocaleDateString('en-US', {
@@ -491,8 +574,14 @@ async function downloadCardAsPNG({
 
   // ── Chart ───────────────────────────────────────────────────────────────
   if (chartCanvas) {
+    const chartX = padX, chartY = cardTop + 200;
+    const chartW = W - padX * 2;
+    // Chart.js cards re-render at the slot's aspect ratio; the map and bar-list
+    // exports arrive pre-rasterized and fall through to the source canvas.
+    const source = chartToExportCanvas(chartCanvas, chartW, chartH, SCALE) || chartCanvas;
+
     let chartUrl = null;
-    try { chartUrl = chartCanvas.toDataURL('image/png'); } catch (e) {}
+    try { chartUrl = source.toDataURL('image/png'); } catch (e) {}
     if (chartUrl) {
       const img = new Image();
       await new Promise((resolve) => {
@@ -500,9 +589,14 @@ async function downloadCardAsPNG({
         img.onerror = resolve; // never block the export on a chart fail
         img.src = chartUrl;
       });
-      const chartX = padX, chartY = cardTop + 200;
-      const chartW = W - padX * 2;
-      ctx.drawImage(img, chartX, chartY, chartW, chartH);
+      // Contain-fit, centered. The re-rendered canvas already matches the slot
+      // ratio so this is a no-op for it, but it means a fallback source can
+      // never be stretched the way every card export used to be.
+      if (img.width && img.height) {
+        const s = Math.min(chartW / img.width, chartH / img.height);
+        const dw = img.width * s, dh = img.height * s;
+        ctx.drawImage(img, chartX + (chartW - dw) / 2, chartY + (chartH - dh) / 2, dw, dh);
+      }
     }
   }
 
@@ -886,7 +980,7 @@ function buildFactText(item, opts = {}) {
     ? `${item.source_note || 'FRED'} series ${item.fred_id}`
     : (item.source_note || 'federal data');
   const rankPart = opts.rankText ? ` — ${opts.rankText}` : '';
-  return `${main}${secondaries}${rankPart}. Source: ${src}, via the Economic Security Project Affordability Tracker.`;
+  return `${main}${secondaries}${rankPart}. Source: ${src}, via the Economic Security Project Affordability Dashboard.`;
 }
 
 // Lazy loader for the split state payloads (data/states/*.js and
@@ -2287,23 +2381,15 @@ function NationalView({ data, anchorId, displayMode, priceType }) {
               Pick a metric from the list to chart it.
             </div>
           ) : (
-            <div className="at-cards-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: 0,
-              border: `1px solid rgba(44,50,84,.14)`, background: SURFACE }}>
-              {selectedItems.map((item, i) => {
-                const col = i % 2;
-                const row = Math.floor(i / 2);
-                const total = selectedItems.length;
-                const lastRow = Math.floor((total - 1) / 2);
-                return (
-                  <div key={item.id} className="at-card" style={{
-                    borderRight: col < 1 ? `1px solid rgba(44,50,84,.14)` : 'none',
-                    borderBottom: row < lastRow ? `1px solid rgba(44,50,84,.14)` : 'none',
-                  }}>
+            <div className="at-cards-clip" style={{ border: `1px solid rgba(44,50,84,.14)`, background: SURFACE }}>
+              <div className="at-cards-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: 0 }}>
+                {selectedItems.map((item) => (
+                  <div key={item.id} className="at-card">
                     <ChartCard item={item} anchorId={anchorId} displayMode={displayMode}
                                priceType={priceType} cpiData={cpiData} />
                   </div>
-                );
-              })}
+                ))}
+              </div>
             </div>
           )}
         </div>
@@ -2577,24 +2663,17 @@ function StateView({ data, code, setCode, anchorId, displayMode, priceType }) {
             ) : (
               /* 380px to match National. At 420 the two tabs sized their cards
                  differently for no reason a reader could see. */
-              <div className="at-cards-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: 0,
-                border: `1px solid rgba(44,50,84,.14)`, background: SURFACE }}>
-                {selectedCards.map(({ item, factLabel, rankNote, rankText }, i) => {
-                  const col = i % 2;
-                  const row = Math.floor(i / 2);
-                  const lastRow = Math.floor((selectedCards.length - 1) / 2);
-                  return (
-                    <div key={item.id} className="at-card" style={{
-                      borderRight: col < 1 ? `1px solid rgba(44,50,84,.14)` : 'none',
-                      borderBottom: row < lastRow ? `1px solid rgba(44,50,84,.14)` : 'none',
-                    }}>
+              <div className="at-cards-clip" style={{ border: `1px solid rgba(44,50,84,.14)`, background: SURFACE }}>
+                <div className="at-cards-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: 0 }}>
+                  {selectedCards.map(({ item, factLabel, rankNote, rankText }) => (
+                    <div key={item.id} className="at-card">
                       <ChartCard item={item} anchorId={anchorId} displayMode={displayMode}
                                  priceType={priceType} cpiData={cpiData}
                                  factLabel={factLabel}
                                  rankNote={rankNote} rankText={rankText} />
                     </div>
-                  );
-                })}
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -3025,14 +3104,22 @@ async function mapToExportCanvas(svgEl, scale, metric) {
   const mh = H, mw = 975 * (mh / 610);
   ctx.drawImage(img, (W - mw) / 2, 0, mw, mh);
 
-  const lw = 160, lh = 12, lx = W - lw - 10, ly = 16;
+  // Legend: [≤ lo] [ramp] [≥ hi], laid out from the right edge. The whole
+  // group has to be measured — pinning the ramp 10px off the right used to
+  // push the "≥ hi" label to x=1278 on a 1280-wide canvas, so it was always
+  // clipped and the top of the scale never had a number on it.
+  const lw = 160, lh = 12, ly = 16, PAD = 10, GAP = 8;
+  ctx.font = '600 13px "Public Sans", system-ui, sans-serif';
+  const loText = '≤ ' + fmtVal(scale.lo, metric.units);
+  const hiText = '≥ ' + fmtVal(scale.hi, metric.units);
+  const lx = W - PAD - ctx.measureText(hiText).width - GAP - lw;
+
   const grad = ctx.createLinearGradient(lx, 0, lx + lw, 0);
   [0, 0.25, 0.5, 0.75, 1].forEach(t => grad.addColorStop(t, rampColor(t)));
   ctx.fillStyle = grad; ctx.fillRect(lx, ly, lw, lh);
   ctx.fillStyle = INK;
-  ctx.font = '600 13px "Public Sans", system-ui, sans-serif';
-  ctx.textAlign = 'right'; ctx.fillText('≤ ' + fmtVal(scale.lo, metric.units), lx - 8, ly + 11);
-  ctx.textAlign = 'left';  ctx.fillText('≥ ' + fmtVal(scale.hi, metric.units), lx + lw + 8, ly + 11);
+  ctx.textAlign = 'right'; ctx.fillText(loText, lx - GAP, ly + 11);
+  ctx.textAlign = 'left';  ctx.fillText(hiText, lx + lw + GAP, ly + 11);
   return canvas;
 }
 
@@ -3852,7 +3939,7 @@ function AboutView({ onBack }) {
       fontFamily: "'Public Sans', system-ui, sans-serif",
       fontSize: 11, letterSpacing: '.16em', textTransform: 'uppercase', fontWeight: 600,
       color: NAVY, borderBottom: '1px dotted rgba(44,50,84,.45)',
-    }}>← Back to the tracker</button>
+    }}>← Back to the dashboard</button>
   );
 
   return (
@@ -3871,7 +3958,7 @@ function AboutView({ onBack }) {
         fontFamily: "'Public Sans', system-ui, sans-serif",
         fontSize: 16, lineHeight: 1.6, color: MUTE, maxWidth: 900, margin: '0 0 30px',
       }}>
-        Every figure on the tracker comes from a public source, with the series identifier a
+        Every figure on the dashboard comes from a public source, with the series identifier a
         click away. Below: where each number comes from, how often it updates, how it's
         calculated, and what it can and can't be used to say.
       </p>

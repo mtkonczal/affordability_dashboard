@@ -38,7 +38,7 @@ window.ABOUT_CONTENT = `
           <td><b>Electricity, natural gas</b></td>
           <td>BLS Average Price data (US city average)</td>
           <td><span class="freq m">Monthly</span></td>
-          <td>Dollars per kilowatt-hour and dollars per therm, the units on a utility bill. Electricity was previously shown as a CPI index, which could only be read as percent change; natural gas is new to the tracker. Not seasonally adjusted, and household energy is strongly seasonal, so compare a month with the same month a year earlier rather than with the month before. National and regional only, not by state; the state view carries an average monthly residential electricity bill from the EIA instead.</td>
+          <td>Dollars per kilowatt-hour and dollars per therm, the units on a utility bill. Electricity was previously shown as a CPI index, which could only be read as percent change; natural gas is new to the dashboard. Not seasonally adjusted, and household energy is strongly seasonal, so compare a month with the same month a year earlier rather than with the month before. National and regional only, not by state; the state view carries an average monthly residential electricity bill from the EIA instead.</td>
         </tr>
         <tr>
           <td><b>Gasoline</b></td>
@@ -50,13 +50,13 @@ window.ABOUT_CONTENT = `
           <td><b>Water &amp; sewer</b></td>
           <td>BLS CPI (water, sewer &amp; trash collection services), via FRED</td>
           <td><span class="freq m">Monthly</span></td>
-          <td>National only. There is no public state-level water-rate series (the AWWA rate survey is proprietary), so the tracker shows no state water bills.</td>
+          <td>National only. There is no public state-level water-rate series (the AWWA rate survey is proprietary), so the dashboard shows no state water bills.</td>
         </tr>
         <tr>
           <td><b>Rent (market)</b></td>
           <td>Zillow Observed Rent Index (ZORI)</td>
           <td><span class="freq m">Monthly</span></td>
-          <td>Typical <i>asking</i> rent on a new lease, in dollars. This is the tracker's only rent measure. CPI rent averages across all tenants, including people holding long-standing leases, so it runs behind what someone signing a lease today pays. Smoothed and seasonally adjusted by Zillow; 2015 onward, so the longest comparison windows show no rent line.</td>
+          <td>Typical <i>asking</i> rent on a new lease, in dollars. This is the dashboard's only rent measure. CPI rent averages across all tenants, including people holding long-standing leases, so it runs behind what someone signing a lease today pays. Smoothed and seasonally adjusted by Zillow; 2015 onward, so the longest comparison windows show no rent line.</td>
         </tr>
         <tr>
           <td><b>Median home price</b></td>
@@ -74,7 +74,7 @@ window.ABOUT_CONTENT = `
           <td><b>Wages, unemployment</b></td>
           <td>BLS (CES, CPS), via FRED</td>
           <td><span class="freq m">Monthly</span></td>
-          <td>Wages are average hourly earnings of all private employees, in nominal dollars; switch the page to Real to see them deflated by CPI-U and restated in the latest month's dollars. The tracker no longer carries job openings, the quit rate, or unemployment duration; those measure labor-market slack rather than what a household can afford.</td>
+          <td>Wages are average hourly earnings of all private employees, in nominal dollars; switch the page to Real to see them deflated by CPI-U and restated in the latest month's dollars. The dashboard no longer carries job openings, the quit rate, or unemployment duration; those measure labor-market slack rather than what a household can afford.</td>
         </tr>
         <tr>
           <td><b>Credit card &amp; mortgage delinquency rates</b></td>
@@ -110,7 +110,7 @@ window.ABOUT_CONTENT = `
           <td><b>Income: 20th percentile</b></td>
           <td>Census ACS 1-year estimates, table B19080</td>
           <td><span class="freq a">Annual</span></td>
-          <td>A quintile upper limit: the income level one in five households falls below. The ACS publishes quintile limits and not arbitrary percentiles, so the tracker uses the published 20th point rather than interpolating a 25th. Nominal dollars; the Real switch deflates them. Median income arrives already inflation-adjusted and is left alone.</td>
+          <td>A quintile upper limit: the income level one in five households falls below. The ACS publishes quintile limits and not arbitrary percentiles, so the dashboard uses the published 20th point rather than interpolating a 25th. Nominal dollars; the Real switch deflates them. Median income arrives already inflation-adjusted and is left alone.</td>
         </tr>
         <tr>
           <td><b>Rent in hours of work</b></td>
@@ -140,7 +140,7 @@ window.ABOUT_CONTENT = `
       January 2025, 2019, 2000, or the full history. The 2019 anchor is <b>December 2019</b>,
       not early or mid-2020. Anchoring inside 2020 puts the COVID price collapse in the
       baseline (gasoline bottomed out in April 2020) and produces changes that don't survive
-      a second look. The tracker opens on December 2019 by default. Individual cards can
+      a second look. The dashboard opens on December 2019 by default. Individual cards can
       override the baseline; Nominal/Real and the dollars/percent toggle are page-wide.
     </p>
 
@@ -273,7 +273,7 @@ window.ABOUT_CONTENT = `
     <p class="note">
       Corrections and questions are welcome: write to
       <a href="mailto:press@economicsecurityproject.org">press@economicsecurityproject.org</a>. Every series
-      identifier is declared explicitly in the tracker's data pipeline, and every CSV
+      identifier is declared explicitly in the dashboard's data pipeline, and every CSV
       download carries its source.
     </p>
 

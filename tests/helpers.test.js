@@ -572,7 +572,7 @@ const factItem = (over) => Object.assign({
 test('fact: dollar series read as from→to with both endpoints and the denominator', () => {
   const s = buildFactText(factItem(), { anchorId: '2019' });
   assert.match(s, /^Eggs: \$150\.00 per dozen in Jun 2026, up 50\.0% from \$100\.00 per dozen in Dec 2019/);
-  assert.match(s, /Source: FRED series APU0000708111, via the Economic Security Project Affordability Tracker\.$/);
+  assert.match(s, /Source: FRED series APU0000708111, via the Economic Security Project Affordability Dashboard\.$/);
 });
 
 test('fact: rate series change in percentage points, never in percent', () => {

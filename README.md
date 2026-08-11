@@ -1,4 +1,4 @@
-# Affordability Tracker
+# Affordability Dashboard
 
 A dashboard of national and state-level cost-of-living indicators, built by
 the [Economic Security Project](https://economicsecurityproject.org). It
@@ -150,7 +150,7 @@ the [About page](about.html).
   base effects.
 - Real values deflate by CPI-U (all items), expressed in latest-month
   dollars. State series use the national CPI-U: **no state-level CPI
-  exists**, and the tracker does not imply one.
+  exists**, and the dashboard does not imply one.
 - Index-level series (e.g. home price indexes) always display as cumulative
   percent change, since index levels are not comparable across states.
 - State rankings are computed at build time on each metric's latest value.
@@ -162,5 +162,5 @@ open index.html
 ```
 
 No build step or server required. See [DEPLOYMENT.md](DEPLOYMENT.md) for
-GitHub Pages setup and for embedding the tracker on another site via
+GitHub Pages setup and for embedding the dashboard on another site via
 `?embed=1`.
