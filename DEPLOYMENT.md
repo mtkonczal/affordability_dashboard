@@ -47,6 +47,17 @@ pieces fit together.
 
 ## Embedding on the ESP site
 
+**Live URL:** `https://www.mikekonczal.com/affordability_dashboard/?embed=1`
+(GitHub Pages for this repo, served under the account's custom domain). The ESP
+page at `economicsecurityproject.org/affordability-data-tracker` hard-codes this
+in its iframe `src`.
+
+> **Renaming this repo changes that URL.** The Pages path is the repo name.
+> GitHub redirects `github.com` repo URLs after a rename but does *not* redirect
+> Pages paths, so the old path 404s immediately and the ESP embed goes blank
+> until the iframe `src` on the ESP page is edited to match. Rename and edit the
+> ESP page in the same sitting.
+
 Add `?embed=1` to the URL for the embed variant: the navy topper is dropped
 (the ESP site header takes its place), the view tabs move into a light menu
 bar, the menu bars render `#F4F2E4`, and the chart area goes white. Without
