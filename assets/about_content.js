@@ -13,10 +13,7 @@
 window.ABOUT_CONTENT = `
     <h2>National series</h2>
     <p class="lead">
-      Every series here is public and free to cite. The Notes column carries the exact
-      definition, the start date, and the gaps; read it before you quote a figure. Each card
-      downloads a CSV of the series shown and names its source series ID, so any number
-      traces back to the agency that published it.
+      Every series here is public.
     </p>
     <div class="table-wrap">
     <table>
@@ -123,16 +120,14 @@ window.ABOUT_CONTENT = `
     </div>
 
     <p class="lead">
-      <b>Dollars, indexes, and the Real switch.</b> Dollar series display in dollars. Index
+      <b>Dollar series display in dollars. Index
       series (CPI subindexes, the FHFA house price index) display as cumulative percent
-      change, never as index points, because an index level of 320 means nothing without its
-      base year. The page-wide <b>Nominal / Real</b> switch deflates dollar and index series
+      change. The page-wide <b>Nominal / Real</b> switch deflates dollar and index series
       by CPI-U (all items) and restates them in the latest month's dollars, so the newest
       point is unchanged and earlier points are lifted into today's money. Real is a no-op
       for rates, durations, and counts, which are already comparable over time, and for
-      series that arrive inflation-adjusted (median household income), which are never
-      deflated twice. There is no separate real-wage card: the wage card in Real mode
-      <i>is</i> the real wage.
+      series that arrive inflation-adjusted (median household income), which are already
+      deflated.
     </p>
 
     <p class="lead">
@@ -146,12 +141,7 @@ window.ABOUT_CONTENT = `
 
     <h2>State series</h2>
     <p class="lead">
-      Each state series covers all 50 states and DC unless the Notes say otherwise. The BLS
-      publishes no state-level consumer price index, and no one else publishes a credible
-      public one. That shapes this whole section: there are no state grocery, gasoline, or
-      insurance <i>prices</i> here, only measures that exist at the state level. When you
-      switch to Real, state dollar series are deflated by the national CPI-U, the standard
-      fallback.
+      Each state series covers all 50 states and DC unless the Notes say otherwise. State dollar series are deflated by the national CPI-U.
     </p>
     <div class="table-wrap">
     <table>
@@ -235,15 +225,12 @@ window.ABOUT_CONTENT = `
 
     <p class="lead">
       <b>Rankings.</b> Every state metric carries a national rank, computed when the data is
-      built, from each state's latest value (1 = highest; ties share a rank). Ranks are
-      direction-neutral: 1st highest income is good news, 1st highest rent is not. They cover
-      only the states that have data, which is why market rent omits low-coverage states. The denominator is printed next to every rank so you can see what the state was
-      ranked against.
+      built, from each state's latest value (1 = highest; ties share a rank).
     </p>
 
     <h2>Annual state indicators</h2>
     <p class="lead">
-      Some of the costs that matter most are published only once a year. These appear as stat
+      Some of these are published only once a year. These appear as stat
       tiles on each state's page: context for the live series, at a fixed vintage rather than
       a moving time series.
     </p>
