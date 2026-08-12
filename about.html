@@ -52,11 +52,7 @@
   h1 {
     font-family: 'Public Sans', system-ui, sans-serif;
     font-size: 52px; line-height: 1.06; letter-spacing: -.02em; font-weight: 500;
-    max-width: 900px; margin-bottom: 22px;
-  }
-  .dek {
-    font-family: 'Public Sans', system-ui, sans-serif;
-    font-size: 19px; line-height: 1.55; color: #E8C9A8; max-width: 760px; font-style: italic;
+    max-width: 900px; margin-bottom: 0;
   }
 
   main { padding: 44px 56px 64px; max-width: 1180px; }
@@ -91,19 +87,9 @@
   tr:last-child td { border-bottom: none; }
   td b { font-weight: 600; }
   td a { color: var(--navy); }
-  /* Cadence badges: lightly-rounded rectangles like every other control on the
-     tracker (What to Check #7), in muted ESP families rather than the former
-     bright green/amber/red (What to Check #5). */
-  .freq {
-    font-family: 'Public Sans', system-ui, sans-serif;
-    display: inline-block; font-size: 10.5px; font-weight: 700;
-    letter-spacing: .06em; text-transform: uppercase;
-    padding: 2px 8px; border-radius: 3px; white-space: nowrap;
-    border: 1px solid;
-  }
-  .freq.m, .freq.w { background: #EAF1EC; color: #3E6E57; border-color: rgba(112,173,143,.55); }
-  .freq.q { background: #F8F0DE; color: #8A6412; border-color: rgba(235,195,130,.7); }
-  .freq.a { background: #F4E6E4; color: #8A4640; border-color: rgba(176,100,95,.45); }
+  /* The Updates column is plain text (Weekly / Monthly / Quarterly / Annual).
+     It used to be a color-coded .freq badge; the colors read as a status
+     signal that a publication cadence doesn't carry. Don't reintroduce it. */
 
   footer {
     padding: 22px 56px 48px;
@@ -134,11 +120,6 @@
   <header class="hero">
     <div class="kicker">Economic Security Project's Affordability Dashboard</div>
     <h1>About the data.</h1>
-    <p class="dek">
-      Every figure on the dashboard comes from a public source, with the series identifier a
-      click away. Below: where each number comes from, how often it updates, how it's
-      calculated, and what it can and can't be used to say.
-    </p>
   </header>
 
   <main></main>

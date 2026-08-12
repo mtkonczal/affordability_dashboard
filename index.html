@@ -199,7 +199,7 @@
 
   /* In-app About view. The content comes from assets/about_content.js and is
      injected verbatim, so these rules mirror about.html's styles for the
-     classes the content uses (h2, .lead, .note, tables, .freq badges),
+     classes the content uses (h2, .lead, .note, tables),
      scoped under .at-about and mapped to this page's fonts. Keep the two in
      sync — same content, two hosts. */
   .at-about { --rule: rgba(44,50,84,.18); font-size: 14px; }
@@ -232,19 +232,9 @@
   .at-about tr:last-child td { border-bottom: none; }
   .at-about td b { font-weight: 600; }
   .at-about td a { color: #2c3254; }
-  /* Cadence badges: lightly-rounded rectangles like every other control here
-     (What to Check #7), in muted ESP families rather than the former bright
-     green/amber/red (What to Check #5). */
-  .at-about .freq {
-    font-family: 'Public Sans', system-ui, sans-serif;
-    display: inline-block; font-size: 10.5px; font-weight: 700;
-    letter-spacing: .06em; text-transform: uppercase;
-    padding: 2px 8px; border-radius: 3px; white-space: nowrap;
-    border: 1px solid;
-  }
-  .at-about .freq.m, .at-about .freq.w { background: #EAF1EC; color: #3E6E57; border-color: rgba(112,173,143,.55); }
-  .at-about .freq.q { background: #F8F0DE; color: #8A6412; border-color: rgba(235,195,130,.7); }
-  .at-about .freq.a { background: #F4E6E4; color: #8A4640; border-color: rgba(176,100,95,.45); }
+  /* The Updates column is plain text (Weekly / Monthly / Quarterly / Annual).
+     It used to be a color-coded .freq badge; the colors read as a status
+     signal that a publication cadence doesn't carry. Don't reintroduce it. */
 </style>
 
 <script>
@@ -3946,7 +3936,7 @@ function AboutView({ onBack }) {
     <div className="at-pad" style={{ padding: '34px 56px 40px' }}>
       <div style={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
-        gap: 12, flexWrap: 'wrap', marginBottom: 10,
+        gap: 12, flexWrap: 'wrap', marginBottom: 30,
       }}>
         <h2 style={{
           fontFamily: "'Public Sans', system-ui, sans-serif", fontSize: 34, fontWeight: 600,
@@ -3954,14 +3944,6 @@ function AboutView({ onBack }) {
         }}>About the data.</h2>
         {backBtn}
       </div>
-      <p style={{
-        fontFamily: "'Public Sans', system-ui, sans-serif",
-        fontSize: 16, lineHeight: 1.6, color: MUTE, maxWidth: 900, margin: '0 0 30px',
-      }}>
-        Every figure on the dashboard comes from a public source, with the series identifier a
-        click away. Below: where each number comes from, how often it updates, how it's
-        calculated, and what it can and can't be used to say.
-      </p>
       {failed ? (
         <p style={{ fontSize: 14, lineHeight: 1.6 }}>
           The sources &amp; methods page couldn't be loaded here.{' '}
