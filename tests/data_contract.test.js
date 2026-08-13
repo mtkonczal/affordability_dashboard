@@ -429,3 +429,28 @@ test('index.html: map picker excludes index-level metrics', () => {
   const unflagged = indexMetrics.filter(m => !m.rebase).map(m => m.id);
   assert.deepEqual(unflagged, [], 'Index-unit state metrics must be flagged rebase so the map excludes them');
 });
+
+test('payloads: no card can print a start date the series does not reach', () => {
+  // The artifact-level guard behind measuredFromPhrase. helpers.test.js pins the
+  // rule on fixtures; this one sweeps every committed series on every anchor and
+  // checks the caption against the window the card would actually draw — so a
+  // refresh that adds a short series, or a new SERIES entry that starts in 2019,
+  // can't quietly reintroduce "+29.9% since 2000" over a 2018 → 2026 number.
+  const anchors = [...H.ANCHORS.map(a => a.id), 'y:2010', 'y:2022'];
+  const bad = [];
+  for (const [id, s] of Object.entries(NAT)) {
+    if (!s.data || s.data.length < 2) continue;
+    for (const anchorId of anchors) {
+      const visible = H.sliceFrom(s.data, H.anchorObsDate(s.data, anchorId));
+      if (visible.length < 2) continue;
+      const phrase = H.measuredFromPhrase(s.data, visible, anchorId);
+      // A caption naming a year must not name one the window starts after.
+      const named = phrase.match(/\b(19|20)\d{2}\b/);
+      if (!named) continue;
+      if (Number(visible[0].date.slice(0, 4)) > Number(named[0])) {
+        bad.push(`${id} @ ${anchorId}: "${phrase}" but the window starts ${visible[0].date}`);
+      }
+    }
+  }
+  assert.deepEqual(bad, [], 'cards captioning a start date earlier than their first plotted reading');
+});

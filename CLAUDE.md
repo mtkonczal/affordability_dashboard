@@ -283,6 +283,29 @@ and PNG export are still covered only by the manual pass in `What to Check.md`.
     reading on or before; clamps forward only if the anchor predates the
     series). Every number that moved moved onto the badge's value. Don't call
     `anchorDate` + `sliceFrom` directly for this.
+  - **The caption names the reading, not the anchor** (`measuredFromPhrase` /
+    `measuredFromPhraseMulti`, block one, August 2026). `anchorObsDate`'s
+    forward clamp made the old guard unreachable: it fired on `change == null`,
+    the symptom of an *un*clamped miss, so a series starting after the anchor
+    got a correct number under a false date. The ACA benchmark premium (first
+    reading 2018) read "+29.9% since 2000" on the Since-2000 anchor, above a
+    Copy-fact button that correctly said "up 29.9% from $481.00 in 2018" — 11
+    national cards, every state card with a short series, the Compare and Map
+    §02 PNG range labels and the Map §02 footnote. The rule now tests the
+    condition: when the base observation lands **later** than the anchor's
+    calendar date, name the observation (`fmtObsDate`, so cadence carries —
+    "since 2018", "since Jan 2015"). Two deliberate narrowings: landing
+    *earlier* inside the anchor's own period is the badge convention
+    `anchorObsDate` exists to enforce (quarterly FHFA on Q4 2019, annual series
+    on Jan 2019) and keeps saying "since Dec 2019"; and the comparison is at
+    **month** granularity, so gas and the 30-year mortgage — which begin Jan 3
+    and Jan 7 2000 — keep a true, readable "since 2000" instead of trading it
+    for "since Jan 3, 2000". Multi-line charts (Compare panels, the Map's
+    pinned chart) take the earliest line, the plot's actual left edge. Pinned
+    on fixtures in `helpers.test.js` and swept across every committed series ×
+    anchor in `data_contract.test.js`. Don't caption a chart with a bare
+    `anchorById(anchorId).phrase`; `emptyWindowNote` is the one exception, where
+    "No data since 2000" is true.
 - **Six categories, recut August 2026** — `housing` (Rent & homes), `groceries`
   (Food), `bills` (Bills & getting around), `health` (Health & care), `income`
   (Paychecks & debt), `overall` (Overall inflation). The old `big` / `daily` /

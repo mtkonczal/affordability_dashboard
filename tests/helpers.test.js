@@ -21,7 +21,8 @@ const {
   scaleByCPI, categoryLabel, ANCHORS, anchorById, anchorDate, buildFactText,
   isDeflatable, toReal, seriesForType, ALREADY_REAL_IDS, railChangeText,
   isRateSeries, changeIn, fmtChange, changeSince, changeBetween,
-  selAdd, selRemove, emptyWindowNote,
+  selAdd, selRemove, emptyWindowNote, measuredFromPhrase, measuredFromPhraseMulti,
+  anchorObsDate,
 } = H;
 
 // ── The seam between the two script blocks ──────────────────────────────────
@@ -721,4 +722,108 @@ test('empty window: a series with no readings at all says so without naming a da
   const note = emptyWindowNote([], [], '2025');
   assert.equal(note.head, 'No data');
   assert.doesNotMatch(note.sub, /Last published/);
+});
+
+// ── The caption under the number ────────────────────────────────────────────
+// A card must name the reading it actually measured FROM. anchorObsDate clamps
+// an anchor that predates the series forward to its first reading, so a series
+// that starts in 2018 answers the "Since 2000" anchor with a real 2018 → latest
+// number — and the caption has to say 2018, not 2000. This shipped wrong: the
+// ACA benchmark premium card read "+29.9% since 2000" above a Copy-fact button
+// that said "up 29.9% from $481.00 per month in 2018".
+
+// Annual, first reading Jan 2018 — the ACA benchmark premium's shape.
+const LATE_ANNUAL = [
+  { date: '2018-01-01', value: 481 },
+  { date: '2019-01-01', value: 478 },
+  { date: '2020-01-01', value: 462 },
+  { date: '2021-01-01', value: 452 },
+  { date: '2022-01-01', value: 438 },
+  { date: '2023-01-01', value: 456 },
+  { date: '2024-01-01', value: 477 },
+  { date: '2025-01-01', value: 497 },
+  { date: '2026-01-01', value: 625 },
+];
+// The window a card would draw, resolved exactly the way ChartCard resolves it.
+const windowFor = (data, anchorId) => sliceFrom(data, anchorObsDate(data, anchorId));
+const phraseFor = (data, anchorId) => measuredFromPhrase(data, windowFor(data, anchorId), anchorId);
+
+test('caption: an anchor that predates the series names the first reading, not the anchor', () => {
+  // The regression, in the exact pair that shipped. Cadence-aware: an annual
+  // series is named by year, so "since 2018" and not "since Jan 2018".
+  assert.equal(phraseFor(LATE_ANNUAL, '2000'), 'since 2018');
+  assert.equal(phraseFor(LATE_ANNUAL, 'y:2010'), 'since 2018');
+});
+
+test('caption: the number and the caption agree about where they started', () => {
+  // The failure this guards is not a wrong number, it is a true number under a
+  // false date — so assert the pair, the way the card prints it.
+  const win = windowFor(LATE_ANNUAL, '2000');
+  const change = changeIn(win[0].value, win[win.length - 1].value, false);
+  assert.equal(fmtChange(change, false), '+29.9%');
+  assert.equal(measuredFromPhrase(LATE_ANNUAL, win, '2000'), 'since 2018');
+});
+
+test('caption: an anchor the series does cover keeps the anchor phrase', () => {
+  const monthly = [
+    { date: '2019-12-01', value: 100 },
+    { date: '2020-01-01', value: 101 },
+    { date: '2026-06-01', value: 150 },
+  ];
+  assert.equal(phraseFor(monthly, '2019'), 'since Dec 2019');
+  assert.equal(phraseFor(LATE_ANNUAL, '2019'), 'since Dec 2019');
+  assert.equal(phraseFor(LATE_ANNUAL, '2025'), 'since Jan 2025');
+});
+
+test('caption: Max never names a date, it says all-time', () => {
+  // anchorDate('max') IS the first reading, so the two can never disagree.
+  assert.equal(phraseFor(LATE_ANNUAL, 'max'), 'all-time');
+});
+
+test('caption: landing earlier inside the anchor month keeps the anchor phrase', () => {
+  // Editorial: anchorObsDate deliberately resolves backward to the last reading
+  // on or before the anchor, so quarterly FHFA answers Pre-COVID with Q4 2019
+  // and an annual series answers it with its Jan 2019 reading. Those keep
+  // saying "since Dec 2019" — relabeling only fires when the base lands LATER.
+  const quarterly = [
+    { date: '2019-10-01', value: 100 },
+    { date: '2020-01-01', value: 104 },
+    { date: '2026-04-01', value: 156 },
+  ];
+  assert.equal(phraseFor(quarterly, '2019'), 'since Dec 2019');
+});
+
+test('caption: month granularity, so a weekly series starting Jan 3 2000 still says "since 2000"', () => {
+  // Gas and the 30-year mortgage begin days into January 2000. Trading a true,
+  // readable "since 2000" for "since Jan 3, 2000" is churn, not a fix.
+  const weekly = [
+    { date: '2000-01-03', value: 1.26 },
+    { date: '2000-01-10', value: 1.28 },
+    { date: '2000-01-17', value: 1.29 },
+    { date: '2026-08-03', value: 3.86 },
+  ];
+  assert.equal(phraseFor(weekly, '2000'), 'since 2000');
+});
+
+test('caption: no window to describe falls back to the anchor phrase', () => {
+  assert.equal(measuredFromPhrase(LATE_ANNUAL, [], '2000'), 'since 2000');
+  assert.equal(measuredFromPhrase([], null, '2019'), 'since Dec 2019');
+});
+
+test('caption (multi-line): names the earliest line, the left edge the reader sees', () => {
+  // Compare panels and the Map's pinned chart draw one metric across several
+  // states, each clamped on its own. The caption describes the plot, so it
+  // follows whichever line starts first.
+  const list = [
+    { label: 'ND', data: LATE_ANNUAL.slice(3) },   // starts 2021
+    { label: 'IL', data: LATE_ANNUAL },            // starts 2018
+  ];
+  assert.equal(measuredFromPhraseMulti(list, '2000'), 'since 2018');
+  assert.equal(measuredFromPhraseMulti([list[0]], '2000'), 'since 2021');
+});
+
+test('caption (multi-line): no pinned lines falls back to the anchor phrase', () => {
+  assert.equal(measuredFromPhraseMulti([], '2000'), 'since 2000');
+  assert.equal(measuredFromPhraseMulti(null, '2019'), 'since Dec 2019');
+  assert.equal(measuredFromPhraseMulti([{ label: 'ND', data: [] }], '2000'), 'since 2000');
 });

@@ -1151,6 +1151,58 @@ function emptyWindowNote(srcData, visible, anchorId) {
   };
 }
 
+// The words a chart puts under its number: normally the anchor's own phrase,
+// but it has to name the reading the number actually measures FROM.
+//
+// anchorObsDate clamps an anchor that predates the series forward to its first
+// reading, so "Since 2000" on the ACA benchmark premium (first reading 2018)
+// measured 2018 → 2026 and still captioned itself "since 2000" — while the
+// Copy-fact button on the same card said "up 29.9% from $481.00 in 2018". The
+// clamp happened upstream and the phrase never learned about it. (The old guard
+// keyed off `change == null`, the symptom of an unclamped miss, which
+// anchorObsDate had already made unreachable.) Eleven national cards and every
+// state card with a short series printed a false start date on that anchor.
+//
+// Two deliberate narrowings:
+//   · Only when the base lands LATER than the anchor. Landing earlier inside the
+//     anchor's own period is the badge convention anchorObsDate exists to
+//     enforce (quarterly FHFA on Q4 2019, annual series on Jan 2019), and those
+//     keep saying "since Dec 2019".
+//   · Compared at month granularity, so a weekly series whose first reading is
+//     Jan 3 2000 keeps the true, readable "since 2000" instead of trading it for
+//     "since Jan 3, 2000".
+//
+// fmtObsDate, not fmtDate, so the replacement carries the series' own cadence:
+// "since 2018" for an annual premium, "since Jan 2015" for monthly rent.
+//
+// Takes the *displayed* series and its visible window (deflated in Real mode),
+// so the caption describes what the reader is looking at.
+function measuredFromPhrase(srcData, visible, anchorId) {
+  const phrase = anchorById(anchorId).phrase;
+  if (!visible || !visible.length) return phrase;
+  const base = visible[0].date;
+  return base.slice(0, 7) > anchorDate(anchorId, srcData).slice(0, 7)
+    ? 'since ' + fmtObsDate(base, srcData)
+    : phrase;
+}
+
+// The multi-line version. Compare's panels and the Map's pinned chart draw one
+// metric across several states, each line clamped independently by
+// anchorObsDate, so the same falsehood was available to them: a chart whose
+// states all begin in 2018 captioned "since 2000". Names the earliest reading
+// any line actually starts at — the left edge of the plot the reader sees.
+// Takes the series as drawn, deflated included.
+function measuredFromPhraseMulti(seriesList, anchorId) {
+  let best = null;
+  for (const s of (seriesList || [])) {
+    if (!s || !s.data || !s.data.length) continue;
+    const vis = sliceFrom(s.data, anchorObsDate(s.data, anchorId));
+    if (!vis.length) continue;
+    if (!best || vis[0].date < best.vis[0].date) best = { vis, data: s.data };
+  }
+  return best ? measuredFromPhrase(best.data, best.vis, anchorId) : anchorById(anchorId).phrase;
+}
+
 Object.assign(window, {
   ESP, fmtVal, fmtDate, inferCadence, fmtObsDate, ordinal, pctChange, pctChangeBetween, valueAt, sliceFrom, downloadCSV, downloadCardAsPNG,
   downloadCompareCSV,
@@ -1158,7 +1210,7 @@ Object.assign(window, {
   ANCHORS, anchorById, anchorDate, anchorObsDate, buildFactText, loadDataFile,
   ALREADY_REAL_IDS, isDeflatable, toReal, seriesForType, railChangeText,
   isRateSeries, changeIn, fmtChange, changeSince, changeBetween,
-  selAdd, selRemove, emptyWindowNote,
+  selAdd, selRemove, emptyWindowNote, measuredFromPhrase, measuredFromPhraseMulti,
 });
 
 })();
@@ -1185,7 +1237,7 @@ const { ESP, fmtVal, fmtDate, fmtObsDate, ordinal, valueAt, sliceFrom, downloadC
         ANCHORS, anchorById, anchorDate, anchorObsDate, buildFactText, loadDataFile,
         ALREADY_REAL_IDS, isDeflatable, toReal, seriesForType, railChangeText,
         isRateSeries, changeIn, fmtChange, changeSince, changeBetween,
-        selAdd, selRemove, emptyWindowNote } = window;
+        selAdd, selRemove, emptyWindowNote, measuredFromPhrase, measuredFromPhraseMulti } = window;
 const { useState, useMemo, useEffect, useRef } = React;
 
 const NAVY = '#2c3254';
@@ -1573,7 +1625,6 @@ function ChartCard({ item, anchorId, displayMode, priceType, cpiData, overlayIte
   const [ovr, setOvr] = useState(null);
   useEffect(() => { setOvr(null); }, [anchorId]);
   const activeId = ovr || anchorId;
-  const active = anchorById(activeId);
   // Resolved to a reading the series actually publishes, so the chart window,
   // the headline and the two badges all measure from the same point.
   const cardSince = anchorObsDate(item.data, activeId);
@@ -1753,21 +1804,19 @@ function ChartCard({ item, anchorId, displayMode, priceType, cpiData, overlayIte
   }, [chartReady, item, cardSince, accent, displayMode, priceType, overlayItem]);
 
   let change = changeSince(srcData, cardSince, item);
-  // If the anchor predates this series (e.g. a global "since 2000" or a custom
-  // 2000 on a series that only starts in 2006), changeSince finds no reading
-  // at/before the anchor and returns null. Fall back to the change since the
-  // earliest available reading — the same base the chart draws from — instead
-  // of showing a misleading 0.0%. When we clamp, remember the true start so the
-  // label reads "since Mar 2006", not "since 2000".
-  let clampedStart = null;
+  // changeSince returns null when there is no reading at/before cardSince at
+  // all. anchorObsDate makes that impossible for item.data, but Real mode can
+  // trim the front of srcData past it (a series that starts before the CPI
+  // window we deflate against), so fall back to the change since the earliest
+  // reading the chart actually draws rather than showing a misleading 0.0%.
   if (change == null && visibleData.length >= 2) {
     const clamped = changeIn(visibleData[0].value, visibleData[visibleData.length - 1].value, rate);
-    if (clamped != null) {
-      change = clamped;
-      clampedStart = visibleData[0].date;
-    }
+    if (clamped != null) change = clamped;
   }
-  const activePhrase = clampedStart ? 'since ' + fmtDate(clampedStart) : active.phrase;
+  // Named from the reading we measured from, not from whether the fallback
+  // above fired — see measuredFromPhrase. Both clamps (anchorObsDate's, and the
+  // Real-mode one just above) land on visibleData[0], so one rule covers them.
+  const activePhrase = measuredFromPhrase(srcData, visibleData, activeId);
   // change is still null here only when the active anchor is on/after the
   // series' actual last reading (e.g. an annual series with nothing
   // published since the anchor) — the clamp above only recovers the
@@ -3311,7 +3360,7 @@ function CompareMetricPanel({ metric, data, pinned, names, anchorId, displayMode
                       headlineText: '',
                       changeText: '',
                       changeColor: metric.color,
-                      rangeLabel: anchorById(anchorId).phrase,
+                      rangeLabel: measuredFromPhraseMulti(seriesList, anchorId),
                       legend: seriesList.map(s => ({ label: s.label, color: s.color })),
                     });
                   } catch (err) { console.error('PNG export failed', err); }
@@ -3587,6 +3636,13 @@ function MapView({ data, metricId, setMetricId, anchorId, setAnchorId, priceType
   const deflate = (arr) => metricReal ? toReal(arr, cpiData) : arr;
   const annual = (metric.frequency || '').startsWith('Annual');
 
+  // §02's lines, built once: the chart draws them, the PNG export and the
+  // caption below it both have to describe the same left edge.
+  const pinnedSeries = pinned.map((code, i) => {
+    const s = md && md.states[code];
+    return s ? { label: names[code] || code, color: PIN_COLORS[i % PIN_COLORS.length], data: deflate(s.data) } : null;
+  }).filter(Boolean);
+
   // Years available for this metric (union across states), newest first. The
   // dropdown defaults to the latest year; within a year each state shows its
   // last reading, so monthly/quarterly series default to the latest month.
@@ -3680,7 +3736,7 @@ function MapView({ data, metricId, setMetricId, anchorId, setAnchorId, priceType
         },
         accent: metric.color,
         headlineText: '', changeText: '', changeColor: metric.color,
-        rangeLabel: anchorById(anchorId).phrase,
+        rangeLabel: measuredFromPhraseMulti(pinnedSeries, anchorId),
         legend: pinned.map((code, i) => ({ label: names[code] || code, color: PIN_COLORS[i % PIN_COLORS.length] })),
       });
     } catch (err) { console.error('PNG export failed', err); }
@@ -3820,18 +3876,14 @@ function MapView({ data, metricId, setMetricId, anchorId, setAnchorId, priceType
                 <div ref={pinnedChartRef} style={{ background: SURFACE, border: `1px solid rgba(44,50,84,.16)`, padding: '14px 16px 10px' }}>
                   <CompareChart
                     metric={metric}
-                    seriesList={pinned.map((code, i) => {
-                      const s = md.states[code];
-                      if (!s) return null;
-                      return { label: names[code] || code, color: PIN_COLORS[i % PIN_COLORS.length], data: deflate(s.data) };
-                    }).filter(Boolean)}
+                    seriesList={pinnedSeries}
                     anchorId={anchorId} displayMode={chartMode} height={340} />
                 </div>
                 <div style={{
                   marginTop: 10, fontFamily: 'Publico, Georgia, serif', fontStyle: 'italic',
                   fontSize: 12.5, color: MUTE,
                 }}>
-                  Lines show {chartMode === 'pct' ? '% change' : 'levels'} {anchorById(anchorId).phrase}{metricReal ? ', inflation-adjusted with the national CPI-U (no state price index exists)' : ''}.
+                  Lines show {chartMode === 'pct' ? '% change' : 'levels'} {measuredFromPhraseMulti(pinnedSeries, anchorId)}{metricReal ? ', inflation-adjusted with the national CPI-U (no state price index exists)' : ''}.
                 </div>
                 <ExportFooter metric={metric} onCSV={exportPinnedCSV} onPNG={exportPinnedPNG} />
               </React.Fragment>
