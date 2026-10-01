@@ -13,11 +13,11 @@
       "invert_color": false,
       "overlay_only": false,
       "rebase": true,
-      "last_updated": "2026-09-01",
-      "latest_value": 332.956,
-      "latest_date": "2026-07-01",
-      "yoy_change": 4.62,
-      "n_obs": 318
+      "last_updated": "2026-10-01",
+      "latest_value": 334.591,
+      "latest_date": "2026-08-01",
+      "yoy_change": 4.76,
+      "n_obs": 319
     },
     "gas": {
       "id": "gas",
@@ -32,11 +32,11 @@
       "invert_color": false,
       "overlay_only": false,
       "rebase": false,
-      "last_updated": "2026-09-01",
-      "latest_value": 3.916,
-      "latest_date": "2026-08-31",
-      "yoy_change": 28.9,
-      "n_obs": 1392
+      "last_updated": "2026-10-01",
+      "latest_value": 4.309,
+      "latest_date": "2026-09-28",
+      "yoy_change": 41.28,
+      "n_obs": 1396
     },
     "electricity": {
       "id": "electricity",
@@ -51,11 +51,11 @@
       "invert_color": false,
       "overlay_only": false,
       "rebase": false,
-      "last_updated": "2026-09-01",
-      "latest_value": 0.197,
-      "latest_date": "2026-07-01",
-      "yoy_change": 4.23,
-      "n_obs": 318
+      "last_updated": "2026-10-01",
+      "latest_value": 0.196,
+      "latest_date": "2026-08-01",
+      "yoy_change": 3.16,
+      "n_obs": 319
     },
     "utility_gas": {
       "id": "utility_gas",
@@ -70,11 +70,11 @@
       "invert_color": false,
       "overlay_only": false,
       "rebase": false,
-      "last_updated": "2026-09-01",
-      "latest_value": 1.704,
-      "latest_date": "2026-07-01",
-      "yoy_change": 3.78,
-      "n_obs": 318
+      "last_updated": "2026-10-01",
+      "latest_value": 1.714,
+      "latest_date": "2026-08-01",
+      "yoy_change": 4.9,
+      "n_obs": 319
     },
     "groceries": {
       "id": "groceries",
@@ -89,11 +89,11 @@
       "invert_color": false,
       "overlay_only": false,
       "rebase": true,
-      "last_updated": "2026-09-01",
-      "latest_value": 321.216,
-      "latest_date": "2026-07-01",
-      "yoy_change": 2.61,
-      "n_obs": 318
+      "last_updated": "2026-10-01",
+      "latest_value": 321.335,
+      "latest_date": "2026-08-01",
+      "yoy_change": 2.13,
+      "n_obs": 319
     },
     "eggs": {
       "id": "eggs",
@@ -108,11 +108,11 @@
       "invert_color": false,
       "overlay_only": false,
       "rebase": false,
-      "last_updated": "2026-09-01",
-      "latest_value": 2.189,
-      "latest_date": "2026-07-01",
-      "yoy_change": -39.18,
-      "n_obs": 318
+      "last_updated": "2026-10-01",
+      "latest_value": 2.272,
+      "latest_date": "2026-08-01",
+      "yoy_change": -36.66,
+      "n_obs": 319
     },
     "ground_beef": {
       "id": "ground_beef",
@@ -127,11 +127,11 @@
       "invert_color": false,
       "overlay_only": false,
       "rebase": false,
-      "last_updated": "2026-09-01",
-      "latest_value": 6.885,
-      "latest_date": "2026-07-01",
-      "yoy_change": 10.09,
-      "n_obs": 317
+      "last_updated": "2026-10-01",
+      "latest_value": 6.923,
+      "latest_date": "2026-08-01",
+      "yoy_change": 9.58,
+      "n_obs": 318
     },
     "chicken_breast": {
       "id": "chicken_breast",
@@ -146,11 +146,11 @@
       "invert_color": false,
       "overlay_only": false,
       "rebase": false,
-      "last_updated": "2026-09-01",
-      "latest_value": 4.153,
-      "latest_date": "2026-07-01",
-      "yoy_change": -1.21,
-      "n_obs": 246
+      "last_updated": "2026-10-01",
+      "latest_value": 4.173,
+      "latest_date": "2026-08-01",
+      "yoy_change": -0.93,
+      "n_obs": 247
     },
     "milk": {
       "id": "milk",
@@ -165,11 +165,11 @@
       "invert_color": false,
       "overlay_only": false,
       "rebase": false,
-      "last_updated": "2026-09-01",
-      "latest_value": 4.313,
-      "latest_date": "2026-07-01",
-      "yoy_change": 3.63,
-      "n_obs": 318
+      "last_updated": "2026-10-01",
+      "latest_value": 4.229,
+      "latest_date": "2026-08-01",
+      "yoy_change": 1.39,
+      "n_obs": 319
     },
     "bread": {
       "id": "bread",
@@ -184,11 +184,11 @@
       "invert_color": false,
       "overlay_only": false,
       "rebase": false,
-      "last_updated": "2026-09-01",
-      "latest_value": 1.82,
-      "latest_date": "2026-07-01",
-      "yoy_change": -1.67,
-      "n_obs": 318
+      "last_updated": "2026-10-01",
+      "latest_value": 1.823,
+      "latest_date": "2026-08-01",
+      "yoy_change": -0.98,
+      "n_obs": 319
     },
     "coffee": {
       "id": "coffee",
@@ -203,11 +203,11 @@
       "invert_color": false,
       "overlay_only": false,
       "rebase": false,
-      "last_updated": "2026-09-01",
-      "latest_value": 9.317,
-      "latest_date": "2026-07-01",
-      "yoy_change": 10.73,
-      "n_obs": 278
+      "last_updated": "2026-10-01",
+      "latest_value": 9.299,
+      "latest_date": "2026-08-01",
+      "yoy_change": 4.81,
+      "n_obs": 279
     },
     "bacon": {
       "id": "bacon",
@@ -222,11 +222,11 @@
       "invert_color": false,
       "overlay_only": false,
       "rebase": false,
-      "last_updated": "2026-09-01",
-      "latest_value": 6.584,
-      "latest_date": "2026-07-01",
-      "yoy_change": -7.5,
-      "n_obs": 318
+      "last_updated": "2026-10-01",
+      "latest_value": 6.605,
+      "latest_date": "2026-08-01",
+      "yoy_change": -8.37,
+      "n_obs": 319
     },
     "car_insurance": {
       "id": "car_insurance",
@@ -242,11 +242,11 @@
       "overlay_only": false,
       "rebase": true,
       "source_note": "BLS · Motor Vehicle Insurance CPI (not on FRED)",
-      "last_updated": "2026-09-01",
-      "latest_value": 856.268,
-      "latest_date": "2026-07-01",
-      "yoy_change": -4.46,
-      "n_obs": 317
+      "last_updated": "2026-10-01",
+      "latest_value": 849.837,
+      "latest_date": "2026-08-01",
+      "yoy_change": -5.13,
+      "n_obs": 318
     },
     "new_cars": {
       "id": "new_cars",
@@ -261,11 +261,11 @@
       "invert_color": false,
       "overlay_only": false,
       "rebase": true,
-      "last_updated": "2026-09-01",
-      "latest_value": 178.81,
-      "latest_date": "2026-07-01",
-      "yoy_change": 0.54,
-      "n_obs": 319
+      "last_updated": "2026-10-01",
+      "latest_value": 179.259,
+      "latest_date": "2026-08-01",
+      "yoy_change": 0.57,
+      "n_obs": 320
     },
     "used_cars": {
       "id": "used_cars",
@@ -280,11 +280,11 @@
       "invert_color": false,
       "overlay_only": false,
       "rebase": true,
-      "last_updated": "2026-09-01",
-      "latest_value": 180.306,
-      "latest_date": "2026-07-01",
-      "yoy_change": -1.87,
-      "n_obs": 319
+      "last_updated": "2026-10-01",
+      "latest_value": 180.965,
+      "latest_date": "2026-08-01",
+      "yoy_change": -2.32,
+      "n_obs": 320
     },
     "childcare": {
       "id": "childcare",
@@ -300,11 +300,11 @@
       "overlay_only": false,
       "rebase": true,
       "source_note": "BLS · Day Care and Preschool CPI (not on FRED)",
-      "last_updated": "2026-09-01",
-      "latest_value": 401.453,
-      "latest_date": "2026-07-01",
-      "yoy_change": 3.39,
-      "n_obs": 318
+      "last_updated": "2026-10-01",
+      "latest_value": 405.432,
+      "latest_date": "2026-08-01",
+      "yoy_change": 3.98,
+      "n_obs": 319
     },
     "zori_rent": {
       "id": "zori_rent",
@@ -320,11 +320,11 @@
       "overlay_only": false,
       "rebase": false,
       "source_note": "Zillow Observed Rent Index (ZORI), smoothed & seasonally adjusted",
-      "last_updated": "2026-09-01",
-      "latest_value": 1962,
-      "latest_date": "2026-07-01",
-      "yoy_change": 2.4,
-      "n_obs": 139
+      "last_updated": "2026-10-01",
+      "latest_value": 1948,
+      "latest_date": "2026-08-01",
+      "yoy_change": 2.63,
+      "n_obs": 140
     },
     "median_home_price": {
       "id": "median_home_price",
@@ -339,7 +339,7 @@
       "invert_color": false,
       "overlay_only": false,
       "rebase": false,
-      "last_updated": "2026-09-01",
+      "last_updated": "2026-10-01",
       "latest_value": 410700,
       "latest_date": "2026-04-01",
       "yoy_change": -1.3,
@@ -358,11 +358,11 @@
       "invert_color": false,
       "overlay_only": false,
       "rebase": false,
-      "last_updated": "2026-09-01",
-      "latest_value": 6.66,
-      "latest_date": "2026-08-27",
-      "yoy_change": 1.22,
-      "n_obs": 1391
+      "last_updated": "2026-10-01",
+      "latest_value": 7.28,
+      "latest_date": "2026-10-01",
+      "yoy_change": 15.56,
+      "n_obs": 1396
     },
     "aca_benchmark_premium": {
       "id": "aca_benchmark_premium",
@@ -378,7 +378,7 @@
       "overlay_only": false,
       "rebase": false,
       "source_note": "KFF State Health Facts, Average Marketplace Premiums by Metal Tier (annual)",
-      "last_updated": "2026-09-01",
+      "last_updated": "2026-10-01",
       "latest_value": 625,
       "latest_date": "2026-01-01",
       "yoy_change": 25.75,
@@ -398,7 +398,7 @@
       "overlay_only": false,
       "rebase": false,
       "source_note": "KFF State Health Facts, Health Insurance Coverage of the Total Population (annual)",
-      "last_updated": "2026-09-01",
+      "last_updated": "2026-10-01",
       "latest_value": 8.2,
       "latest_date": "2024-01-01",
       "yoy_change": 3.8,
@@ -418,7 +418,7 @@
       "overlay_only": false,
       "rebase": false,
       "source_note": "Census ACS 1-year, table B25070 (annual)",
-      "last_updated": "2026-09-01",
+      "last_updated": "2026-10-01",
       "latest_value": 51.8,
       "latest_date": "2024-01-01",
       "yoy_change": 0,
@@ -437,11 +437,11 @@
       "invert_color": false,
       "overlay_only": false,
       "rebase": false,
-      "last_updated": "2026-09-01",
+      "last_updated": "2026-10-01",
       "latest_value": 4.1,
-      "latest_date": "2026-07-01",
+      "latest_date": "2026-08-01",
       "yoy_change": -4.65,
-      "n_obs": 318
+      "n_obs": 319
     },
     "hourly_earnings": {
       "id": "hourly_earnings",
@@ -456,11 +456,11 @@
       "invert_color": true,
       "overlay_only": false,
       "rebase": false,
-      "last_updated": "2026-09-01",
-      "latest_value": 37.62,
-      "latest_date": "2026-07-01",
-      "yoy_change": 3.15,
-      "n_obs": 245
+      "last_updated": "2026-10-01",
+      "latest_value": 37.75,
+      "latest_date": "2026-08-01",
+      "yoy_change": 3.09,
+      "n_obs": 246
     },
     "income_20th": {
       "id": "income_20th",
@@ -476,7 +476,7 @@
       "overlay_only": false,
       "rebase": false,
       "source_note": "Census ACS 1-year, table B19080 (annual)",
-      "last_updated": "2026-09-01",
+      "last_updated": "2026-10-01",
       "latest_value": 33775,
       "latest_date": "2024-01-01",
       "yoy_change": 5.74,
@@ -495,11 +495,11 @@
       "invert_color": false,
       "overlay_only": false,
       "rebase": true,
-      "last_updated": "2026-09-01",
-      "latest_value": 332.813,
-      "latest_date": "2026-07-01",
-      "yoy_change": 3.3,
-      "n_obs": 318
+      "last_updated": "2026-10-01",
+      "latest_value": 334.131,
+      "latest_date": "2026-08-01",
+      "yoy_change": 3.35,
+      "n_obs": 319
     },
     "credit_card_delinquency": {
       "id": "credit_card_delinquency",
@@ -514,7 +514,7 @@
       "invert_color": false,
       "overlay_only": false,
       "rebase": false,
-      "last_updated": "2026-09-01",
+      "last_updated": "2026-10-01",
       "latest_value": 2.85,
       "latest_date": "2026-04-01",
       "yoy_change": -6.25,
@@ -533,7 +533,7 @@
       "invert_color": false,
       "overlay_only": false,
       "rebase": false,
-      "last_updated": "2026-09-01",
+      "last_updated": "2026-10-01",
       "latest_value": 1.86,
       "latest_date": "2026-04-01",
       "yoy_change": 4.49,
@@ -553,7 +553,7 @@
       "overlay_only": false,
       "rebase": false,
       "source_note": "NY Fed Consumer Credit Panel / Equifax (annual, Q4)",
-      "last_updated": "2026-09-01",
+      "last_updated": "2026-10-01",
       "latest_value": 63200,
       "latest_date": "2025-12-01",
       "yoy_change": 2.5,
@@ -573,7 +573,7 @@
       "overlay_only": true,
       "rebase": false,
       "source_note": "NY Fed Consumer Credit Panel / Equifax (annual, Q4)",
-      "last_updated": "2026-09-01",
+      "last_updated": "2026-10-01",
       "latest_value": 5460,
       "latest_date": "2025-12-01",
       "yoy_change": -1.8,
@@ -593,7 +593,7 @@
       "overlay_only": true,
       "rebase": false,
       "source_note": "NY Fed Consumer Credit Panel / Equifax (annual, Q4)",
-      "last_updated": "2026-09-01",
+      "last_updated": "2026-10-01",
       "latest_value": 12.4,
       "latest_date": "2025-12-01",
       "yoy_change": 10.71,
@@ -612,7 +612,7 @@
       "invert_color": false,
       "overlay_only": true,
       "rebase": true,
-      "last_updated": "2026-09-01",
+      "last_updated": "2026-10-01",
       "latest_value": 719.87,
       "latest_date": "2026-04-01",
       "yoy_change": 3.03,
@@ -631,11 +631,11 @@
       "invert_color": true,
       "overlay_only": false,
       "rebase": false,
-      "last_updated": "2026-09-01",
-      "latest_value": 83730,
-      "latest_date": "2024-01-01",
-      "yoy_change": 1.26,
-      "n_obs": 25
+      "last_updated": "2026-10-01",
+      "latest_value": 87460,
+      "latest_date": "2025-01-01",
+      "yoy_change": 2.64,
+      "n_obs": 26
     },
     "rent_hours": {
       "id": "rent_hours",
@@ -651,11 +651,11 @@
       "invert_color": false,
       "overlay_only": false,
       "rebase": false,
-      "last_updated": "2026-09-01",
-      "latest_value": 52.2,
-      "latest_date": "2026-07-01",
-      "yoy_change": -0.57,
-      "n_obs": 139
+      "last_updated": "2026-10-01",
+      "latest_value": 51.6,
+      "latest_date": "2026-08-01",
+      "yoy_change": -0.39,
+      "n_obs": 140
     }
   },
   "states": {
