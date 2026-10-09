@@ -462,8 +462,8 @@ SERIES <- list(
   # dashboard that is NSA. Changes over whole years (1Y, Dec 2019) are clean;
   # the Jan 2025 anchor compares different months and carries seasonal noise.
   # The series begins Dec 2005 (= 100), and BLS left some months unpublished
-  # (Jun 2020, Oct 2024, Apr 2025), handled like coffee's gaps. Default-on as
-  # the lead card in DEFAULT_NATIONAL_IDS (index.html).
+  # (Jun 2020, Oct 2024, Apr 2025), handled like coffee's gaps. Default-on, after
+  # the ACA benchmark premium in DEFAULT_NATIONAL_IDS (index.html).
   list(
     id          = "home_health_care",
     source      = "bls",
