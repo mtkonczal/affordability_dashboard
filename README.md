@@ -3,8 +3,8 @@
 A dashboard of national and state-level cost-of-living indicators, built by
 the [Economic Security Project](https://economicsecurityproject.org). It
 tracks what everyday essentials cost, from groceries and gas to rent, health
-insurance, childcare, and household debt, and how those costs have changed
-since before the pandemic.
+insurance, childcare, home health care, and household debt, and how those
+costs have changed since before the pandemic.
 
 The site is fully static: a single `index.html` renders the dashboard from
 pre-built data files in `data/`, so it can be served from GitHub Pages (or

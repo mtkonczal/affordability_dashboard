@@ -2174,12 +2174,13 @@ function Heatmap({ items, priceType, cpiData }) {
 // ── National view ────────────────────────────────────────────────────────────
 // Default card set (comms request, August 2026): a cross-category headline mix
 // rather than one whole category, ending on headline CPI so the individual
-// prices above it add up to the overall number.
+// prices above it add up to the overall number. Home health care (October 2026)
+// leads the set.
 // This list is ORDERED — it is the first paint's card order top to bottom, not
 // just a membership set, so taxonomy order does not reshuffle it. Everything
 // after first paint follows the usual newest-added-first rule.
 const DEFAULT_NATIONAL_IDS = [
-  'electricity', 'gas', 'aca_benchmark_premium', 'zori_rent',
+  'home_health_care', 'electricity', 'gas', 'aca_benchmark_premium', 'zori_rent',
   'mortgage', 'coffee', 'ground_beef', 'cpi_all_items',
 ];
 // One list of rows, rendered into either container: a rail above the 1060px

@@ -457,6 +457,28 @@ SERIES <- list(
     color       = "#C026D3",
     from        = "2000-01-01"
   ),
+  # Home health care has no seasonally adjusted version (BLS returns "series
+  # does not exist" for CUSR0000SEMD03), so this is the one CPI index on the
+  # dashboard that is NSA. Changes over whole years (1Y, Dec 2019) are clean;
+  # the Jan 2025 anchor compares different months and carries seasonal noise.
+  # The series begins Dec 2005 (= 100), and BLS left some months unpublished
+  # (Jun 2020, Oct 2024, Apr 2025), handled like coffee's gaps. Default-on as
+  # the lead card in DEFAULT_NATIONAL_IDS (index.html).
+  list(
+    id          = "home_health_care",
+    source      = "bls",
+    bls_id      = "CUUR0000SEMD03",
+    source_note = "BLS · Home Health Care CPI (not on FRED)",
+    source_url  = "https://data.bls.gov/timeseries/CUUR0000SEMD03",
+    label       = "Home Health Care",
+    subtitle    = "Home Health Care CPI",
+    category    = "health",
+    units       = "Index (Dec 2005 = 100)",
+    description = "CPI for home health care, all urban consumers, not seasonally adjusted (BLS publishes no seasonally adjusted version; fetched via the BLS API). The series begins in December 2005, and BLS did not publish some months (June 2020, October 2024, April 2025).",
+    color       = "#C026D3",
+    from        = "2005-12-01",
+    is_new      = TRUE
+  ),
   # ── Rent & homes (navy family) ──
   # Rent is market rent (Zillow ZORI) only. CPI rent (CUUR0000SEHA) was cut in
   # the July 2026 trim: two rent lines confused readers, the dollar figure is

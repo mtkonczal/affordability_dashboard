@@ -27,10 +27,10 @@ window.ABOUT_CONTENT = `
       <thead><tr><th>Series</th><th>Source</th><th>Updates</th><th>Notes</th></tr></thead>
       <tbody>
         <tr>
-          <td><b>Groceries (all), new &amp; used cars, car insurance, childcare, inflation</b></td>
+          <td><b>Groceries (all), new &amp; used cars, car insurance, childcare, home health care, inflation</b></td>
           <td>BLS Consumer Price Index, via FRED and the BLS public API</td>
           <td>Monthly</td>
-          <td>Seasonally adjusted where BLS publishes it that way. These are price indexes, so they display as cumulative percent change, not index points. There is no CPI card for health insurance: that index prices only the share of a premium insurers keep for administration and profit, not what a household pays, so it can fall in a year when premiums jump. The ACA benchmark premium below is the premium series.</td>
+          <td>Seasonally adjusted where BLS publishes it that way; home health care is not (BLS publishes no adjusted version) and begins in December 2005. These are price indexes, so they display as cumulative percent change, not index points. There is no CPI card for health insurance: that index prices only the share of a premium insurers keep for administration and profit, not what a household pays, so it can fall in a year when premiums jump. The ACA benchmark premium below is the premium series.</td>
         </tr>
         <tr>
           <td><b>Eggs, ground beef, chicken, milk, bread, coffee, bacon</b></td>
