@@ -160,6 +160,7 @@ def convert_nyfed():
     for sheet, name, is_dollar in [
         ("total",             "debt_per_capita.csv",        True),
         ("studentloan",       "studentloan_per_capita.csv", True),
+        ("creditcard",        "cc_per_capita.csv",          True),
         ("creditcard_delinq", "cc_delinquency_90.csv",      False),
     ]:
         rows, label = sheet_series(sheet)

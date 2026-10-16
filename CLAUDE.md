@@ -230,7 +230,7 @@ and PNG export are still covered only by the manual pass in `What to Check.md`.
     national counterpart (EIA publishes state bills, not a US average) and reads
     `—`. On Map those numbers follow that tab's own anchor and Real toggle, down
     on the §02 controls, while §01 beside them paints state levels for one year.
-  - Map lists 13, not 14: index-level metrics stay out (FHFA levels aren't
+  - Map lists 14, not 15: index-level metrics stay out (FHFA levels aren't
     comparable across states), a filter that predates the rail.
   - The rail costs the choropleth ~220px (891px wide at a 1280px viewport). Side
     effect: Map's section head wraps to two lines at 1280 where it used to fit

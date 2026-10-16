@@ -202,10 +202,10 @@ window.ABOUT_CONTENT = `
           <td>Share of each state's population with no health coverage; KFF estimates from the Census ACS. 2008 onward, no 2020 point.</td>
         </tr>
         <tr>
-          <td><b>Household debt, student loan debt (per capita); credit card delinquency (90+)</b></td>
+          <td><b>Household debt, student loan debt, credit card debt (per capita); credit card delinquency (90+)</b></td>
           <td><a href="https://www.newyorkfed.org/microeconomics/databank.html" target="_blank" rel="noopener">NY Fed</a> Consumer Credit Panel / Equifax, State-Level Household Debt Statistics</td>
           <td>Annual</td>
-          <td>Per person with a credit file (ages 18+), not per resident, so states with more people outside the credit system aren't strictly comparable on a population basis. Delinquency is the percent of balance 90+ days late, stricter than the 30-day national bank series above; the two are not interchangeable. Each point is a fourth quarter, 2003 onward. One panel covers the US and every state, so the national overlay on these charts is built the same way as the state lines.</td>
+          <td>Per person with a credit file (ages 18+), not per resident, and people with no balance count in the denominator, so states with more people outside the credit system aren't strictly comparable on a population basis. Delinquency is the percent of balance 90+ days late, stricter than the 30-day national bank series above; the two are not interchangeable. Each point is a fourth quarter, 2003 onward. One panel covers the US and every state, so the national overlay on these charts is built the same way as the state lines.</td>
         </tr>
         <tr>
           <td><b>Rent burden</b></td>

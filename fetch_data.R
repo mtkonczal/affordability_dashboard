@@ -726,6 +726,23 @@ SERIES <- list(
     source_note  = "NY Fed Consumer Credit Panel / Equifax (annual, Q4)",
     source_url   = "https://www.newyorkfed.org/microeconomics/databank.html"
   ),
+  # Per person with a credit file, zero balances included, so it rises when
+  # more people carry a balance as well as when balances grow.
+  list(
+    id           = "cc_per_capita",
+    source       = "nyfed",
+    src_id       = "cc_per_capita",
+    label        = "Credit Card Debt per Capita",
+    subtitle     = "Per Person with a Credit File, US",
+    category     = "income",
+    units        = "$ per Person",
+    description  = "Credit card debt per person with a credit file, US. NY Fed Consumer Credit Panel / Equifax — annual, each point is Q4. National comparison line for the state metric.",
+    color        = "#BE123C",
+    from         = "2003-12-01",
+    overlay_only = TRUE,
+    source_note  = "NY Fed Consumer Credit Panel / Equifax (annual, Q4)",
+    source_url   = "https://www.newyorkfed.org/microeconomics/databank.html"
+  ),
   list(
     id           = "cc_delinquency_90",
     source       = "nyfed",
@@ -1007,6 +1024,22 @@ STATE_METRICS <- list(
     description  = "Student loan debt per person with a credit file. NY Fed State-Level Household Debt Statistics; each point is Q4.",
     source       = "nyfed",
     src_id       = "studentloan_per_capita",
+    from         = "2003-12-01",
+    round_digits = 0
+  ),
+  list(
+    id           = "cc_per_capita",
+    label        = "Credit Card Debt per Capita",
+    units        = "$ per Person",
+    category     = "income",
+    color        = "#BE123C",
+    national_id  = "cc_per_capita",
+    frequency    = "Annual (Q4)",
+    source_label = "NY Fed Consumer Credit Panel / Equifax",
+    source_url   = "https://www.newyorkfed.org/microeconomics/databank.html",
+    description  = "Credit card debt per person with a credit file, counting people with no card balance. NY Fed State-Level Household Debt Statistics; each point is Q4.",
+    source       = "nyfed",
+    src_id       = "cc_per_capita",
     from         = "2003-12-01",
     round_digits = 0
   ),
