@@ -36,6 +36,15 @@ python3 scripts/convert_annual.py
 # Writes data/census/*.csv; needs CENSUS_API_KEY (env or .Renviron).
 python3 scripts/fetch_census.py
 
+# Freeze dashboard series into blog-post iframes (one-off, never refreshed).
+# The post's choices live in embeds/<slug>/config.json (chart ids, series,
+# per-chart start/end, two-line charts, and "graphics": the charts that share
+# one iframe side by side, swiped sideways on phones so the height stays
+# fixed); the script writes data.js, chart.html and a README with one
+# WordPress iframe snippet per graphic next to it. Preview at embeds/embed_test.html?slug=<slug> (&nosandbox=1 for tools that
+# can't see into a sandboxed frame). embeds/template/chart.html is the source.
+python3 scripts/snapshot_embed.py embeds/rising-cost-2026/config.json
+
 # View the dashboard (or use the static server in .claude/launch.json)
 open index.html
 ```

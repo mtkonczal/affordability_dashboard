@@ -1,0 +1,23 @@
+{
+  "post": "The Rising Cost of Trump's Economy (ESP Action blog, 2026)",
+  "start": "2024-12",
+  "charts": [
+    {"id": "aca-premium", "title": "ACA Benchmark Premium",
+     "series": ["aca_benchmark_premium"], "start": "2000", "headline_from": "2025"},
+    {"id": "mortgage", "title": "30-Year Mortgage Rate",
+     "series": ["mortgage"], "start": "2024-12-26", "end": "2026-10-15"},
+    {"id": "gas-diesel", "title": "Gasoline and Diesel",
+     "series": ["gas", "diesel"], "labels": ["Gasoline", "Diesel"],
+     "start": "2024-10-28"},
+    {"id": "coffee-beef", "title": "Coffee and Ground Beef",
+     "series": ["coffee", "ground_beef"], "labels": ["Coffee", "Ground beef"]},
+    {"id": "childcare", "title": "Childcare",
+     "series": ["childcare"]},
+    {"id": "inflation", "title": "Overall Inflation",
+     "series": ["cpi_all_items"], "labels": ["All items (CPI)"]}
+  ],
+  "graphics": {
+    "Graphic 1": ["aca-premium", "mortgage", "gas-diesel"],
+    "Graphic 2": ["coffee-beef", "childcare", "inflation"]
+  }
+}
