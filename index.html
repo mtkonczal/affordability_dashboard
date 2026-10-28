@@ -2176,12 +2176,13 @@ function Heatmap({ items, priceType, cpiData }) {
 // rather than one whole category, ending on headline CPI so the individual
 // prices above it add up to the overall number. Home health care (October 2026)
 // sits beside the ACA benchmark premium, the other health line in the set.
+// Diesel (October 2026) follows gasoline, the other pump price.
 // This list is ORDERED — it is the first paint's card order top to bottom, not
 // just a membership set, so taxonomy order does not reshuffle it. Everything
 // after first paint follows the usual newest-added-first rule.
 const DEFAULT_NATIONAL_IDS = [
-  'electricity', 'gas', 'aca_benchmark_premium', 'home_health_care', 'zori_rent',
-  'mortgage', 'coffee', 'ground_beef', 'cpi_all_items',
+  'electricity', 'gas', 'diesel', 'aca_benchmark_premium', 'home_health_care',
+  'zori_rent', 'mortgage', 'coffee', 'ground_beef', 'cpi_all_items',
 ];
 // One list of rows, rendered into either container: a rail above the 1060px
 // breakpoint, a menu below it. Selection, filter text and group state all live

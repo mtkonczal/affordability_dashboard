@@ -45,10 +45,10 @@ window.ABOUT_CONTENT = `
           <td>Dollars per kilowatt-hour and dollars per therm, the units on a utility bill. Not seasonally adjusted, and household energy use is strongly seasonal, so compare a month with the same month a year earlier. National and regional only; the state view carries an average monthly residential electricity bill from the EIA instead.</td>
         </tr>
         <tr>
-          <td><b>Gasoline</b></td>
+          <td><b>Gasoline, diesel</b></td>
           <td>US Energy Information Administration, via FRED</td>
           <td>Weekly</td>
-          <td>Regular unleaded, US average pump price, all formulations.</td>
+          <td>US average retail pump prices, taxes included: regular gasoline (all formulations) and on-highway diesel. These are pump prices, not the wholesale or futures prices quoted in commodity news.</td>
         </tr>
         <tr>
           <td><b>Water &amp; sewer</b></td>

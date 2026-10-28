@@ -228,16 +228,38 @@ SERIES <- list(
     from        = "2000-01-01",
     is_new      = TRUE
   ),
+  # Pump prices are EIA's weekly retail survey, all formulations. GASREGCOVW
+  # (conventional only) was used until Oct 2026; it leaves out reformulated
+  # gasoline and ran ~15¢ below the US pump average that AAA and the press
+  # quote, while the About page already said "all formulations".
   list(
     id          = "gas",
-    fred_id     = "GASREGCOVW",
+    fred_id     = "GASREGW",
     label       = "Gasoline",
-    subtitle    = "Regular Unleaded, US Average",
+    subtitle    = "Regular, All Formulations, US Average",
     category    = "bills",
     units       = "$ per Gallon",
-    description = "Weekly retail price of regular unleaded gasoline, averaged across all US regions. Published by the EIA.",
+    description = "Weekly retail pump price of regular gasoline, all formulations (conventional and reformulated), averaged across the US, taxes included. Published by the EIA.",
     color       = "#0D9488",
     from        = "2000-01-01"
+  ),
+  # Retail on-highway diesel from the same EIA weekly survey as gasoline, so
+  # the two cards share source, cadence and definition. Not the NY Harbor
+  # wholesale/futures price (DDFUELNYH) that market news quotes, which runs
+  # ~$1.50 below the pump. BLS publishes a monthly equivalent (APU000074717)
+  # that tracks this within a few cents; EIA is fresher and has no Oct 2025
+  # shutdown gap.
+  list(
+    id          = "diesel",
+    fred_id     = "GASDESW",
+    label       = "Diesel",
+    subtitle    = "Retail Pump Price, US Average",
+    category    = "bills",
+    units       = "$ per Gallon",
+    description = "Weekly retail pump price of on-highway diesel, averaged across the US, taxes included. Published by the EIA. Few households buy diesel directly; it reaches family budgets mostly through freight and the prices of goods.",
+    color       = "#0F766E",
+    from        = "2000-01-01",
+    is_new      = TRUE
   ),
   # Household energy is priced in dollars per unit, not in index points. The
   # July 2026 trim swapped the electricity CPI index (CUSR0000SEHF01) for the
