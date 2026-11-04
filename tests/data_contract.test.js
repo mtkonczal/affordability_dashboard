@@ -144,8 +144,15 @@ test('real mode: CPI deflator exists, is monthly, and keeps up with the series i
   // series running well past the newest CPI print get deflated by a stale
   // deflator (toReal falls back to the nearest earlier month).
   const cpiLast = maxDate(cpi.data);
+  // The ACA benchmark premium is the one deliberate exception: KFF publishes
+  // next plan year's premiums in November, so its last point (Jan 1 of the
+  // coming year) runs ahead of CPI by design. Real mode holds it at the latest
+  // CPI and the card says so (H.realForwardNote). Capped at 12 months so a
+  // genuinely stale deflator on this series still fails.
+  const FORWARD_DATED = new Set(['aca_benchmark_premium']);
   const tooFarAhead = NAT_IDS
     .filter(id => id !== 'cpi_all_items' && H.isDeflatable(NAT[id]))
+    .filter(id => !(FORWARD_DATED.has(id) && monthsBetween(cpiLast, NAT[id].latest_date) <= 12))
     .filter(id => monthsBetween(cpiLast, NAT[id].latest_date) > 3)
     .map(id => `${id} ends ${NAT[id].latest_date}, CPI only reaches ${cpiLast}`);
   assert.deepEqual(tooFarAhead, []);

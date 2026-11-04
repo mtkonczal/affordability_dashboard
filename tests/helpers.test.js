@@ -242,6 +242,19 @@ test('toReal: points older than the CPI history are dropped, not left nominal', 
   assert.deepEqual(real.map(d => d.date), ['2026-06-01']);
 });
 
+test('realForwardNote: labels only the ACA premium, only in Real, only while ahead of CPI', () => {
+  const { realForwardNote } = H;
+  const cpi = series([['2026-08-01', 150], ['2026-09-01', 151]]);
+  const aca = { id: 'aca_benchmark_premium', data: series([['2026-01-01', 600], ['2027-01-01', 704]]) };
+  const note = realForwardNote(aca, cpi, true);
+  assert.match(note, /published 2027 plan-year premium/);
+  assert.match(note, /after Sep 2026/);
+  assert.equal(realForwardNote(aca, cpi, false), null, 'Nominal never gets the label');
+  assert.equal(realForwardNote({ ...aca, id: 'rent' }, cpi, true), null, 'scoped to the one series');
+  const caught = { id: aca.id, data: series([['2026-01-01', 600], ['2026-09-01', 650]]) };
+  assert.equal(realForwardNote(caught, cpi, true), null, 'vanishes once CPI reaches the last point');
+});
+
 test('toReal: degenerate inputs pass through instead of throwing', () => {
   assert.deepEqual(toReal([], CPI), []);
   assert.deepEqual(toReal(MONTHLY, []), MONTHLY);

@@ -1036,6 +1036,23 @@ function seriesForType(item, cpi, real) {
   return (real && isDeflatable(item)) ? toReal(item.data, cpi) : item.data;
 }
 
+// The ACA benchmark premium is dated by plan year, and KFF publishes next
+// year's premiums in November, so its last point can sit months past the newest
+// CPI print. toReal holds that point at the latest CPI (zero assumed inflation
+// from then until its date). Say so on the card, in Real mode only, and only
+// while the point really is ahead of the CPI. Deliberately scoped to this one
+// series; nothing else publishes forward-dated readings.
+const FORWARD_DATED_REAL_IDS = new Set(['aca_benchmark_premium']);
+function realForwardNote(item, cpi, real) {
+  if (!real || !item || !FORWARD_DATED_REAL_IDS.has(item.id)) return null;
+  if (!item.data || !item.data.length || !cpi || !cpi.length) return null;
+  const last = item.data[item.data.length - 1].date;
+  const cpiLast = cpi[cpi.length - 1].date;
+  if (last.slice(0, 7) <= cpiLast.slice(0, 7)) return null;
+  const yr = last.slice(0, 4);
+  return `Last point is the published ${yr} plan-year premium. Not adjusted for inflation after ${fmtDate(cpiLast)}.`;
+}
+
 // ── One rule for "how much did this move" ───────────────────────────────────
 // A rate series moves in PERCENTAGE POINTS. The mortgage rate going from 3.68%
 // to 6.66% has risen 3.0 pp; calling that "+81.0%" is the percent-of-a-percent
@@ -1208,7 +1225,7 @@ Object.assign(window, {
   downloadCompareCSV,
   linePath, toPoints, hoursToAfford, REFERENCE_PRICES, scaleByCPI, categoryLabel,
   ANCHORS, anchorById, anchorDate, anchorObsDate, buildFactText, loadDataFile,
-  ALREADY_REAL_IDS, isDeflatable, toReal, seriesForType, railChangeText,
+  ALREADY_REAL_IDS, isDeflatable, toReal, seriesForType, realForwardNote, railChangeText,
   isRateSeries, changeIn, fmtChange, changeSince, changeBetween,
   selAdd, selRemove, emptyWindowNote, measuredFromPhrase, measuredFromPhraseMulti,
 });
@@ -1235,7 +1252,7 @@ const { ESP, fmtVal, fmtDate, fmtObsDate, ordinal, valueAt, sliceFrom, downloadC
         downloadCompareCSV,
         linePath, toPoints, categoryLabel, hoursToAfford, REFERENCE_PRICES, scaleByCPI,
         ANCHORS, anchorById, anchorDate, anchorObsDate, buildFactText, loadDataFile,
-        ALREADY_REAL_IDS, isDeflatable, toReal, seriesForType, railChangeText,
+        ALREADY_REAL_IDS, isDeflatable, toReal, seriesForType, realForwardNote, railChangeText,
         isRateSeries, changeIn, fmtChange, changeSince, changeBetween,
         selAdd, selRemove, emptyWindowNote, measuredFromPhrase, measuredFromPhraseMulti } = window;
 const { useState, useMemo, useEffect, useRef } = React;
@@ -1850,6 +1867,7 @@ function ChartCard({ item, anchorId, displayMode, priceType, cpiData, overlayIte
   // reads as a broken chart, so the canvas is replaced by a blank panel that
   // names the gap.
   const emptyNote = emptyWindowNote(srcData, visibleData, activeId);
+  const forwardNote = realForwardNote(item, cpiData, real);
 
   // In % mode an empty window rebases its one reading against itself and the
   // headline comes out "+0.0%" — an unchanged-since claim, right beside a note
@@ -1979,6 +1997,12 @@ function ChartCard({ item, anchorId, displayMode, priceType, cpiData, overlayIte
           <canvas ref={canvasRef} />
         )}
       </div>
+      {forwardNote && !emptyNote && (
+        <div style={{
+          fontFamily: 'Publico, Georgia, serif', fontStyle: 'italic',
+          fontSize: 12, color: MUTE, lineHeight: 1.4,
+        }}>{forwardNote}</div>
+      )}
       {overlayItem && !emptyNote && (
         <div style={{
           fontFamily: '"Neue Haas Grotesk Display Pro", sans-serif',
